@@ -1,11 +1,12 @@
+import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
-import 'package:all_flutter0709/features/topic/presentation/topic_detail_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class TopicPage extends StatefulWidget {
   const TopicPage({super.key});
@@ -87,10 +88,9 @@ class _TopicPageState extends State<TopicPage> {
           child: TopicItemWidget(
             topicModel: _topics[index],
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TopicDetailPage(topic: _topics[index]),
-                ),
+              context.push(
+                '${AppRoutes.topic}/detail/${_topics[index].tid}',
+                extra: _topics[index],
               );
             },
           ),

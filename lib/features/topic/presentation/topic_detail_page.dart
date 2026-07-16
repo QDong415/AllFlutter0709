@@ -4,26 +4,43 @@ import 'package:flutter/material.dart';
 
 class TopicDetailPage extends StatelessWidget {
   const TopicDetailPage({
-    required this.topic,
+    required this.tid,
     super.key,
+    this.topic,
   });
 
-  final TopicModel topic;
+  final String tid;
+  final TopicModel? topic;
+
+  TopicModel get _displayTopic {
+    return topic ??
+        TopicModel(
+          tid: tid,
+          userName: '未知用户',
+          likeCount: 0,
+          commentCount: 0,
+          createTime: 0,
+          displayTime: '--',
+          content: null,
+          avatar: null,
+        );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final data = _displayTopic;
     return Scaffold(
       appBar: const CommonAppBar(title: '动态详情'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            topic.userName,
+            data.userName,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           Text(
-            topic.content?.isNotEmpty == true ? topic.content! : '（无正文）',
+            data.content?.isNotEmpty == true ? data.content! : '（无正文）',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 16),
@@ -31,15 +48,15 @@ class TopicDetailPage extends StatelessWidget {
             children: [
               const Icon(Icons.mode_comment_outlined),
               const SizedBox(width: 6),
-              Text('评论 ${topic.commentCount}'),
+              Text('评论 ${data.commentCount}'),
               const SizedBox(width: 24),
               const Icon(Icons.thumb_up_alt_outlined),
               const SizedBox(width: 6),
-              Text('点赞 ${topic.likeCount}'),
+              Text('点赞 ${data.likeCount}'),
             ],
           ),
           const SizedBox(height: 16),
-          Text('tid: ${topic.tid}'),
+          Text('tid: ${data.tid}'),
         ],
       ),
     );
