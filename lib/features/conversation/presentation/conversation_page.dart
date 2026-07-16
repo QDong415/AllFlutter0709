@@ -19,7 +19,7 @@ class ConversationPage extends StatelessWidget {
           );
         },
         separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemCount: 12,
+        itemCount: 120,
       ),
     );
   }

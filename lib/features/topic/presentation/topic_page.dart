@@ -20,6 +20,7 @@ class _TopicPageState extends State<TopicPage> {
 
   int _nextPage = 1;
   bool _hasMore = true;
+  bool _isLoadingMore = false;
   PageState _pageState = PageState.loading;
 
   @override
@@ -69,23 +70,30 @@ class _TopicPageState extends State<TopicPage> {
   }
 
   Future<void> _onLoad() async {
-    if (!_hasMore) return;
-    await _requestList(isRefresh: false);
+    if (!_hasMore || _isLoadingMore) return;
+    _isLoadingMore = true;
+    try {
+      await _requestList(isRefresh: false);
+    } finally {
+      _isLoadingMore = false;
+    }
   }
 
   Widget _buildListView() {
     return ListView.separated(
       itemCount: _topics.length,
       itemBuilder: (context, index) {
-        return TopicItemWidget(
-          topicModel: _topics[index],
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => TopicDetailPage(topic: _topics[index]),
-              ),
-            );
-          },
+        return RepaintBoundary(
+          child: TopicItemWidget(
+            topicModel: _topics[index],
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => TopicDetailPage(topic: _topics[index]),
+                ),
+              );
+            },
+          ),
         );
       },
       separatorBuilder: (_, _) => const SizedBox(height: 10),

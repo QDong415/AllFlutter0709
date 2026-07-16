@@ -9,6 +9,7 @@ class SocialApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Social App',
       debugShowCheckedModeBanner: false,
+      showPerformanceOverlay: true,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,

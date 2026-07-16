@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class TopicItemWidget extends StatelessWidget {
@@ -33,7 +34,9 @@ class TopicItemWidget extends StatelessWidget {
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: Colors.grey.shade300,
-                    backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                    backgroundImage: avatarUrl.isNotEmpty
+                        ? CachedNetworkImageProvider(avatarUrl)
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -50,7 +53,7 @@ class TopicItemWidget extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatTime(topicModel.createTime),
+                          topicModel.displayTime,
                           style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                         ),
                       ],
@@ -105,12 +108,6 @@ class TopicItemWidget extends StatelessWidget {
     );
   }
 
-  String _formatTime(int timestamp) {
-    if (timestamp <= 0) return '--';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
 }
 
 class _ActionButton extends StatelessWidget {
@@ -123,6 +120,7 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String text;
   final VoidCallback onTap;
+  static const _textStyle = TextStyle(color: Colors.grey, fontSize: 15);
 
   @override
   Widget build(BuildContext context) {
@@ -138,10 +136,7 @@ class _ActionButton extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: Colors.grey),
               const SizedBox(width: 4),
-              Text(
-                text,
-                style: const TextStyle(color: Colors.grey, fontSize: 15),
-              ),
+              Text(text, style: _textStyle),
             ],
           ),
         ),
