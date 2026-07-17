@@ -1,13 +1,48 @@
 package com.dq.flutter0709.all_flutter0709
 
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity : FlutterActivity()  {
+class MainActivity : FlutterActivity() {
+
+    companion object {
+        private const val NAV_BAR_COLOR = 0xFFF7F2FA.toInt()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.e("dq","MainActivity 创建！！")
+        applyEdgeToEdge()
+        window.decorView.post {
+            applyEdgeToEdge()
+        }
+    }
+
+    override fun onPostResume() {
+        super.onPostResume()
+        applyEdgeToEdge()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            applyEdgeToEdge()
+        }
+    }
+
+    private fun applyEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = NAV_BAR_COLOR
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+            window.isStatusBarContrastEnforced = false
+        }
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.isAppearanceLightStatusBars = true
+        controller.isAppearanceLightNavigationBars = true
     }
 }

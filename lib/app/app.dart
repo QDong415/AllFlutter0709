@@ -4,15 +4,25 @@ import 'package:flutter/material.dart';
 class SocialApp extends StatelessWidget {
   const SocialApp({super.key});
 
+  static const appSurfaceColor = Color(0xFFF7F2FA);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Social App',
       debugShowCheckedModeBanner: false,
-      showPerformanceOverlay: true,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        scaffoldBackgroundColor: appSurfaceColor,
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+        ),
+        navigationBarTheme: const NavigationBarThemeData(
+          backgroundColor: appSurfaceColor,
+          indicatorColor: Color(0xFFE9DDF7),
+        ),
       ),
       routerConfig: AppRouter.router,
     );
