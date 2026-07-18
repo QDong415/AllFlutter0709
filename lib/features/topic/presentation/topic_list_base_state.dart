@@ -12,6 +12,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T> imp
 
   final TopicRepository _topicRepository = const TopicRepository();
   final List<TopicModel> _topics = <TopicModel>[];
+  final Set<String> _likingTopicIds = <String>{};
 
   int _nextPage = 1;
   bool _hasMore = true;
@@ -68,6 +69,12 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T> imp
     await _requestList(isRefresh: false);
   }
 
+  void _replaceTopic(TopicModel topic) {
+    final index = _topics.indexWhere((item) => item.tid == topic.tid);
+    if (index == -1) return;
+    _topics[index] = topic;
+  }
+
   Widget _buildListView() {
     return ListView.separated(
       itemCount: _topics.length,
@@ -96,7 +103,41 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T> imp
   void onCommentTap(TopicModel topic) {}
 
   @override
-  void onLikeTap(TopicModel topic) {}
+  Future<void> onLikeTap(TopicModel topic) async {
+    if (_likingTopicIds.contains(topic.tid)) return;
+
+    final nextIsLiked = !topic.isLiked;
+    final nextLikeCount = nextIsLiked
+        ? topic.likeCount + 1
+        : (topic.likeCount > 0 ? topic.likeCount - 1 : 0);
+    final updatedTopic = topic.copyWith(
+      isLiked: nextIsLiked,
+      likeCount: nextLikeCount,
+    );
+
+    _likingTopicIds.add(topic.tid);
+    setState(() {
+      _replaceTopic(updatedTopic);
+    });
+
+    try {
+      await _topicRepository.likeTopic(
+        tid: topic.tid,
+        isLiked: topic.isLiked,
+        likeCount: topic.likeCount,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _replaceTopic(topic);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      _likingTopicIds.remove(topic.tid);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

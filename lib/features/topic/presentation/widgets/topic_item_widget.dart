@@ -15,6 +15,9 @@ abstract class TopicItemActionListener {
 }
 
 class TopicItemWidget extends StatelessWidget {
+  static const _likeIconOffAsset = 'assets/icons/listitem_unpraise.png';
+  static const _likeIconOnAsset = 'assets/icons/listitem_praise.png';
+
   const TopicItemWidget({
     required this.topicModel,
     super.key,
@@ -30,6 +33,8 @@ class TopicItemWidget extends StatelessWidget {
     final content = topicModel.content?.trim() ?? '';
     final commentCount = topicModel.commentCount > 0 ? topicModel.commentCount : 0;
     final likeCount = topicModel.likeCount > 0 ? topicModel.likeCount : 0;
+    final likeTextColor = topicModel.isLiked ? const Color(0xFFF46533) : Colors.grey;
+    final likeAsset = topicModel.isLiked ? _likeIconOnAsset : _likeIconOffAsset;
 
     return Material(
       color: Colors.white,
@@ -100,18 +105,19 @@ class TopicItemWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _ActionButton(
-                    icon: Icons.share_outlined,
+                    icon: const Icon(Icons.share_outlined, size: 18, color: Colors.grey),
                     text: '分享',
                     onTap: () => listener?.onShareTap(topicModel),
                   ),
                   _ActionButton(
-                    icon: Icons.mode_comment_outlined,
+                    icon: const Icon(Icons.mode_comment_outlined, size: 18, color: Colors.grey),
                     text: commentCount > 0 ? '评论 $commentCount' : '评论',
                     onTap: () => listener?.onCommentTap(topicModel),
                   ),
                   _ActionButton(
-                    icon: Icons.thumb_up_alt_outlined,
+                    icon: Image.asset(likeAsset, width: 18, height: 18),
                     text: likeCount > 0 ? '点赞 $likeCount' : '点赞',
+                    textColor: likeTextColor,
                     onTap: () => listener?.onLikeTap(topicModel),
                   ),
                 ],
@@ -131,12 +137,13 @@ class _ActionButton extends StatelessWidget {
     required this.icon,
     required this.text,
     required this.onTap,
+    this.textColor = Colors.grey,
   });
 
-  final IconData icon;
+  final Widget icon;
   final String text;
   final VoidCallback onTap;
-  static const _textStyle = TextStyle(color: Colors.grey, fontSize: 15);
+  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -150,9 +157,12 @@ class _ActionButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: Colors.grey),
+              icon,
               const SizedBox(width: 4),
-              Text(text, style: _textStyle),
+              Text(
+                text,
+                style: TextStyle(color: textColor, fontSize: 15),
+              ),
             ],
           ),
         ),

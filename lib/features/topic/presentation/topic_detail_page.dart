@@ -17,6 +17,7 @@ class TopicDetailPage extends StatelessWidget {
         TopicModel(
           tid: tid,
           userName: '未知用户',
+          isLiked: false,
           likeCount: 0,
           commentCount: 0,
           createTime: 0,
