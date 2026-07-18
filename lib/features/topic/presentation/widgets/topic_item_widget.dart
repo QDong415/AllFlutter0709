@@ -2,15 +2,27 @@ import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+abstract class TopicItemActionListener {
+  void onItemTap(TopicModel topic);
+
+  void onShareTap(TopicModel topic);
+
+  void onAvatarTap(TopicModel topic);
+
+  void onCommentTap(TopicModel topic);
+
+  void onLikeTap(TopicModel topic);
+}
+
 class TopicItemWidget extends StatelessWidget {
   const TopicItemWidget({
     required this.topicModel,
     super.key,
-    this.onTap,
+    this.listener,
   });
 
   final TopicModel topicModel;
-  final VoidCallback? onTap;
+  final TopicItemActionListener? listener;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +34,7 @@ class TopicItemWidget extends StatelessWidget {
     return Material(
       color: Colors.white,
       child: InkWell(
-        onTap: onTap,
+        onTap: () => listener?.onItemTap(topicModel),
         child: Column(
           children: [
             const Divider(height: 0.5),
@@ -31,12 +43,16 @@ class TopicItemWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.grey.shade300,
-                    backgroundImage: avatarUrl.isNotEmpty
-                        ? CachedNetworkImageProvider(avatarUrl)
-                        : null,
+                  InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => listener?.onAvatarTap(topicModel),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.grey.shade300,
+                      backgroundImage: avatarUrl.isNotEmpty
+                          ? CachedNetworkImageProvider(avatarUrl)
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -86,17 +102,17 @@ class TopicItemWidget extends StatelessWidget {
                   _ActionButton(
                     icon: Icons.share_outlined,
                     text: '分享',
-                    onTap: () {},
+                    onTap: () => listener?.onShareTap(topicModel),
                   ),
                   _ActionButton(
                     icon: Icons.mode_comment_outlined,
                     text: commentCount > 0 ? '评论 $commentCount' : '评论',
-                    onTap: () {},
+                    onTap: () => listener?.onCommentTap(topicModel),
                   ),
                   _ActionButton(
                     icon: Icons.thumb_up_alt_outlined,
                     text: likeCount > 0 ? '点赞 $likeCount' : '点赞',
-                    onTap: () {},
+                    onTap: () => listener?.onLikeTap(topicModel),
                   ),
                 ],
               ),

@@ -12,8 +12,8 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _mobileController = TextEditingController(text: '13800138000');
-  final _passwordController = TextEditingController(text: '123456');
+  final _mobileController = TextEditingController(text: '13810244766');
+  final _passwordController = TextEditingController(text: '123');
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
 
@@ -118,8 +118,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.length < 6) {
-                          return '密码至少 6 位';
+                        if (value == null || value.length < 3) {
+                          return '密码至少 3 位';
                         }
                         return null;
                       },

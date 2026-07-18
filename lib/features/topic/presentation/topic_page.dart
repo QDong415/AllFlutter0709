@@ -15,13 +15,12 @@ class TopicPage extends StatefulWidget {
   State<TopicPage> createState() => _TopicPageState();
 }
 
-class _TopicPageState extends State<TopicPage> {
+class _TopicPageState extends State<TopicPage> implements TopicItemActionListener {
   final TopicRepository _topicRepository = const TopicRepository();
   final List<TopicModel> _topics = <TopicModel>[];
 
   int _nextPage = 1;
   bool _hasMore = true;
-  bool _isLoadingMore = false;
   PageState _pageState = PageState.loading;
 
   @override
@@ -71,13 +70,8 @@ class _TopicPageState extends State<TopicPage> {
   }
 
   Future<void> _onLoad() async {
-    if (!_hasMore || _isLoadingMore) return;
-    _isLoadingMore = true;
-    try {
-      await _requestList(isRefresh: false);
-    } finally {
-      _isLoadingMore = false;
-    }
+    if (!_hasMore) return;
+    await _requestList(isRefresh: false);
   }
 
   Widget _buildListView() {
@@ -86,17 +80,29 @@ class _TopicPageState extends State<TopicPage> {
       itemBuilder: (context, index) {
         return TopicItemWidget(
           topicModel: _topics[index],
-          onTap: () {
-            context.push(
-              '${AppRoutes.topic}/detail/${_topics[index].tid}',
-              extra: _topics[index],
-            );
-          },
+          listener: this,
         );
       },
       separatorBuilder: (_, _) => const SizedBox(height: 10),
     );
   }
+
+  @override
+  void onItemTap(TopicModel topic) {
+    context.push('${AppRoutes.topic}/detail/${topic.tid}', extra: topic);
+  }
+
+  @override
+  void onShareTap(TopicModel topic) {}
+
+  @override
+  void onAvatarTap(TopicModel topic) {}
+
+  @override
+  void onCommentTap(TopicModel topic) {}
+
+  @override
+  void onLikeTap(TopicModel topic) {}
 
   @override
   Widget build(BuildContext context) {

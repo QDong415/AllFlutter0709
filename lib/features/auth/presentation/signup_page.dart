@@ -85,8 +85,8 @@ class _SignupPageState extends State<SignupPage> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.length < 6) {
-                          return '密码至少 6 位';
+                        if (value == null || value.length < 3) {
+                          return '密码至少 3 位';
                         }
                         return null;
                       },
