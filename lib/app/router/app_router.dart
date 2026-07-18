@@ -1,5 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/core/account/account.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/signup_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_page.dart';
@@ -10,18 +10,24 @@ import 'package:all_flutter0709/features/topic/presentation/topic_detail_page.da
 import 'package:all_flutter0709/features/topic/presentation/topic_page.dart';
 import 'package:all_flutter0709/features/video/presentation/video_page.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-abstract final class AppRouter {
-  static final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final refreshListenable = ValueNotifier<Object?>(null);
+  ref.onDispose(refreshListenable.dispose);
+  ref.listen(accountProvider, (previous, next) {
+    refreshListenable.value = Object();
+  });
 
-  static final GoRouter router = GoRouter(
+  return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.topic,
-    refreshListenable: Account.instance,
+    refreshListenable: refreshListenable,
     redirect: (context, state) {
-      final loggedIn = Account.instance.isLoggedIn;
-      final isAuthPage = state.matchedLocation == AppRoutes.login ||
+      final loggedIn = ref.read(accountProvider) != null;
+      final isAuthPage =
+          state.matchedLocation == AppRoutes.login ||
           state.matchedLocation == AppRoutes.signup;
 
       if (!loggedIn && !isAuthPage) {
@@ -52,9 +58,8 @@ abstract final class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.topic,
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: TopicPage(),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: TopicPage()),
                 routes: [
                   GoRoute(
                     parentNavigatorKey: _rootNavigatorKey,
@@ -64,10 +69,7 @@ abstract final class AppRouter {
                       final topic = state.extra is TopicModel
                           ? state.extra! as TopicModel
                           : null;
-                      return TopicDetailPage(
-                        tid: tid,
-                        topic: topic,
-                      );
+                      return TopicDetailPage(tid: tid, topic: topic);
                     },
                   ),
                 ],
@@ -78,9 +80,8 @@ abstract final class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.video,
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: VideoPage(),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: VideoPage()),
               ),
             ],
           ),
@@ -88,9 +89,8 @@ abstract final class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.conversation,
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: ConversationPage(),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: ConversationPage()),
               ),
             ],
           ),
@@ -98,9 +98,8 @@ abstract final class AppRouter {
             routes: [
               GoRoute(
                 path: AppRoutes.me,
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: MePage(),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: MePage()),
               ),
             ],
           ),
@@ -111,4 +110,6 @@ abstract final class AppRouter {
       return const LoginPage();
     },
   );
-}
+});
+
+final _rootNavigatorKey = GlobalKey<NavigatorState>();

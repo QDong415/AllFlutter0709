@@ -47,6 +47,7 @@ dependencies:
   image_picker: ^1.2.3
   flutter_blue_plus: ^2.3.10
   riverpod: ^3.3.2
+  flutter_riverpod: ^3.3.2
 
 dev_dependencies:
   flutter_test:

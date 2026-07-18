@@ -1,3 +1,5 @@
+import 'package:all_flutter0709/core/utils/value_util.dart';
+
 class TopicModel {
   const TopicModel({
     required this.tid,
@@ -24,7 +26,7 @@ class TopicModel {
       tid: json['tid']?.toString() ?? '',
       content: json['content'] as String?,
       userName: json['name'] as String? ?? 'Unknown',
-      avatar: json['avatar'] as String?,
+      avatar: ValueUtil.getQiniuUrlByFileName(json['avatar']?.toString()),
       likeCount: (json['likecount'] as num?)?.toInt() ?? 0,
       commentCount: (json['commentcount'] as num?)?.toInt() ?? 0,
       createTime: (json['create_time'] as num?)?.toInt() ?? 0,

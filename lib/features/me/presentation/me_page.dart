@@ -1,16 +1,17 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/core/account/account.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class MePage extends StatelessWidget {
+class MePage extends ConsumerWidget {
   const MePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final account = Account.instance;
-    final user = account.currentUser;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentAccount = ref.watch(accountProvider);
 
     return Scaffold(
       appBar: const CommonAppBar(title: '我的 Me'),
@@ -19,9 +20,17 @@ class MePage extends StatelessWidget {
         children: [
           Card(
             child: ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person)),
-              title: Text(user?.name ?? '未登录用户'),
-              subtitle: Text(user?.email ?? '请先登录以查看完整资料'),
+              leading: _UserAvatar(avatar: currentAccount?.avatar),
+              title: Text(
+                currentAccount?.name.isNotEmpty == true
+                    ? currentAccount!.name
+                    : '未登录用户',
+              ),
+              subtitle: Text(
+                currentAccount?.mobile.isNotEmpty == true
+                    ? currentAccount!.mobile
+                    : '请先登录以查看完整资料',
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -40,15 +49,19 @@ class MePage extends StatelessWidget {
                 ),
                 ListTile(
                   leading: Icon(
-                    user == null ? Icons.login : Icons.logout,
+                    currentAccount == null ? Icons.login : Icons.logout,
                   ),
-                  title: Text(user == null ? '去登录' : '退出登录'),
-                  onTap: () {
-                    if (user == null) {
+                  title: Text(currentAccount == null ? '去登录' : '退出登录'),
+                  onTap: () async {
+                    if (currentAccount == null) {
                       context.go(AppRoutes.login);
                       return;
                     }
-                    account.logout();
+
+                    await ref.read(accountProvider.notifier).logout();
+                    if (context.mounted) {
+                      context.go(AppRoutes.login);
+                    }
                   },
                 ),
               ],
@@ -57,5 +70,21 @@ class MePage extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _UserAvatar extends StatelessWidget {
+  const _UserAvatar({required this.avatar});
+
+  final String? avatar;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = ValueUtil.getQiniuUrlByFileName(avatar) ?? '';
+    if (imageUrl.isEmpty) {
+      return const CircleAvatar(child: Icon(Icons.person));
+    }
+
+    return CircleAvatar(backgroundImage: NetworkImage(imageUrl));
   }
 }

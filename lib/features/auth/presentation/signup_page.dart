@@ -1,5 +1,4 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/core/account/account.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,32 +11,26 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
+    _mobileController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _signup() async {
+  void _signup() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    await Account.instance.signup(
-      name: _nameController.text,
-      email: _emailController.text,
-      password: _passwordController.text,
-    );
-
-    if (mounted) {
-      context.go(AppRoutes.topic);
-    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('当前仅接入登录流程，注册流程暂未补充')));
   }
 
   @override
@@ -71,14 +64,14 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      controller: _emailController,
+                      controller: _mobileController,
                       decoration: const InputDecoration(
-                        labelText: '邮箱',
+                        labelText: '手机号',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return '请输入邮箱';
+                          return '请输入手机号';
                         }
                         return null;
                       },
@@ -101,7 +94,7 @@ class _SignupPageState extends State<SignupPage> {
                     const SizedBox(height: 20),
                     FilledButton(
                       onPressed: _signup,
-                      child: const Text('注册并进入首页'),
+                      child: const Text('注册功能暂未开放'),
                     ),
                     const SizedBox(height: 12),
                     TextButton(

@@ -84,16 +84,14 @@ class _TopicPageState extends State<TopicPage> {
     return ListView.separated(
       itemCount: _topics.length,
       itemBuilder: (context, index) {
-        return RepaintBoundary(
-          child: TopicItemWidget(
-            topicModel: _topics[index],
-            onTap: () {
-              context.push(
-                '${AppRoutes.topic}/detail/${_topics[index].tid}',
-                extra: _topics[index],
-              );
-            },
-          ),
+        return TopicItemWidget(
+          topicModel: _topics[index],
+          onTap: () {
+            context.push(
+              '${AppRoutes.topic}/detail/${_topics[index].tid}',
+              extra: _topics[index],
+            );
+          },
         );
       },
       separatorBuilder: (_, _) => const SizedBox(height: 10),

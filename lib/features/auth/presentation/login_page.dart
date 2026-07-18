@@ -1,23 +1,25 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/core/account/account.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController(text: 'demo@social.app');
+class _LoginPageState extends ConsumerState<LoginPage> {
+  final _mobileController = TextEditingController(text: '13800138000');
   final _passwordController = TextEditingController(text: '123456');
   final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _mobileController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -27,13 +29,37 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    await Account.instance.login(
-      email: _emailController.text,
-      password: _passwordController.text,
-    );
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSubmitting = true;
+    });
 
-    if (mounted) {
-      context.go(AppRoutes.topic);
+    try {
+      await ref
+          .read(accountProvider.notifier)
+          .login(
+            mobile: _mobileController.text.trim(),
+            password: _passwordController.text,
+          );
+
+      if (mounted) {
+        context.go(AppRoutes.topic);
+      }
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = error.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
@@ -59,20 +85,26 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '社交 App 登录入口',
+                      'iTopic 登录入口',
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
                     TextFormField(
-                      controller: _emailController,
+                      controller: _mobileController,
+                      keyboardType: TextInputType.phone,
                       decoration: const InputDecoration(
-                        labelText: '邮箱',
+                        labelText: '手机号',
+                        hintText: '请输入登录手机号',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return '请输入邮箱';
+                        final mobile = value?.trim() ?? '';
+                        if (mobile.isEmpty) {
+                          return '请输入手机号';
+                        }
+                        if (mobile.length < 6) {
+                          return '手机号格式不正确';
                         }
                         return null;
                       },
@@ -94,12 +126,20 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 20),
                     FilledButton(
-                      onPressed: _login,
-                      child: const Text('登录'),
+                      onPressed: _isSubmitting ? null : _login,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('登录'),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
-                      onPressed: () => context.go(AppRoutes.signup),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => context.push(AppRoutes.signup),
                       child: const Text('前往注册'),
                     ),
                   ],
