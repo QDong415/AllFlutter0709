@@ -1,12 +1,16 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_share_sheet.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     implements TopicItemActionListener {
@@ -91,13 +95,81 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   }
 
   @override
-  void onShareTap(TopicModel topic) {}
+  void onShareTap(TopicModel topic) {
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return TopicShareSheet(
+          onWeChatTap: () => _shareTopic(sheetContext, topic),
+        );
+      },
+    );
+  }
+
+  Future<void> _shareTopic(BuildContext sheetContext, TopicModel topic) async {
+    Navigator.of(sheetContext).pop();
+
+    final content = topic.content?.trim();
+    final shareUrl = '${AppEnv.shareTopicBaseUrl}${topic.tid}';
+    final shareText = [
+      if (content != null && content.isNotEmpty) content,
+      shareUrl,
+    ].join('\n');
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: shareText,
+          subject: content?.isNotEmpty == true ? content : '分享一条动态',
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('分享失败: $e')));
+    }
+  }
 
   @override
   void onAvatarTap(TopicModel topic) {}
 
   @override
   void onCommentTap(TopicModel topic) {}
+
+  @override
+  void onMentionTap(TopicModel topic, String mention) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('点击了 @$mention')));
+  }
+
+  @override
+  void onHashtagTap(TopicModel topic, String hashtag) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('点击了 $hashtag')));
+  }
+
+  @override
+  Future<void> onLinkTap(TopicModel topic, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('链接格式不正确')));
+      return;
+    }
+
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('无法打开链接')));
+    }
+  }
 
   @override
   Future<void> onLikeTap(TopicModel topic) async {

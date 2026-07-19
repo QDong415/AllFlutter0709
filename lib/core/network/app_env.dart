@@ -21,4 +21,15 @@ abstract final class AppEnv {
         return 'http://qiniu.itopic.com.cn/';
     }
   }
+
+  static String get siteBaseUrl {
+    switch (current) {
+      case AppEnvironment.test:
+        return 'https://api.itopic.com.cn';
+      case AppEnvironment.production:
+        return 'https://api.itopic.com.cn';
+    }
+  }
+
+  static String get shareTopicBaseUrl => '$siteBaseUrl/home/topic/detail?tid=';
 }

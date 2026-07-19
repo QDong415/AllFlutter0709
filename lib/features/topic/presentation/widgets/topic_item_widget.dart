@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,12 @@ abstract class TopicItemActionListener {
   void onCommentTap(TopicModel topic);
 
   void onLikeTap(TopicModel topic);
+
+  void onMentionTap(TopicModel topic, String mention);
+
+  void onHashtagTap(TopicModel topic, String hashtag);
+
+  void onLinkTap(TopicModel topic, String url);
 }
 
 class TopicItemWidget extends StatelessWidget {
@@ -86,7 +93,15 @@ class TopicItemWidget extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(content, style: const TextStyle(fontSize: 18)),
+                  child: TopicContentText(
+                    text: content,
+                    style: const TextStyle(fontSize: 18),
+                    onMentionTap: (mention) =>
+                        listener?.onMentionTap(topicModel, mention),
+                    onHashtagTap: (hashtag) =>
+                        listener?.onHashtagTap(topicModel, hashtag),
+                    onLinkTap: (url) => listener?.onLinkTap(topicModel, url),
+                  ),
                 ),
               ),
             ],

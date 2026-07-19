@@ -48,6 +48,8 @@ dependencies:
   flutter_blue_plus: ^2.3.10
   riverpod: ^3.3.2
   flutter_riverpod: ^3.3.2
+  url_launcher: ^6.3.2
+  share_plus: ^13.2.1
 
 dev_dependencies:
   flutter_test:
