@@ -1,6 +1,7 @@
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -102,6 +103,16 @@ class TopicItemWidget extends StatelessWidget {
                         listener?.onHashtagTap(topicModel, hashtag),
                     onLinkTap: (url) => listener?.onLinkTap(topicModel, url),
                   ),
+                ),
+              ),
+            ],
+            if (topicModel.pictures.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TopicPictureGrid(pictures: topicModel.pictures),
                 ),
               ),
             ],

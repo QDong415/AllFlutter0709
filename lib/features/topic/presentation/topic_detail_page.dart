@@ -19,6 +19,8 @@ class TopicDetailPage extends StatelessWidget {
           commentCount: 0,
           createTime: 0,
           displayTime: '--',
+          pictures: const <TopicPictureModel>[],
+          comments: const <TopicCommentModel>[],
           content: null,
           avatar: null,
         );
