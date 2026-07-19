@@ -7,8 +7,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _currentAccountStorageKey = 'current-account';
-
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('SharedPreferences 尚未初始化');
 });
@@ -21,11 +19,11 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
 });
 
 class AccountRepository {
-  const AccountRepository({
-    required SharedPreferences preferences,
-    required Dio dio,
-  }) : _preferences = preferences,
-       _dio = dio;
+  AccountRepository({required SharedPreferences preferences, required Dio dio})
+    : _preferences = preferences,
+      _dio = dio;
+
+  static const _currentAccountStorageKey = 'current-account';
 
   final SharedPreferences _preferences;
   final Dio _dio;
@@ -73,8 +71,6 @@ class AccountRepository {
       throw Exception('登录成功，但用户信息为空');
     }
 
-    await persistAccount(account);
-    await notifyUserOpen();
     return account;
   }
 
@@ -87,17 +83,5 @@ class AccountRepository {
 
   Future<void> clearAccount() {
     return _preferences.remove(_currentAccountStorageKey);
-  }
-
-  Future<void> notifyUserOpen() async {
-    try {
-      await _dio.post<Map<String, dynamic>>(
-        '/api/user/open',
-        data: const <String, dynamic>{},
-        options: Options(contentType: Headers.formUrlEncodedContentType),
-      );
-    } catch (_) {
-      // 这个接口只用于服务端记录登录设备，失败不阻塞主登录流程。
-    }
   }
 }

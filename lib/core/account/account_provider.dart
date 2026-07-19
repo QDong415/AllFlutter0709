@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
+import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final accountProvider = NotifierProvider<AccountNotifier, AccountModel?>(
@@ -11,18 +12,23 @@ class AccountNotifier extends Notifier<AccountModel?> {
 
   @override
   AccountModel? build() {
-    return _repository.restoreAccount();
+    final account = _repository.restoreAccount();
+    HttpClient.instance.updateUserId(account?.userId);
+    return account;
   }
 
   bool get isLogin => state != null;
 
   Future<void> login({required String mobile, required String password}) async {
     final account = await _repository.login(mobile: mobile, password: password);
+    await _repository.persistAccount(account);
+    HttpClient.instance.updateUserId(account.userId);
     state = account;
   }
 
   Future<void> setAccount(AccountModel account) async {
     await _repository.persistAccount(account);
+    HttpClient.instance.updateUserId(account.userId);
     state = account;
   }
 
@@ -50,6 +56,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
 
   Future<void> logout() async {
     await _repository.clearAccount();
+    HttpClient.instance.updateUserId(null);
     state = null;
   }
 }

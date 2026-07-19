@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+
   final refreshListenable = ValueNotifier<Object?>(null);
   ref.onDispose(refreshListenable.dispose);
   ref.listen(accountProvider, (previous, next) {

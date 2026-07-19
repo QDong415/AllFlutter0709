@@ -8,6 +8,12 @@ class HttpClient {
   static final HttpClient instance = HttpClient._();
 
   final Logger _logger = Logger();
+  String? _userId;
+
+  void updateUserId(String? value) {
+    final nextUserId = value?.trim();
+    _userId = nextUserId == null || nextUserId.isEmpty ? null : nextUserId;
+  }
 
   late final Dio dio =
       Dio(
@@ -22,6 +28,7 @@ class HttpClient {
         ..interceptors.add(
           InterceptorsWrapper(
             onRequest: (options, handler) {
+              _appendUserId(options);
               _logger.d('[HTTP] ${options.method} ${options.uri}');
               handler.next(options);
             },
@@ -35,4 +42,36 @@ class HttpClient {
             },
           ),
         );
+
+  void _appendUserId(RequestOptions options) {
+    final userId = _userId ?? '';
+    if (userId.isEmpty) {
+      return;
+    }
+
+    options.queryParameters.putIfAbsent('userid', () => userId);
+
+    final data = options.data;
+    if (data == null) {
+      options.data = <String, dynamic>{'userid': userId};
+      return;
+    }
+
+    if (data is Map<String, dynamic>) {
+      data.putIfAbsent('userid', () => userId);
+      return;
+    }
+
+    if (data is Map) {
+      data.putIfAbsent('userid', () => userId);
+      return;
+    }
+
+    if (data is FormData) {
+      final hasUserId = data.fields.any((field) => field.key == 'userid');
+      if (!hasUserId) {
+        data.fields.add(MapEntry('userid', userId));
+      }
+    }
+  }
 }
