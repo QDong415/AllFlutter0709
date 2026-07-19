@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -15,14 +16,7 @@ abstract class TopicItemActionListener {
 }
 
 class TopicItemWidget extends StatelessWidget {
-  static const _likeIconOffAsset = 'assets/icons/listitem_unpraise.png';
-  static const _likeIconOnAsset = 'assets/icons/listitem_praise.png';
-
-  const TopicItemWidget({
-    required this.topicModel,
-    super.key,
-    this.listener,
-  });
+  const TopicItemWidget({required this.topicModel, super.key, this.listener});
 
   final TopicModel topicModel;
   final TopicItemActionListener? listener;
@@ -31,10 +25,9 @@ class TopicItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarUrl = topicModel.avatar ?? '';
     final content = topicModel.content?.trim() ?? '';
-    final commentCount = topicModel.commentCount > 0 ? topicModel.commentCount : 0;
-    final likeCount = topicModel.likeCount > 0 ? topicModel.likeCount : 0;
-    final likeTextColor = topicModel.isLiked ? const Color(0xFFF46533) : Colors.grey;
-    final likeAsset = topicModel.isLiked ? _likeIconOnAsset : _likeIconOffAsset;
+    final commentCount = topicModel.commentCount > 0
+        ? topicModel.commentCount
+        : 0;
 
     return Material(
       color: Colors.white,
@@ -75,7 +68,10 @@ class TopicItemWidget extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           topicModel.displayTime,
-                          style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ],
                     ),
@@ -90,10 +86,7 @@ class TopicItemWidget extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    content,
-                    style: const TextStyle(fontSize: 18),
-                  ),
+                  child: Text(content, style: const TextStyle(fontSize: 18)),
                 ),
               ),
             ],
@@ -105,20 +98,30 @@ class TopicItemWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _ActionButton(
-                    icon: const Icon(Icons.share_outlined, size: 18, color: Colors.grey),
+                    icon: const Icon(
+                      Icons.share_outlined,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
                     text: '分享',
                     onTap: () => listener?.onShareTap(topicModel),
                   ),
                   _ActionButton(
-                    icon: const Icon(Icons.mode_comment_outlined, size: 18, color: Colors.grey),
+                    icon: const Icon(
+                      Icons.mode_comment_outlined,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
                     text: commentCount > 0 ? '评论 $commentCount' : '评论',
                     onTap: () => listener?.onCommentTap(topicModel),
                   ),
-                  _ActionButton(
-                    icon: Image.asset(likeAsset, width: 18, height: 18),
-                    text: likeCount > 0 ? '点赞 $likeCount' : '点赞',
-                    textColor: likeTextColor,
-                    onTap: () => listener?.onLikeTap(topicModel),
+                  Expanded(
+                    child: TopicLikeButton(
+                      isLiked: topicModel.isLiked,
+                      likeCount: topicModel.likeCount,
+                      onTap: () => listener?.onLikeTap(topicModel),
+                      mainAxisSize: MainAxisSize.min,
+                    ),
                   ),
                 ],
               ),
@@ -129,7 +132,6 @@ class TopicItemWidget extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _ActionButton extends StatelessWidget {
@@ -137,13 +139,11 @@ class _ActionButton extends StatelessWidget {
     required this.icon,
     required this.text,
     required this.onTap,
-    this.textColor = Colors.grey,
   });
 
   final Widget icon;
   final String text;
   final VoidCallback onTap;
-  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +161,7 @@ class _ActionButton extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 text,
-                style: TextStyle(color: textColor, fontSize: 15),
+                style: const TextStyle(color: Colors.grey, fontSize: 15),
               ),
             ],
           ),

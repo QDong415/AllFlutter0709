@@ -8,8 +8,8 @@ import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-abstract class TopicListBaseState<T extends StatefulWidget> extends State<T> implements TopicItemActionListener {
-
+abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
+    implements TopicItemActionListener {
   final TopicRepository _topicRepository = const TopicRepository();
   final List<TopicModel> _topics = <TopicModel>[];
   final Set<String> _likingTopicIds = <String>{};
@@ -54,9 +54,9 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T> imp
         });
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -79,10 +79,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T> imp
     return ListView.separated(
       itemCount: _topics.length,
       itemBuilder: (context, index) {
-        return TopicItemWidget(
-          topicModel: _topics[index],
-          listener: this,
-        );
+        return TopicItemWidget(topicModel: _topics[index], listener: this);
       },
       separatorBuilder: (_, _) => const SizedBox(height: 10),
     );
@@ -131,9 +128,9 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T> imp
       setState(() {
         _replaceTopic(topic);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       _likingTopicIds.remove(topic.tid);
     }
