@@ -12,7 +12,7 @@ class TopicPictureGrid extends StatelessWidget {
   static const double _spacing = 6;
   static const double _singleMaxExtent = 220;
   static const double _singleMinExtent = 120;
-  static const double _radius = 10;
+  static const double _radius = 8;
 
   @override
   Widget build(BuildContext context) {
@@ -29,17 +29,23 @@ class TopicPictureGrid extends StatelessWidget {
           );
         }
 
-        final columns = pictures.length == 4 ? 2 : 3;
-        final itemWidth =
-            (constraints.maxWidth - _spacing * (columns - 1)) / columns;
+        final tripleGridItemWidth = (constraints.maxWidth - _spacing * 2) / 3;
+        final isFourGrid = pictures.length == 4;
+        final itemWidth = tripleGridItemWidth;
+        final gridWidth = isFourGrid
+            ? itemWidth * 2 + _spacing
+            : constraints.maxWidth;
 
-        return Wrap(
-          spacing: _spacing,
-          runSpacing: _spacing,
-          children: [
-            for (final picture in pictures)
-              _GridPictureItem(picture: picture, width: itemWidth),
-          ],
+        return SizedBox(
+          width: gridWidth,
+          child: Wrap(
+            spacing: _spacing,
+            runSpacing: _spacing,
+            children: [
+              for (final picture in pictures)
+                _GridPictureItem(picture: picture, width: itemWidth),
+            ],
+          ),
         );
       },
     );

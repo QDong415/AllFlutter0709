@@ -7,6 +7,8 @@ class ValueUtil {
     String? filename, {
     int limitPx = 240,
     bool max = false,
+    bool keepOriginal = false,
+    bool thumbnail = false,
   }) {
     final value = filename?.trim() ?? '';
     if (value.isEmpty || value.startsWith('http')) {
@@ -16,6 +18,19 @@ class ValueUtil {
     final buffer = StringBuffer()
       ..write(AppEnv.qiniuBaseUrl)
       ..write(value);
+
+    if (keepOriginal) {
+      return buffer.toString();
+    }
+
+    if (thumbnail && !value.toLowerCase().endsWith('.gif')) {
+      buffer
+        ..write('?imageView2/1/w/')
+        ..write(limitPx)
+        ..write('/h/')
+        ..write(limitPx);
+      return buffer.toString();
+    }
 
     if (!value.toLowerCase().endsWith('.gif')) {
       buffer
