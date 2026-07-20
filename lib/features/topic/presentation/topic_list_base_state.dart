@@ -140,6 +140,19 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   void onCommentTap(TopicModel topic) {}
 
   @override
+  void onCommentUserTap(
+    TopicModel topic,
+    TopicCommentModel comment,
+    String userId,
+    String userName,
+    String? avatar,
+  ) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('点击了评论用户 $userName')));
+  }
+
+  @override
   void onMentionTap(TopicModel topic, String mention) {
     ScaffoldMessenger.of(
       context,

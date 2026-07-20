@@ -67,11 +67,14 @@ class TopicCommentModel {
     required this.tid,
     required this.content,
     required this.userName,
+    required this.toUserId,
+    required this.toUserName,
     required this.likeCount,
     required this.childCount,
     required this.createTime,
     required this.pictures,
     this.avatar,
+    this.toAvatar,
   });
 
   final String cid;
@@ -79,11 +82,18 @@ class TopicCommentModel {
   final String tid;
   final String content;
   final String userName;
+  final String toUserId;
+  final String toUserName;
   final int likeCount;
   final int childCount;
   final int createTime;
   final List<TopicPictureModel> pictures;
   final String? avatar;
+  final String? toAvatar;
+
+  bool get hasReplyTarget =>
+      toUserId.isNotEmpty && toUserId != '0' && toUserName.isNotEmpty;
+  String get previewContent => content.isNotEmpty ? content : '[图片]';
 
   factory TopicCommentModel.fromJson(Object? json) {
     if (json is! Map) {
@@ -93,11 +103,14 @@ class TopicCommentModel {
         tid: '',
         content: '',
         userName: '',
+        toUserId: '',
+        toUserName: '',
         likeCount: 0,
         childCount: 0,
         createTime: 0,
         pictures: <TopicPictureModel>[],
         avatar: null,
+        toAvatar: null,
       );
     }
 
@@ -107,11 +120,14 @@ class TopicCommentModel {
       tid: json['tid']?.toString() ?? '',
       content: _TopicJsonParser.parseNullableString(json['content']) ?? '',
       userName: json['name']?.toString() ?? '',
+      toUserId: json['to_userid']?.toString() ?? '',
+      toUserName: json['to_name']?.toString() ?? '',
       likeCount: _TopicJsonParser.parseInt(json['likecount']),
       childCount: _TopicJsonParser.parseInt(json['childcount']),
       createTime: _TopicJsonParser.parseInt(json['create_time']),
       pictures: TopicModel.parsePictures(json['pictures']),
       avatar: ValueUtil.getQiniuUrlByFileName(json['avatar']?.toString()),
+      toAvatar: ValueUtil.getQiniuUrlByFileName(json['to_avatar']?.toString()),
     );
   }
 }

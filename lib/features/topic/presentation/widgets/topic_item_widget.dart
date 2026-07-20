@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_comment_preview_list.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
@@ -21,6 +22,14 @@ abstract class TopicItemActionListener {
   void onHashtagTap(TopicModel topic, String hashtag);
 
   void onLinkTap(TopicModel topic, String url);
+
+  void onCommentUserTap(
+    TopicModel topic,
+    TopicCommentModel comment,
+    String userId,
+    String userName,
+    String? avatar,
+  );
 }
 
 class TopicItemWidget extends StatelessWidget {
@@ -113,6 +122,31 @@ class TopicItemWidget extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: TopicPictureGrid(pictures: topicModel.pictures),
+                ),
+              ),
+            ],
+            if (topicModel.comments.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TopicCommentPreviewList(
+                  topic: topicModel,
+                  comments: topicModel.comments,
+                  onTap: () => listener?.onCommentTap(topicModel),
+                  onCommentUserTap:
+                      (topic, comment, userId, userName, avatar) =>
+                          listener?.onCommentUserTap(
+                            topic,
+                            comment,
+                            userId,
+                            userName,
+                            avatar,
+                          ),
+                  onMentionTap: (mention) =>
+                      listener?.onMentionTap(topicModel, mention),
+                  onHashtagTap: (hashtag) =>
+                      listener?.onHashtagTap(topicModel, hashtag),
+                  onLinkTap: (url) => listener?.onLinkTap(topicModel, url),
                 ),
               ),
             ],
