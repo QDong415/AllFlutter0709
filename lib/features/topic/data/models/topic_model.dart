@@ -30,16 +30,27 @@ abstract final class _TopicJsonParser {
 }
 
 class TopicPictureModel {
-  const TopicPictureModel({required this.url, this.width, this.height});
+  const TopicPictureModel({
+    required this.originalUrl,
+    required this.thumbnailUrl,
+    this.width,
+    this.height,
+  });
 
-  final String url;
+  final String originalUrl;
+  final String thumbnailUrl;
   final int? width;
   final int? height;
+
+  String get heroTag => '$originalUrl|$thumbnailUrl';
 
   factory TopicPictureModel.fromJson(Object? json) {
     if (json is String) {
       return TopicPictureModel(
-        url: ValueUtil.getQiniuUrlByFileName(json, max: true) ?? '',
+        originalUrl: ValueUtil.getOriginalImageUrl(json) ?? '',
+        thumbnailUrl:
+            ValueUtil.getQiniuUrlByFileName(json, limitPx: 360, max: true) ??
+            '',
       );
     }
 
@@ -50,13 +61,20 @@ class TopicPictureModel {
           json['picture']?.toString() ??
           '';
       return TopicPictureModel(
-        url: ValueUtil.getQiniuUrlByFileName(filename, max: true) ?? '',
+        originalUrl: ValueUtil.getOriginalImageUrl(filename) ?? '',
+        thumbnailUrl:
+            ValueUtil.getQiniuUrlByFileName(
+              filename,
+              limitPx: 360,
+              max: true,
+            ) ??
+            '',
         width: _TopicJsonParser.parseNullableInt(json['width']),
         height: _TopicJsonParser.parseNullableInt(json['height']),
       );
     }
 
-    return const TopicPictureModel(url: '');
+    return const TopicPictureModel(originalUrl: '', thumbnailUrl: '');
   }
 }
 
@@ -215,7 +233,9 @@ class TopicModel {
 
     return value
         .map((item) => TopicPictureModel.fromJson(item))
-        .where((item) => item.url.isNotEmpty)
+        .where(
+          (item) => item.originalUrl.isNotEmpty || item.thumbnailUrl.isNotEmpty,
+        )
         .toList(growable: false);
   }
 

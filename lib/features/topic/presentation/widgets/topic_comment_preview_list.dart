@@ -37,29 +37,32 @@ class TopicCommentPreviewList extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Material(
-      color: const Color(0xFFF5F5F7),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: const Color(0xFFF5F5F7),
         borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < comments.length; i++) ...[
-                _CommentPreviewText(
-                  topic: topic,
-                  comment: comments[i],
-                  onCommentUserTap: onCommentUserTap,
-                  onMentionTap: onMentionTap,
-                  onHashtagTap: onHashtagTap,
-                  onLinkTap: onLinkTap,
-                ),
-                if (i != comments.length - 1) const SizedBox(height: 4),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < comments.length; i++) ...[
+                  _CommentPreviewText(
+                    topic: topic,
+                    comment: comments[i],
+                    onCommentUserTap: onCommentUserTap,
+                    onMentionTap: onMentionTap,
+                    onHashtagTap: onHashtagTap,
+                    onLinkTap: onLinkTap,
+                  ),
+                  if (i != comments.length - 1) const SizedBox(height: 4),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

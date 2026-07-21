@@ -3,6 +3,17 @@ import 'package:all_flutter0709/core/network/app_env.dart';
 class ValueUtil {
   const ValueUtil._();
 
+  static String? getOriginalImageUrl(String? filename) {
+    final value = filename?.trim() ?? '';
+    if (value.isEmpty) return null;
+
+    final original = value.startsWith('http')
+        ? value
+        : '${AppEnv.qiniuBaseUrl}$value';
+
+    return _stripImageProcessQuery(original);
+  }
+
   static String? getQiniuUrlByFileName(
     String? filename, {
     int limitPx = 240,
@@ -43,5 +54,13 @@ class ValueUtil {
     }
 
     return buffer.toString();
+  }
+
+  static String _stripImageProcessQuery(String url) {
+    final markerIndex = url.indexOf('?image');
+    if (markerIndex >= 0) {
+      return url.substring(0, markerIndex);
+    }
+    return url;
   }
 }
