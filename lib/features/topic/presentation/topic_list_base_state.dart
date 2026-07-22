@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
@@ -137,7 +138,9 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   void onAvatarTap(TopicModel topic) {}
 
   @override
-  void onCommentTap(TopicModel topic) {}
+  void onCommentTap(TopicModel topic) {
+    context.push('${AppRoutes.topic}/detail/${topic.tid}', extra: topic);
+  }
 
   @override
   void onCommentUserTap(
@@ -186,6 +189,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
   @override
   Future<void> onLikeTap(TopicModel topic) async {
+    if (!context.ensureLoggedIn()) return;
     if (_likingTopicIds.contains(topic.tid)) return;
 
     final nextIsLiked = !topic.isLiked;

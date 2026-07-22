@@ -153,6 +153,7 @@ class TopicCommentModel {
 class TopicModel {
   const TopicModel({
     required this.tid,
+    required this.userId,
     required this.userName,
     required this.isLiked,
     required this.likeCount,
@@ -166,6 +167,7 @@ class TopicModel {
   });
 
   final String tid;
+  final String userId;
   final String userName;
   final bool isLiked;
   final int likeCount;
@@ -180,6 +182,7 @@ class TopicModel {
   factory TopicModel.fromJson(Map<String, dynamic> json) {
     return TopicModel(
       tid: json['tid']?.toString() ?? '',
+      userId: json['userid']?.toString() ?? '',
       content: _TopicJsonParser.parseNullableString(json['content']),
       userName: json['name']?.toString() ?? 'Unknown',
       avatar: ValueUtil.getQiniuUrlByFileName(json['avatar']?.toString()),
@@ -195,6 +198,7 @@ class TopicModel {
 
   TopicModel copyWith({
     String? tid,
+    String? userId,
     String? userName,
     bool? isLiked,
     int? likeCount,
@@ -208,6 +212,7 @@ class TopicModel {
   }) {
     return TopicModel(
       tid: tid ?? this.tid,
+      userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       isLiked: isLiked ?? this.isLiked,
       likeCount: likeCount ?? this.likeCount,

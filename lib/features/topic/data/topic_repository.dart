@@ -17,6 +17,32 @@ class TopicPageResult {
 class TopicRepository {
   const TopicRepository();
 
+  Future<TopicModel> getTopicDetail({required String tid}) async {
+    final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
+      '/api/topic/detail',
+      queryParameters: {'tid': tid},
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<TopicModel>.fromJson(
+      json,
+      (dataJson) => TopicModel.fromJson(dataJson as Map<String, dynamic>),
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '详情加载失败' : result.message);
+    }
+
+    final topic = result.data;
+    if (topic == null || topic.tid.isEmpty) {
+      throw Exception('动态详情为空');
+    }
+    return topic;
+  }
+
   Future<TopicPageResult> getTopicList({
     required int page,
   }) async {

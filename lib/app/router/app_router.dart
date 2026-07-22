@@ -67,10 +67,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: AppRoutes.topicDetail,
                     builder: (context, state) {
                       final tid = state.pathParameters['tid'] ?? '';
-                      final topic = state.extra is TopicModel
+                      final topicModel = state.extra is TopicModel
                           ? state.extra! as TopicModel
                           : null;
-                      return TopicDetailPage(tid: tid, topic: topic);
+                      return TopicDetailPage(tid: tid, topicModel: topicModel);
                     },
                   ),
                 ],
