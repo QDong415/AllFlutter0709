@@ -23,6 +23,8 @@ class CommentSection extends ConsumerStatefulWidget {
     required this.authorUserId,
     super.key,
     this.onCommentCountChanged,
+    this.listPadding = const EdgeInsets.fromLTRB(12, 12, 12, 24),
+    this.enablePullRefresh = true,
   });
 
   final String targetId;
@@ -31,6 +33,8 @@ class CommentSection extends ConsumerStatefulWidget {
   final int initialCommentCount;
   final String authorUserId;
   final ValueChanged<int>? onCommentCountChanged;
+  final EdgeInsetsGeometry listPadding;
+  final bool enablePullRefresh;
 
   @override
   ConsumerState<CommentSection> createState() => _CommentSectionState();
@@ -428,15 +432,15 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           child: EasyRefresh(
             header: const ClassicHeader(showMessage: false, showText: false),
             footer: const ClassicFooter(showMessage: false),
-            onRefresh: _refreshComments,
+            onRefresh: widget.enablePullRefresh ? _refreshComments : null,
             onLoad: _hasMore && !_isLoading ? _loadMoreComments : null,
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+              padding: widget.listPadding,
               itemCount: _buildVisibleItemCount(),
               itemBuilder: (context, index) {
                 if (index == 0) {
-                  return _buildHeader();
+                  return _buildHeaderAndCommentTitle();
                 }
 
                 if (_isLoading && _items.isEmpty) {
@@ -508,7 +512,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     return _items.length + 1;
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeaderAndCommentTitle() {
+    final hasComments = _items.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -519,7 +524,9 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: hasComments
+                ? const BorderRadius.vertical(top: Radius.circular(16))
+                : BorderRadius.circular(16),
           ),
           child: Text(
             '全部评论 ${_commentCount > 0 ? _commentCount : ''}'.trim(),

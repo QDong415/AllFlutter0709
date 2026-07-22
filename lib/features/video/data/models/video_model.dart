@@ -90,6 +90,50 @@ class VideoModel {
     );
   }
 
+  VideoModel copyWith({
+    String? videoId,
+    String? videoUrl,
+    String? coverUrl,
+    String? content,
+    int? width,
+    int? height,
+    int? createTime,
+    String? displayTime,
+    bool? isLiked,
+    int? readCount,
+    int? likeCount,
+    int? commentCount,
+    int? shareCount,
+    String? userId,
+    String? userName,
+    String? avatarUrl,
+  }) {
+    return VideoModel(
+      videoId: videoId ?? this.videoId,
+      videoUrl: videoUrl ?? this.videoUrl,
+      coverUrl: coverUrl ?? this.coverUrl,
+      content: content ?? this.content,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      createTime: createTime ?? this.createTime,
+      displayTime: displayTime ?? this.displayTime,
+      isLiked: isLiked ?? this.isLiked,
+      readCount: readCount ?? this.readCount,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      shareCount: shareCount ?? this.shareCount,
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+    );
+  }
+
+  String get displayDate {
+    if (createTime <= 0) return '--';
+    final date = DateTime.fromMillisecondsSinceEpoch(createTime * 1000);
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   static String _formatTime(int timestamp) {
     if (timestamp <= 0) return '--';
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);

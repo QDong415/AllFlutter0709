@@ -1,12 +1,13 @@
+import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:all_flutter0709/features/video/data/video_repository.dart';
-import 'package:all_flutter0709/features/video/presentation/video_detail_page.dart';
 import 'package:all_flutter0709/features/video/presentation/widgets/video_item_widget.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:go_router/go_router.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({super.key});
@@ -75,8 +76,9 @@ class _VideoPageState extends State<VideoPage> {
   }
 
   void _openDetail(VideoModel video) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => VideoDetailPage(video: video)),
+    context.push(
+      '${AppRoutes.video}/detail/${video.videoId}',
+      extra: video,
     );
   }
 

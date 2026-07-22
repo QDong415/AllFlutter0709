@@ -8,6 +8,9 @@ import 'package:all_flutter0709/features/me/presentation/me_page.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_detail_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_page.dart';
+import 'package:all_flutter0709/features/video/data/models/video_model.dart';
+import 'package:all_flutter0709/features/video/presentation/missing_video_page.dart';
+import 'package:all_flutter0709/features/video/presentation/video_detail_page.dart';
 import 'package:all_flutter0709/features/video/presentation/video_page.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -83,6 +86,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.video,
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: VideoPage()),
+                routes: [
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: AppRoutes.videoDetail,
+                    builder: (context, state) {
+                      final video = state.extra;
+                      if (video is! VideoModel) {
+                        return const MissingVideoPage();
+                      }
+                      return VideoDetailPage(video: video);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -114,3 +130,4 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
+

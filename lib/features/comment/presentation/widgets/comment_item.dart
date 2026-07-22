@@ -28,90 +28,93 @@ class CommentItem extends StatelessWidget {
     final avatarUrl = comment.avatar ?? '';
     final isAuthor = authorUserId.isNotEmpty && authorUserId == comment.userId;
 
-    return Padding(
-      padding: EdgeInsets.only(top: isChild ? 0 : 8),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onTap,
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _CommentTree(
-                    isChild: isChild,
-                    displayType: displayType,
-                    avatarUrl: avatarUrl,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(top: isChild ? 12 : 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  comment.userName.isEmpty
-                                      ? '匿名用户'
-                                      : comment.userName,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF133465),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (isAuthor) ...[
-                                const SizedBox(width: 6),
-                                const _AuthorBadge(),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          _CommentRichText(comment: comment),
-                          if (comment.pictures.isNotEmpty) ...[
-                            const SizedBox(height: 5),
-                            TopicPictureGrid(pictures: comment.pictures),
-                          ],
-                          if (comment.isPending) ...[
-                            const SizedBox(height: 4),
-                            const Row(
+    return ColoredBox(
+      color: Colors.white,
+      child: Padding(
+        padding: EdgeInsets.only(top: isChild ? 0 : 8),
+        child: Column(
+          children: [
+            InkWell(
+              onTap: onTap,
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _CommentTree(
+                      isChild: isChild,
+                      displayType: displayType,
+                      avatarUrl: avatarUrl,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: isChild ? 12 : 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Text(
-                                  '发送中...',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF8E8E93),
+                                Flexible(
+                                  child: Text(
+                                    comment.userName.isEmpty
+                                        ? '匿名用户'
+                                        : comment.userName,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF133465),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                if (isAuthor) ...[
+                                  const SizedBox(width: 6),
+                                  const _AuthorBadge(),
+                                ],
                               ],
                             ),
+                            const SizedBox(height: 3),
+                            _CommentRichText(comment: comment),
+                            if (comment.pictures.isNotEmpty) ...[
+                              const SizedBox(height: 5),
+                              TopicPictureGrid(pictures: comment.pictures),
+                            ],
+                            if (comment.isPending) ...[
+                              const SizedBox(height: 4),
+                              const Row(
+                                children: [
+                                  Text(
+                                    '发送中...',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF8E8E93),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(top: isChild ? 12 : 10),
-                    child: _CommentLikeColumn(
-                      comment: comment,
-                      onTap: onLikeTap,
+                    Padding(
+                      padding: EdgeInsets.only(top: isChild ? 12 : 10),
+                      child: _CommentLikeColumn(
+                        comment: comment,
+                        onTap: onLikeTap,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          if (showCommentSeparator(displayType))
-            Padding(
-              padding: EdgeInsets.only(left: isChild ? 85 : 61, top: 8),
-              child: const Divider(height: 0.6, thickness: 0.6),
-            ),
-        ],
+            if (showCommentSeparator(displayType))
+              Padding(
+                padding: EdgeInsets.only(left: isChild ? 85 : 61, top: 8),
+                child: const Divider(height: 0.6, thickness: 0.6),
+              ),
+          ],
+        ),
       ),
     );
   }
