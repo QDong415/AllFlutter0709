@@ -1,13 +1,15 @@
 import 'dart:async';
 
-import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
-import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_display_model.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_model.dart';
+import 'package:all_flutter0709/features/comment/presentation/helpers/comment_list_local_helper.dart';
+import 'package:all_flutter0709/features/comment/presentation/helpers/comment_send_helper.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_bottom_input_bar.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item.dart';
+import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item_single_tips.dart';
+import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,13 +38,15 @@ class CommentSection extends ConsumerStatefulWidget {
 
 class _CommentSectionState extends ConsumerState<CommentSection> {
   final CommentRepository _repository = const CommentRepository();
+  final CommentSendHelper _sendHelper = const CommentSendHelper();
+  final CommentListLocalHelper _listLocalHelper = const CommentListLocalHelper();
   final List<CommentDisplayModel> _items = <CommentDisplayModel>[];
   final Set<String> _likingCommentIds = <String>{};
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _inputFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
 
-  _CommentReplyTarget? _replyTarget;
+  CommentReplyTarget? _replyTarget;
   int _nextPage = 1;
   int _commentCount = 0;
   bool _hasMore = true;
@@ -54,7 +58,6 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
   void initState() {
     super.initState();
     _commentCount = widget.initialCommentCount;
-    _inputController.addListener(_handleComposerChanged);
     unawaited(_refreshComments());
   }
 
@@ -81,9 +84,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   @override
   void dispose() {
-    _inputController
-      ..removeListener(_handleComposerChanged)
-      ..dispose();
+    _inputController.dispose();
     _inputFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -236,11 +237,16 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       return;
     }
 
-    final localComment = _buildLocalComment(account, content, _replyTarget);
+    final localComment = _sendHelper.buildLocalComment(
+      account: account,
+      targetId: widget.targetId,
+      content: content,
+      replyTarget: _replyTarget,
+    );
 
     _inputFocusNode.unfocus();
     setState(() {
-      _insertOptimisticComment(localComment);
+      _listLocalHelper.insertOptimisticComment(_items, localComment);
       _replyTarget = null;
       _inputController.clear();
       _syncCommentCount(_commentCount + 1);
@@ -271,19 +277,16 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     }
 
     try {
-      final result = await _repository.submitComment(
+      final result = await _sendHelper.submit(
         targetId: widget.targetId,
         type: widget.targetType,
-        content: localComment.content,
-        tempId: localComment.tempId,
-        parentCid: localComment.isRoot ? null : localComment.parentCid,
-        toUserId: localComment.toUserId,
-        toUserName: localComment.toUserName,
+        localComment: localComment,
       );
       if (!mounted) return;
 
       setState(() {
-        _updateCommentByTempId(
+        _listLocalHelper.updateCommentByTempId(
+          _items,
           localComment.tempId,
           (comment) => comment.copyWith(
             cid: result.cid.isNotEmpty ? result.cid : comment.cid,
@@ -294,163 +297,11 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _removeOptimisticComment(localComment);
+        _listLocalHelper.removeOptimisticComment(_items, localComment);
         _syncCommentCount(_commentCount - 1);
       });
       _showSnack(error.toString());
     }
-  }
-
-  void _insertOptimisticComment(CommentModel comment) {
-    if (comment.isRoot) {
-      _items.insert(
-        0,
-        CommentDisplayModel.root(
-          comment,
-          displayType: CommentDisplayType.fatherCommentNoChild,
-        ),
-      );
-      return;
-    }
-
-    final rootIndex = _items.indexWhere(
-      (item) => item.isComment && item.comment!.effectiveId == comment.parentCid,
-    );
-    if (rootIndex == -1) {
-      _items.insert(
-        0,
-        CommentDisplayModel.root(
-          comment,
-          displayType: CommentDisplayType.fatherCommentNoChild,
-        ),
-      );
-      return;
-    }
-
-    final rootItem = _items[rootIndex];
-    _items[rootIndex] = rootItem.copyWith(
-      comment: rootItem.comment!.copyWith(
-        childCount: rootItem.comment!.childCount + 1,
-      ),
-      displayType: CommentDisplayType.fatherCommentContainsChild,
-    );
-    _items.insert(
-      rootIndex + 1,
-      CommentDisplayModel.child(
-        comment,
-        displayType: rootItem.comment!.childCount == 0
-            ? CommentDisplayType.childCommentLast
-            : CommentDisplayType.childCommentMiddle,
-      ),
-    );
-
-    final actionIndex = _items.indexWhere(
-      (item) => item.isAction && item.parentCid == comment.parentCid,
-    );
-    if (actionIndex != -1) {
-      final actionItem = _items[actionIndex];
-      _items[actionIndex] = actionItem.copyWith(
-        totalChildCount: actionItem.totalChildCount + 1,
-      );
-    }
-  }
-
-  CommentModel _buildLocalComment(
-    AccountModel account,
-    String content,
-    _CommentReplyTarget? replyTarget,
-  ) {
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final tempId = DateTime.now().microsecondsSinceEpoch.toString();
-
-    return CommentModel(
-      cid: '',
-      tempId: tempId,
-      targetId: widget.targetId,
-      parentCid: replyTarget?.parentCid ?? '0',
-      userId: account.userId,
-      userName: account.name,
-      avatar: ValueUtil.getQiniuUrlByFileName(
-        account.avatar,
-        thumbnail: true,
-      ),
-      toUserId: replyTarget?.toUserId ?? '',
-      toUserName: replyTarget?.toUserName ?? '',
-      toAvatar: replyTarget?.toAvatar,
-      content: content,
-      likeCount: 0,
-      childCount: 0,
-      createTime: now,
-      isLiked: false,
-      pictures: const [],
-      children: const [],
-      sendState: CommentSendState.sending,
-    );
-  }
-
-  void _updateCommentByTempId(
-    String tempId,
-    CommentModel Function(CommentModel comment) transform,
-  ) {
-    final index = _items.indexWhere(
-      (item) => item.isComment && item.comment!.tempId == tempId,
-    );
-    if (index == -1) return;
-    _items[index] = _items[index].copyWith(comment: transform(_items[index].comment!));
-  }
-
-  void _removeOptimisticComment(CommentModel comment) {
-    final index = _items.indexWhere(
-      (item) => item.isComment && item.comment!.tempId == comment.tempId,
-    );
-    if (index == -1) return;
-
-    if (comment.isRoot) {
-      _items.removeAt(index);
-      return;
-    }
-
-    final rootIndex = _items.indexWhere(
-      (item) => item.isComment && item.comment!.effectiveId == comment.parentCid,
-    );
-    _items.removeAt(index);
-
-    if (rootIndex == -1) return;
-
-    final rootItem = _items[rootIndex];
-    final nextChildCount = rootItem.comment!.childCount > 0
-        ? rootItem.comment!.childCount - 1
-        : 0;
-    _items[rootIndex] = rootItem.copyWith(
-      comment: rootItem.comment!.copyWith(childCount: nextChildCount),
-      displayType: nextChildCount == 0
-          ? CommentDisplayType.fatherCommentNoChild
-          : CommentDisplayType.fatherCommentContainsChild,
-    );
-
-    final actionIndex = _items.indexWhere(
-      (item) => item.isAction && item.parentCid == comment.parentCid,
-    );
-    if (actionIndex != -1) {
-      final actionItem = _items[actionIndex];
-      final nextTotalChildCount = actionItem.totalChildCount > 0
-          ? actionItem.totalChildCount - 1
-          : 0;
-      _items[actionIndex] = actionItem.copyWith(
-        totalChildCount: nextTotalChildCount,
-      );
-    }
-  }
-
-  void _updateCommentByEffectiveId(
-    String effectiveId,
-    CommentModel Function(CommentModel comment) transform,
-  ) {
-    final index = _items.indexWhere(
-      (item) => item.isComment && item.comment!.effectiveId == effectiveId,
-    );
-    if (index == -1) return;
-    _items[index] = _items[index].copyWith(comment: transform(_items[index].comment!));
   }
 
   Future<void> _toggleCommentLike(CommentModel comment) async {
@@ -466,7 +317,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
     _likingCommentIds.add(effectiveId);
     setState(() {
-      _updateCommentByEffectiveId(
+      _listLocalHelper.updateCommentByEffectiveId(
+        _items,
         effectiveId,
         (current) => current.copyWith(
           isLiked: nextIsLiked,
@@ -484,7 +336,11 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _updateCommentByEffectiveId(effectiveId, (_) => comment);
+        _listLocalHelper.updateCommentByEffectiveId(
+          _items,
+          effectiveId,
+          (_) => comment,
+        );
       });
       _showSnack(error.toString());
     } finally {
@@ -494,11 +350,12 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   void _handleCommentTap(CommentModel comment) {
     final currentUserId = context.currentUserId;
-    final isReplyToCurrentUser = currentUserId.isNotEmpty && currentUserId == comment.userId;
+    final isReplyToCurrentUser =
+        currentUserId.isNotEmpty && currentUserId == comment.userId;
     final parentCid = comment.isRoot ? comment.effectiveId : comment.parentCid;
 
     setState(() {
-      _replyTarget = _CommentReplyTarget(
+      _replyTarget = CommentReplyTarget(
         parentCid: parentCid,
         toUserId: isReplyToCurrentUser ? '' : comment.userId,
         toUserName: isReplyToCurrentUser ? '' : comment.userName,
@@ -508,12 +365,6 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     });
 
     _inputFocusNode.requestFocus();
-  }
-
-  void _handleComposerChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   List<CommentDisplayModel> _flattenPage(List<CommentModel> comments) {
@@ -596,7 +447,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                 }
 
                 if (_errorText != null && _items.isEmpty) {
-                  return _StateHint(
+                  return CommonStatePlaceholder(
                     icon: Icons.wifi_off_outlined,
                     text: _errorText!,
                     actionText: '重试',
@@ -607,7 +458,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                 }
 
                 if (_items.isEmpty) {
-                  return const _StateHint(
+                  return const CommonStatePlaceholder(
                     icon: Icons.mode_comment_outlined,
                     text: '还没有评论，来抢沙发吧',
                   );
@@ -615,7 +466,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
                 final item = _items[index - 1];
                 if (item.isAction) {
-                  return _CommentActionTile(
+                  return CommentItemSingleTips(
                     item: item,
                     onTap: () {
                       unawaited(_loadMoreReplies(item));
@@ -682,149 +533,4 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       ],
     );
   }
-}
-
-class _CommentActionTile extends StatelessWidget {
-  const _CommentActionTile({
-    required this.item,
-    required this.onTap,
-  });
-
-  final CommentDisplayModel item;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final displayType = item.displayType!;
-    final label = switch (displayType) {
-      CommentDisplayType.loadingMoreComment => '',
-      CommentDisplayType.packUpComment => '已经是全部回复了',
-      CommentDisplayType.showMoreComment => '加载全部${item.totalChildCount}条回复',
-      _ => '',
-    };
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 12),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 64,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          width: 0.6,
-                          height: 23,
-                          color: const Color(0xFFDCDCDC),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 23),
-                      child: Container(
-                        width: 20,
-                        height: 0.6,
-                        color: const Color(0xFFDCDCDC),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 10, bottom: 2),
-                  child: displayType == CommentDisplayType.loadingMoreComment
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : GestureDetector(
-                          onTap: onTap,
-                          child: Text(
-                            label,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF133465),
-                            ),
-                          ),
-                        ),
-                ),
-              ),
-            ],
-          ),
-          if (showCommentSeparator(displayType))
-            const Padding(
-              padding: EdgeInsets.only(left: 61, top: 10),
-              child: Divider(height: 0.6, thickness: 0.6),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StateHint extends StatelessWidget {
-  const _StateHint({
-    required this.icon,
-    required this.text,
-    this.actionText,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String text;
-  final String? actionText;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 40, color: const Color(0xFFB3B3B8)),
-            const SizedBox(height: 12),
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF7B7B80),
-              ),
-            ),
-            if (actionText != null && onTap != null) ...[
-              const SizedBox(height: 8),
-              TextButton(onPressed: onTap, child: Text(actionText!)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CommentReplyTarget {
-  const _CommentReplyTarget({
-    required this.parentCid,
-    required this.toUserId,
-    required this.toUserName,
-    required this.toAvatar,
-    required this.hintText,
-  });
-
-  final String parentCid;
-  final String toUserId;
-  final String toUserName;
-  final String? toAvatar;
-  final String hintText;
 }
