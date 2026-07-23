@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
 import 'package:all_flutter0709/features/conversation/presentation/chat_image_preview_page.dart';
@@ -16,8 +17,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
+/// 单聊页；未登录时拦截并跳转登录，不加载会话消息。
 class ConversationChatPage extends ConsumerStatefulWidget {
-  const ConversationChatPage({required this.chatId, super.key});
+  const ConversationChatPage({super.key, required this.chatId});
 
   final String chatId;
 
@@ -49,6 +51,11 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     super.initState();
     _focusNode.addListener(_handleFocusChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // 未登录时 push 登录页；勿再 pop，否则会把刚打开的登录页关掉。
+      if (!context.ensureLoggedIn()) {
+        return;
+      }
       unawaited(
         ref
             .read(conversationControllerProvider)
@@ -103,6 +110,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (text.isEmpty || _isSubmitting) {
       return;
     }
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -127,6 +137,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
 
   Future<void> _sendImage() async {
     if (_isSubmitting) {
+      return;
+    }
+    if (!context.ensureLoggedIn()) {
       return;
     }
 

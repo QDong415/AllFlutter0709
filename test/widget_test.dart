@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('redirects unauthenticated user to login page', (
+  testWidgets('allows unauthenticated user to enter main tabs', (
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -17,9 +17,11 @@ void main() {
         child: const SocialApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    // 动态页会发起网络请求，避免 pumpAndSettle 一直等待。
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Login'), findsOneWidget);
-    expect(find.text('iTopic 登录入口'), findsOneWidget);
+    expect(find.text('动态 Topic'), findsOneWidget);
+    expect(find.text('Login'), findsNothing);
   });
 }

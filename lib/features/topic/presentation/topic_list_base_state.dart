@@ -135,7 +135,9 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   }
 
   @override
-  void onAvatarTap(TopicModel topic) {}
+  void onAvatarTap(TopicModel topic) {
+    if (!context.ensureLoggedIn()) return;
+  }
 
   @override
   void onCommentTap(TopicModel topic) {
@@ -150,6 +152,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     String userName,
     String? avatar,
   ) {
+    if (!context.ensureLoggedIn()) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('点击了评论用户 $userName')));
@@ -157,6 +160,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
   @override
   void onMentionTap(TopicModel topic, String mention) {
+    if (!context.ensureLoggedIn()) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('点击了 @$mention')));

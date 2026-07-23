@@ -1,119 +1,133 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
+import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+/// 会话列表页；未登录时展示占位，不请求会话接口。
 class ConversationPage extends ConsumerWidget {
   const ConversationPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentAccount = ref.watch(accountProvider);
     final controller = ref.read(conversationControllerProvider);
 
     return Scaffold(
       appBar: const CommonAppBar(title: '对话 Conversation'),
-      body: ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
-          final state = controller.conversationsState;
-          return state.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => _ConversationErrorView(
-              message: error.toString(),
-              onRetry: controller.syncMessagesFromServer,
-            ),
-            data: (conversations) {
-              if (conversations.isEmpty) {
-                return _ConversationEmptyView(
-                  onRefresh: controller.syncMessagesFromServer,
-                );
-              }
+      body: currentAccount == null
+          ? CommonStatePlaceholder(
+              imageAsset: 'assets/icons/tips_empty_ban.png',
+              text: '需要登录后才能查看',
+              actionText: '去登录',
+              onTap: () => context.ensureLoggedIn(),
+            )
+          : ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) {
+                final state = controller.conversationsState;
+                return state.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stackTrace) => _ConversationErrorView(
+                    message: error.toString(),
+                    onRetry: controller.syncMessagesFromServer,
+                  ),
+                  data: (conversations) {
+                    if (conversations.isEmpty) {
+                      return _ConversationEmptyView(
+                        onRefresh: controller.syncMessagesFromServer,
+                      );
+                    }
 
-              return RefreshIndicator(
-                onRefresh: controller.syncMessagesFromServer,
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemBuilder: (context, index) {
-                    final item = conversations[index];
-                    final avatarUrl = ValueUtil.getQiniuUrlByFileName(
-                      item.avatar,
-                      keepOriginal: true,
-                    );
-                    return ListTile(
-                      onTap: () {
-                        context.push(
-                          '${AppRoutes.conversation}/chat/${item.conversationId}',
-                        );
-                      },
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      leading: CircleAvatar(
-                        backgroundImage: avatarUrl == null
-                            ? null
-                            : NetworkImage(avatarUrl),
-                        child: avatarUrl == null
-                            ? const Icon(Icons.person)
-                            : null,
-                      ),
-                      title: Text(
-                        item.name.isEmpty
-                            ? '用户${item.conversationId}'
-                            : item.name,
-                      ),
-                      subtitle: Text(
-                        item.latestMessage,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            _formatConversationTime(item.latestTime),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 6),
-                          if (item.unreadCount > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2,
-                              ),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFE53935),
-                                borderRadius: BorderRadius.all(
-                                  Radius.circular(99),
-                                ),
-                              ),
-                              child: Text(
-                                item.unreadCount > 99
-                                    ? '99+'
-                                    : '${item.unreadCount}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                    return RefreshIndicator(
+                      onRefresh: controller.syncMessagesFromServer,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemBuilder: (context, index) {
+                          final item = conversations[index];
+                          final avatarUrl = ValueUtil.getQiniuUrlByFileName(
+                            item.avatar,
+                            keepOriginal: true,
+                          );
+                          return ListTile(
+                            onTap: () {
+                              if (!context.ensureLoggedIn()) return;
+                              context.push(
+                                '${AppRoutes.conversation}/chat/${item.conversationId}',
+                              );
+                            },
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
                             ),
-                        ],
+                            leading: CircleAvatar(
+                              backgroundImage: avatarUrl == null
+                                  ? null
+                                  : NetworkImage(avatarUrl),
+                              child: avatarUrl == null
+                                  ? const Icon(Icons.person)
+                                  : null,
+                            ),
+                            title: Text(
+                              item.name.isEmpty
+                                  ? '用户${item.conversationId}'
+                                  : item.name,
+                            ),
+                            subtitle: Text(
+                              item.latestMessage,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  _formatConversationTime(item.latestTime),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 6),
+                                if (item.unreadCount > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 2,
+                                    ),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFE53935),
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(99),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      item.unreadCount > 99
+                                          ? '99+'
+                                          : '${item.unreadCount}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
+                        itemCount: conversations.length,
                       ),
                     );
                   },
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemCount: conversations.length,
-                ),
-              );
-            },
-          );
-        },
-      ),
+                );
+              },
+            ),
     );
   }
 }

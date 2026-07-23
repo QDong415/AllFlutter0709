@@ -86,29 +86,37 @@ class CommentBottomInputBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: TextField(
-                      controller: controller,
-                      focusNode: focusNode,
-                      minLines: 1,
-                      maxLines: 4,
-                      enabled: enabled,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) {
-                        unawaited(onSend());
-                      },
-                      decoration: InputDecoration(
-                        hintText: enabled
-                            ? (replyHintText ?? '说点什么吧...')
-                            : '请先登录后再评论',
-                        filled: true,
-                        fillColor: const Color(0xFFF4F5F7),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(22),
-                          borderSide: BorderSide.none,
+                    child: GestureDetector(
+                      onTap: enabled
+                          ? null
+                          : () => context.ensureLoggedIn(),
+                      child: AbsorbPointer(
+                        absorbing: !enabled,
+                        child: TextField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          minLines: 1,
+                          maxLines: 4,
+                          enabled: enabled,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) {
+                            unawaited(onSend());
+                          },
+                          decoration: InputDecoration(
+                            hintText: enabled
+                                ? (replyHintText ?? '说点什么吧...')
+                                : '请先登录后再评论',
+                            filled: true,
+                            fillColor: const Color(0xFFF4F5F7),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(22),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -116,6 +124,10 @@ class CommentBottomInputBar extends StatelessWidget {
                   const SizedBox(width: 10),
                   FilledButton(
                     onPressed: () {
+                      if (!enabled) {
+                        context.ensureLoggedIn();
+                        return;
+                      }
                       unawaited(onSend());
                     },
                     style: FilledButton.styleFrom(

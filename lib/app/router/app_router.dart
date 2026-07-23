@@ -34,10 +34,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == AppRoutes.login ||
           state.matchedLocation == AppRoutes.signup;
 
-      if (!loggedIn && !isAuthPage) {
-        return AppRoutes.login;
-      }
-
+      // 未登录可浏览主流程；需登录操作由 AccountGuardX 按需跳转登录页。
+      // 已登录访问登录/注册页时仍回到动态页。
       if (loggedIn && isAuthPage) {
         return AppRoutes.topic;
       }

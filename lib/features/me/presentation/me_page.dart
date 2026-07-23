@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/push/getui_push_service.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+/// 「我的」页；收藏 / 设置等需登录操作走 AccountGuardX。
 class MePage extends ConsumerWidget {
   const MePage({super.key});
 
@@ -33,6 +35,9 @@ class MePage extends ConsumerWidget {
                     ? currentAccount!.mobile
                     : '请先登录以查看完整资料',
               ),
+              onTap: () {
+                if (!context.ensureLoggedIn()) return;
+              },
             ),
           ),
           const SizedBox(height: 12),
@@ -42,12 +47,16 @@ class MePage extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.bookmark_outline),
                   title: const Text('我的收藏'),
-                  onTap: () {},
+                  onTap: () {
+                    if (!context.ensureLoggedIn()) return;
+                  },
                 ),
                 ListTile(
                   leading: const Icon(Icons.settings_outlined),
                   title: const Text('账号设置'),
-                  onTap: () {},
+                  onTap: () {
+                    if (!context.ensureLoggedIn()) return;
+                  },
                 ),
                 ListTile(
                   leading: Icon(
@@ -56,7 +65,7 @@ class MePage extends ConsumerWidget {
                   title: Text(currentAccount == null ? '去登录' : '退出登录'),
                   onTap: () async {
                     if (currentAccount == null) {
-                      context.go(AppRoutes.login);
+                      context.ensureLoggedIn();
                       return;
                     }
 
