@@ -1,0 +1,63 @@
+---
+description: Flutter 编码规范（Model 命名、Widget key、中文注释）
+globs: "**/*.dart"
+alwaysApply: false
+---
+
+# Flutter Coding Rules
+
+手写 Dart 代码必须遵守本规范。`*.g.dart`、`*.freezed.dart` 等生成文件除外。
+
+## 1. Model 命名
+
+Model 类型变量名必须以 `Model` 结尾。
+
+```dart
+// ✅
+final UserModel userModel;
+final TopicModel topicModel;
+
+// ❌
+final UserModel user;
+final TopicModel topic;
+```
+
+## 2. Widget 构造方法
+
+`key`（含 `super.key`）必须放在构造参数第一位。
+
+```dart
+// ✅
+const UserAvatarWidget({
+  super.key,
+  required this.userModel,
+});
+
+// ❌
+const UserAvatarWidget({
+  required this.userModel,
+  super.key,
+});
+```
+
+## 3. Class 注释
+
+手写 Class 必须加中文文档注释，说明职责；禁止无意义注释。
+
+```dart
+/// 用户头像展示组件
+class UserAvatarWidget {}
+```
+
+例外：极短 private 内部类、生成代码中的 Class。
+
+## 4. Public 方法注释
+
+手写 public 方法 / getter / setter 必须加中文文档注释。private 方法不强制。
+
+```dart
+/// 加载用户详情数据
+Future<void> loadUserDetail(String userId) async {}
+```
+
+例外：一目了然的简单 getter、纯 `override`（如 `build` / `dispose`）、接口转发实现。

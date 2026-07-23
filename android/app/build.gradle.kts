@@ -28,6 +28,7 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["GETUI_APPID"] = "JjRS35nTSP9k7ZSBKt8DM6"
     }
 
     buildTypes {
@@ -41,4 +42,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.getui:gtsdk:3.3.12.0")
+    implementation("com.getui:gtc:3.2.18.0")
 }

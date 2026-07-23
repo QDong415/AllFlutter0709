@@ -2,6 +2,7 @@ import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/signup_page.dart';
+import 'package:all_flutter0709/features/conversation/presentation/conversation_chat_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_page.dart';
 import 'package:all_flutter0709/features/home/presentation/main_tab_scaffold.dart';
 import 'package:all_flutter0709/features/me/presentation/me_page.dart';
@@ -17,7 +18,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-
   final refreshListenable = ValueNotifier<Object?>(null);
   ref.onDispose(refreshListenable.dispose);
   ref.listen(accountProvider, (previous, next) {
@@ -108,6 +108,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.conversation,
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: ConversationPage()),
+                routes: [
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: AppRoutes.conversationChat,
+                    builder: (context, state) {
+                      final chatId = state.pathParameters['chatId'] ?? '';
+                      return ConversationChatPage(chatId: chatId);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -130,4 +140,3 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-

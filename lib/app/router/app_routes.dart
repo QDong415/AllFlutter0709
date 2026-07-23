@@ -7,5 +7,6 @@ abstract final class AppRoutes {
   static const video = '/video';
   static const videoDetail = 'detail/:videoId';
   static const conversation = '/conversation';
+  static const conversationChat = 'chat/:chatId';
   static const me = '/me';
 }

@@ -1,12 +1,31 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="getui.permission.GetuiService.${applicationId}"/>
+
+    <!-- permission 由 gtsdk 声明（signature），勿再手写 normal，避免 merger 冲突 -->
 
     <application
         android:label="all_flutter0709"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:replace="android:label">
+        <meta-data
+            android:name="PUSH_APPID"
+            android:value="${GETUI_APPID}"/>
+        <meta-data
+            android:name="PUSH_APPKEY"
+            android:value="AQngfBxi8pATf95ENg2Kj9"/>
+        <meta-data
+            android:name="PUSH_APPSECRET"
+            android:value="G6gnMrlBs06cBY9lqyL5V"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

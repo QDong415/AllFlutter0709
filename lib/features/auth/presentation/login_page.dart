@@ -12,7 +12,7 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _mobileController = TextEditingController(text: '13810244766');
+  final _mobileController = TextEditingController(text: '13570835313');
   final _passwordController = TextEditingController(text: '123');
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
@@ -43,6 +43,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           );
 
       if (mounted) {
+        // 通知点击待跳转由 GetuiPushService.flushPendingNavigation 消费。
         context.go(AppRoutes.topic);
       }
     } catch (error) {
