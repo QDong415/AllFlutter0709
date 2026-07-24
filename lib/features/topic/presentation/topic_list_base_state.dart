@@ -6,6 +6,7 @@ import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_share_sheet.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -14,9 +15,14 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// 动态列表页通用基类：刷新 / 加载更多 / 点赞 / 分享等。
+///
+/// 子类可通过 [fetchTopicPage]、[buildListHeader]、[buildAppBar] 等钩子定制。
 abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     implements TopicItemActionListener {
-  final TopicRepository _topicRepository = const TopicRepository();
+  @protected
+  final TopicRepository topicRepository = const TopicRepository();
+
   final List<TopicModel> _topics = <TopicModel>[];
   final Set<String> _likingTopicIds = <String>{};
 
@@ -24,17 +30,55 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   bool _hasMore = true;
   PageState _pageState = PageState.loading;
 
+  @protected
+  List<TopicModel> get topics => _topics;
+
+  @protected
+  PageState get pageState => _pageState;
+
+  @protected
+  bool get hasMore => _hasMore;
+
+  @protected
+  String get pageTitle => '动态 Topic';
+
+  @protected
+  String get emptyText => '暂无动态';
+
+  @protected
+  String get errorText => '网络异常，请稍后重试';
+
+  /// 是否使用默认 Scaffold + AppBar 布局；个人主页等可设为 false 并自行 [build]。
+  @protected
+  bool get useDefaultScaffold => true;
+
+  @protected
+  Future<TopicPageResult> fetchTopicPage(int page) {
+    return topicRepository.getTopicList(page: page);
+  }
+
+  /// 默认 AppBar；返回 null 表示不展示。
+  @protected
+  PreferredSizeWidget? buildAppBar() {
+    return CommonAppBar(title: pageTitle);
+  }
+
+  /// 列表顶部 Header；非 null 时列表改为 CustomScrollView。
+  @protected
+  Widget? buildListHeader() => null;
+
   @override
   void initState() {
     super.initState();
-    _requestList(isRefresh: true);
+    requestList(isRefresh: true);
   }
 
-  Future<void> _requestList({required bool isRefresh}) async {
+  @protected
+  Future<void> requestList({required bool isRefresh}) async {
     final requestPage = isRefresh ? 1 : _nextPage;
 
     try {
-      final result = await _topicRepository.getTopicList(page: requestPage);
+      final result = await fetchTopicPage(requestPage);
       if (!mounted) return;
 
       setState(() {
@@ -66,13 +110,17 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     }
   }
 
-  Future<void> _onRefresh() async {
-    await _requestList(isRefresh: true);
+  /// 下拉刷新。
+  @protected
+  Future<void> onRefreshList() async {
+    await requestList(isRefresh: true);
   }
 
-  Future<void> _onLoad() async {
+  /// 上拉加载更多。
+  @protected
+  Future<void> onLoadMoreList() async {
     if (!_hasMore) return;
-    await _requestList(isRefresh: false);
+    await requestList(isRefresh: false);
   }
 
   void _replaceTopic(TopicModel topic) {
@@ -81,13 +129,54 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     _topics[index] = topic;
   }
 
-  Widget _buildListView() {
-    return ListView.separated(
-      itemCount: _topics.length,
-      itemBuilder: (context, index) {
-        return TopicItemWidget(topicModel: _topics[index], listener: this);
-      },
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+  /// 构建动态列表（可选 physics，便于嵌套滚动）。
+  @protected
+  Widget buildTopicListView({ScrollPhysics? physics}) {
+    final header = buildListHeader();
+    if (header == null) {
+      return ListView.separated(
+        physics: physics,
+        itemCount: _topics.length,
+        itemBuilder: (context, index) {
+          return TopicItemWidget(topicModel: _topics[index], listener: this);
+        },
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+      );
+    }
+
+    return CustomScrollView(
+      physics: physics,
+      slivers: [
+        SliverToBoxAdapter(child: header),
+        SliverList(
+          delegate: SliverChildBuilderDelegate((context, index) {
+            if (index.isOdd) {
+              return const SizedBox(height: 10);
+            }
+            final topicIndex = index ~/ 2;
+            return TopicItemWidget(
+              topicModel: _topics[topicIndex],
+              listener: this,
+            );
+          }, childCount: _topics.isEmpty ? 0 : _topics.length * 2 - 1),
+        ),
+      ],
+    );
+  }
+
+  /// 默认列表主体：EasyRefresh + PageStateView。
+  @protected
+  Widget buildTopicListBody() {
+    return EasyRefresh(
+      header: const ClassicHeader(showMessage: false, showText: false),
+      onRefresh: onRefreshList,
+      onLoad: _hasMore ? onLoadMoreList : null,
+      child: PageStateView(
+        state: _pageState,
+        emptyText: emptyText,
+        errorText: errorText,
+        successWidget: buildTopicListView(),
+      ),
     );
   }
 
@@ -137,7 +226,12 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
   @override
   void onAvatarTap(TopicModel topic) {
-    if (!context.ensureLoggedIn()) return;
+    openUserDetailPage(
+      context,
+      userId: topic.userId,
+      name: topic.userName,
+      avatar: topic.avatar,
+    );
   }
 
   @override
@@ -153,10 +247,12 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     String userName,
     String? avatar,
   ) {
-    if (!context.ensureLoggedIn()) return;
-    ScaffoldMessenger.of(
+    openUserDetailPage(
       context,
-    ).showSnackBar(SnackBar(content: Text('点击了评论用户 $userName')));
+      userId: userId,
+      name: userName,
+      avatar: avatar,
+    );
   }
 
   @override
@@ -212,7 +308,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     });
 
     try {
-      await _topicRepository.likeTopic(
+      await topicRepository.likeTopic(
         tid: topic.tid,
         isLiked: topic.isLiked,
         likeCount: topic.likeCount,
@@ -232,20 +328,14 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
   @override
   Widget build(BuildContext context) {
+    if (!useDefaultScaffold) {
+      return buildTopicListBody();
+    }
+
     return Scaffold(
-      appBar: const CommonAppBar(title: '动态 Topic'),
+      appBar: buildAppBar(),
       backgroundColor: AppColors.bodyBackground,
-      body: EasyRefresh(
-        header: const ClassicHeader(showMessage: false, showText: false),
-        onRefresh: _onRefresh,
-        onLoad: _hasMore ? _onLoad : null,
-        child: PageStateView(
-          state: _pageState,
-          emptyText: '暂无动态',
-          errorText: '网络异常，请稍后重试',
-          successWidget: _buildListView(),
-        ),
-      ),
+      body: buildTopicListBody(),
     );
   }
 }

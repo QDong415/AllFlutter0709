@@ -3,6 +3,7 @@ import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/push/getui_push_service.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +37,17 @@ class MePage extends ConsumerWidget {
                     : '请先登录以查看完整资料',
               ),
               onTap: () {
-                if (!context.ensureLoggedIn()) return;
+                final account = currentAccount;
+                if (account == null) {
+                  context.ensureLoggedIn();
+                  return;
+                }
+                openUserDetailPage(
+                  context,
+                  userId: account.userId,
+                  name: account.name,
+                  avatar: account.avatar,
+                );
               },
             ),
           ),

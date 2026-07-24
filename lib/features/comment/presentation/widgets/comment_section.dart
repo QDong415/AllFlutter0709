@@ -10,6 +10,7 @@ import 'package:all_flutter0709/features/comment/presentation/widgets/comment_bo
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item_single_tips.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -485,6 +486,15 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                   displayType: item.displayType!,
                   onTap: () => _handleCommentTap(item.comment!),
                   onLikeTap: () => _toggleCommentLike(item.comment!),
+                  onAvatarTap: () {
+                    final comment = item.comment!;
+                    openUserDetailPage(
+                      context,
+                      userId: comment.userId,
+                      name: comment.userName,
+                      avatar: comment.avatar,
+                    );
+                  },
                 );
               },
             ),

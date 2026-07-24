@@ -10,6 +10,7 @@ import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -230,24 +231,44 @@ class _TopicDetailHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: const Color(0xFFE8E8E8),
-                backgroundImage: avatarUrl.isNotEmpty
-                    ? CachedNetworkImageProvider(avatarUrl)
-                    : null,
+              GestureDetector(
+                onTap: () {
+                  openUserDetailPage(
+                    context,
+                    userId: topic.userId,
+                    name: topic.userName,
+                    avatar: topic.avatar,
+                  );
+                },
+                child: CircleAvatar(
+                  radius: 22,
+                  backgroundColor: const Color(0xFFE8E8E8),
+                  backgroundImage: avatarUrl.isNotEmpty
+                      ? CachedNetworkImageProvider(avatarUrl)
+                      : null,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      topic.userName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF304F84),
+                    GestureDetector(
+                      onTap: () {
+                        openUserDetailPage(
+                          context,
+                          userId: topic.userId,
+                          name: topic.userName,
+                          avatar: topic.avatar,
+                        );
+                      },
+                      child: Text(
+                        topic.userName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF304F84),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),

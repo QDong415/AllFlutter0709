@@ -16,6 +16,7 @@ class ChatMessageListView extends StatelessWidget {
     required this.onRefresh,
     required this.onRetry,
     required this.onImageTap,
+    this.onAvatarTap,
     this.onUserDragScroll,
   });
 
@@ -25,6 +26,7 @@ class ChatMessageListView extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
   final ValueChanged<ImageMessage> onImageTap;
+  final ValueChanged<MessageItem>? onAvatarTap;
 
   /// 用户手指拖动列表时回调（用于收起键盘 / 面板）。
   final VoidCallback? onUserDragScroll;
@@ -56,10 +58,7 @@ class ChatMessageListView extends StatelessWidget {
               controller: scrollController,
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.fromLTRB(5, 0, 5, 8),
-              children: const [
-                SizedBox(height: 160),
-                Center(child: Text('还没有消息，发一条开始聊天吧')),
-              ],
+              children: const [SizedBox(height: 160)],
             ),
           );
         }
@@ -81,7 +80,11 @@ class ChatMessageListView extends StatelessWidget {
             itemBuilder: (context, index) {
               // reverse 下列表 index 0 在底部，对应时间正序的最后一条。
               final item = items[items.length - 1 - index];
-              return ChatListItemWidget(item: item, onImageTap: onImageTap);
+              return ChatListItemWidget(
+                item: item,
+                onImageTap: onImageTap,
+                onAvatarTap: onAvatarTap,
+              );
             },
           ),
         );

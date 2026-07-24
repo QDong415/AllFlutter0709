@@ -9,4 +9,6 @@ abstract final class AppRoutes {
   static const conversation = '/conversation';
   static const conversationChat = 'chat/:chatId';
   static const me = '/me';
+  static const user = '/user';
+  static const userDetail = ':userId';
 }

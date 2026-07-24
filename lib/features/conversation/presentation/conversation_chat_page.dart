@@ -10,9 +10,11 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_send_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_record_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/mappers/chat_item_mapper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_list_view.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_recording_overlay.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -452,6 +454,25 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
                             context: context,
                             tappedItem: image,
                             items: items,
+                          );
+                        },
+                        onAvatarTap: (message) {
+                          // 右侧为自己，左侧为对方；不在此处拦登录，由个人主页内操作再校验。
+                          if (message.direction == MessageDirection.right) {
+                            final account = ref.read(accountProvider);
+                            openUserDetailPage(
+                              context,
+                              userId: account?.userId ?? widget.chatId,
+                              name: account?.name,
+                              avatar: account?.avatar,
+                            );
+                            return;
+                          }
+                          openUserDetailPage(
+                            context,
+                            userId: widget.chatId,
+                            name: conversationName,
+                            avatar: peerAvatar,
                           );
                         },
                       ),

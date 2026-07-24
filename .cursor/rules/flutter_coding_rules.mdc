@@ -60,4 +60,28 @@ class UserAvatarWidget {}
 Future<void> loadUserDetail(String userId) async {}
 ```
 
-例外：一目了然的简单 getter、纯 `override`（如 `build` / `dispose`）、接口转发实现。
+例外：一目了然的简单 getter/setter、纯 `override`（如 `build` / `dispose`）、接口转发实现。
+
+## 5. 界面文件拆分
+
+新增或大改界面时，不要把整页堆在一个 dart 文件里。按下面拆，直接执行，不必再去翻其他旧页面源码。
+
+目录约定（以某功能 `foo` 为例）：
+
+```text
+presentation/
+  foo_page.dart                 # 主文件：只编排状态与组装
+  widgets/
+    foo_header.dart             # 独立 UI 块
+    foo_input_bar.dart
+  helpers/
+    foo_send_helper.dart        # 不依赖 Widget 树的业务逻辑
+    foo_list_local_helper.dart
+```
+
+怎么拆：
+- 能单独成块的 UI → `presentation/widgets/`
+- 发送、列表本地更新、滚动等逻辑 → `presentation/helpers/`
+- 主文件只做协调，尽量短
+
+例外：300行内、没有明显独立子块的短页面可不拆。

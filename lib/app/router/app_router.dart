@@ -9,6 +9,8 @@ import 'package:all_flutter0709/features/me/presentation/me_page.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_detail_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_page.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:all_flutter0709/features/user/presentation/user_detail_page.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:all_flutter0709/features/video/presentation/missing_video_page.dart';
 import 'package:all_flutter0709/features/video/presentation/video_detail_page.dart';
@@ -50,6 +52,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.signup,
         builder: (context, state) => const SignupPage(),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: '${AppRoutes.user}/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? '';
+          final args = state.extra is UserDetailArgs
+              ? state.extra! as UserDetailArgs
+              : null;
+          return UserDetailPage(
+            userId: userId,
+            initialName: args?.name,
+            initialAvatar: args?.avatar,
+          );
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

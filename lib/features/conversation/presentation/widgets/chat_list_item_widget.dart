@@ -7,10 +7,16 @@ import 'package:flutter/material.dart';
 
 /// 聊天气泡列表单项（时间 tips / 文本 / 语音 / 图片）。
 class ChatListItemWidget extends StatelessWidget {
-  const ChatListItemWidget({super.key, required this.item, this.onImageTap});
+  const ChatListItemWidget({
+    super.key,
+    required this.item,
+    this.onImageTap,
+    this.onAvatarTap,
+  });
 
   final ChatItem item;
   final ValueChanged<ImageMessage>? onImageTap;
+  final ValueChanged<MessageItem>? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +32,7 @@ class ChatListItemWidget extends StatelessWidget {
         deliveryStatus: textItem.deliveryStatus,
         uploadProgress: textItem.uploadProgress,
         bubble: _TextBubble(item: textItem),
+        onAvatarTap: onAvatarTap == null ? null : () => onAvatarTap!(textItem),
       );
     }
 
@@ -37,6 +44,7 @@ class ChatListItemWidget extends StatelessWidget {
         deliveryStatus: voiceItem.deliveryStatus,
         uploadProgress: voiceItem.uploadProgress,
         bubble: _VoiceBubble(item: voiceItem),
+        onAvatarTap: onAvatarTap == null ? null : () => onAvatarTap!(voiceItem),
       );
     }
 
@@ -51,6 +59,7 @@ class ChatListItemWidget extends StatelessWidget {
           item: imageItem,
           onTap: onImageTap == null ? null : () => onImageTap!(imageItem),
         ),
+        onAvatarTap: onAvatarTap == null ? null : () => onAvatarTap!(imageItem),
       );
     }
 
@@ -91,6 +100,7 @@ class _MessageRow extends StatelessWidget {
     required this.deliveryStatus,
     required this.uploadProgress,
     required this.bubble,
+    this.onAvatarTap,
   });
 
   final MessageDirection direction;
@@ -98,6 +108,7 @@ class _MessageRow extends StatelessWidget {
   final MessageDeliveryStatus deliveryStatus;
   final int uploadProgress;
   final Widget bubble;
+  final VoidCallback? onAvatarTap;
 
   bool get _isRight => direction == MessageDirection.right;
 
@@ -127,11 +138,11 @@ class _MessageRow extends StatelessWidget {
               ),
             bubble,
             const SizedBox(width: avatarGap),
-            _ChatAvatar(avatarUrl: avatarUrl),
+            _ChatAvatar(avatarUrl: avatarUrl, onTap: onAvatarTap),
             const SizedBox(width: 10),
           ] else ...[
             const SizedBox(width: 10),
-            _ChatAvatar(avatarUrl: avatarUrl),
+            _ChatAvatar(avatarUrl: avatarUrl, onTap: onAvatarTap),
             const SizedBox(width: avatarGap),
             Flexible(
               child: Align(alignment: Alignment.centerLeft, child: bubble),
@@ -144,13 +155,14 @@ class _MessageRow extends StatelessWidget {
 }
 
 class _ChatAvatar extends StatelessWidget {
-  const _ChatAvatar({required this.avatarUrl});
+  const _ChatAvatar({required this.avatarUrl, this.onTap});
 
   final String avatarUrl;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    final avatar = ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: SizedBox(
         width: 43,
@@ -186,6 +198,9 @@ class _ChatAvatar extends StatelessWidget {
               ),
       ),
     );
+
+    if (onTap == null) return avatar;
+    return GestureDetector(onTap: onTap, child: avatar);
   }
 }
 

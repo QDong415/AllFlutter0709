@@ -14,6 +14,7 @@ class CommentItem extends StatelessWidget {
     required this.onTap,
     required this.onLikeTap,
     super.key,
+    this.onAvatarTap,
   });
 
   final CommentModel comment;
@@ -22,6 +23,7 @@ class CommentItem extends StatelessWidget {
   final CommentDisplayType displayType;
   final VoidCallback onTap;
   final VoidCallback onLikeTap;
+  final VoidCallback? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +46,7 @@ class CommentItem extends StatelessWidget {
                       isChild: isChild,
                       displayType: displayType,
                       avatarUrl: avatarUrl,
+                      onAvatarTap: onAvatarTap,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -125,11 +128,13 @@ class _CommentTree extends StatelessWidget {
     required this.isChild,
     required this.displayType,
     required this.avatarUrl,
+    this.onAvatarTap,
   });
 
   final bool isChild;
   final CommentDisplayType displayType;
   final String avatarUrl;
+  final VoidCallback? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +146,11 @@ class _CommentTree extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _CommentAvatar(size: 36, avatarUrl: avatarUrl),
+              GestureDetector(
+                onTap: onAvatarTap,
+                behavior: HitTestBehavior.opaque,
+                child: _CommentAvatar(size: 36, avatarUrl: avatarUrl),
+              ),
               if (displayType == CommentDisplayType.fatherCommentContainsChild)
                 Expanded(
                   child: Center(
@@ -189,7 +198,11 @@ class _CommentTree extends StatelessWidget {
             Positioned(
               left: 40,
               top: 10,
-              child: _CommentAvatar(size: 24, avatarUrl: avatarUrl),
+              child: GestureDetector(
+                onTap: onAvatarTap,
+                behavior: HitTestBehavior.opaque,
+                child: _CommentAvatar(size: 24, avatarUrl: avatarUrl),
+              ),
             ),
           ],
         ),
