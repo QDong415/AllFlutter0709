@@ -3,6 +3,7 @@ import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/push/getui_push_service.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
+import 'package:all_flutter0709/features/me/presentation/widgets/bridge_debug_panel.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -89,6 +90,8 @@ class MePage extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          const BridgeDebugPanel(),
           const SizedBox(height: 12),
           ListenableBuilder(
             listenable: push,

@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:all_flutter0709/app/router/app_router.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/core/bridge/native_events.dart';
 import 'package:all_flutter0709/core/push/getui_push_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 应用根 Widget：挂路由、主题，并完成推送 / Bridge 等启动初始化。
 class SocialApp extends ConsumerStatefulWidget {
   const SocialApp({super.key});
 
@@ -25,6 +27,8 @@ class _SocialAppState extends ConsumerState<SocialApp> {
     //由于ref.read(getuiPushServiceProvider).initialize() 只能在 app 启动时候走一次就行了
     // 但是因为StatelessWidget没有 init 方法，只有 build 方法，但是 build 会经常触发，所以才改成 StatefulWidget借用initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 尽早挂上 Native→Flutter 的 MethodCallHandler / EventChannel 订阅
+      NativeEvents.instance.start();
       unawaited(ref.read(getuiPushServiceProvider).initialize());
     });
   }
