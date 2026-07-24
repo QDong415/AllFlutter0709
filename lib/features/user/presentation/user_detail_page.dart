@@ -18,6 +18,7 @@ import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_n
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -172,9 +173,20 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
     openUserAvatarPreview(context, imageUrl: url);
   }
 
-  void _onChatTap() {
+  SystemUiOverlayStyle get _systemUiOverlayStyle {
+    return userDetailSystemUiOverlayStyle(collapseProgress: _collapseProgress);
+  }
+
+  void _applySystemUiOverlayStyle() {
+    SystemChrome.setSystemUIOverlayStyle(_systemUiOverlayStyle);
+  }
+
+  Future<void> _onChatTap() async {
     if (!context.ensureLoggedIn()) return;
-    context.push('${AppRoutes.conversation}/chat/${widget.userId}');
+    await context.push('${AppRoutes.conversation}/chat/${widget.userId}');
+    // 从聊天返回时 AnnotatedRegion 不一定会立刻重刷底部指示器，需主动恢复。
+    if (!mounted) return;
+    _applySystemUiOverlayStyle();
   }
 
   Future<void> _onFollowTap() async {
@@ -292,28 +304,31 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
-      body: Stack(
-        children: [
-          EasyRefresh.builder(
-            header: const ClassicHeader(showMessage: false, showText: false),
-            onRefresh: _onRefresh,
-            onLoad: hasMore ? onLoadMoreList : null,
-            childBuilder: (context, physics) => _buildScrollBody(physics),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: UserDetailNavBar(
-              progress: _collapseProgress,
-              title: _profileModel.name,
-              onBack: () => Navigator.of(context).maybePop(),
-              onMore: _onMoreTap,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _systemUiOverlayStyle,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F8F8),
+        body: Stack(
+          children: [
+            EasyRefresh.builder(
+              header: const ClassicHeader(showMessage: false, showText: false),
+              onRefresh: _onRefresh,
+              onLoad: hasMore ? onLoadMoreList : null,
+              childBuilder: (context, physics) => _buildScrollBody(physics),
             ),
-          ),
-        ],
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: UserDetailNavBar(
+                progress: _collapseProgress,
+                title: _profileModel.name,
+                onBack: () => Navigator.of(context).maybePop(),
+                onMore: _onMoreTap,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

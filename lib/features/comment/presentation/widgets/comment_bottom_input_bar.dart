@@ -75,7 +75,7 @@ class CommentBottomInputBar extends StatelessWidget {
                   ),
                 ),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   CircleAvatar(
                     radius: 16,

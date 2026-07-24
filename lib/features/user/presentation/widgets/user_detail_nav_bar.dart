@@ -3,6 +3,26 @@ import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// 个人主页系统栏样式：只切换状态栏图标明暗，底部导航栏始终保持白底。
+///
+/// 不要用 [SystemUiOverlayStyle.light] / [SystemUiOverlayStyle.dark]，
+/// 它们会把 `systemNavigationBarColor` 设成黑色。
+SystemUiOverlayStyle userDetailSystemUiOverlayStyle({
+  required double collapseProgress,
+}) {
+  final solid = collapseProgress.clamp(0.0, 1.0) > 0.5;
+  return SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: solid ? Brightness.dark : Brightness.light,
+    statusBarBrightness: solid ? Brightness.light : Brightness.dark,
+    systemNavigationBarColor: AppColors.tabBarBackground,
+    systemNavigationBarDividerColor: AppColors.tabBarBackground,
+    systemNavigationBarContrastEnforced: false,
+    systemStatusBarContrastEnforced: false,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  );
+}
+
 /// 个人主页双层导航：透明层与实色层按滚动比例渐变。
 class UserDetailNavBar extends StatelessWidget {
   const UserDetailNavBar({
@@ -26,57 +46,37 @@ class UserDetailNavBar extends StatelessWidget {
     final solidOpacity = progress.clamp(0.0, 1.0);
     final clearOpacity = (1.0 - solidOpacity).clamp(0.0, 1.0);
 
-    // 只切换状态栏图标明暗，不要用 SystemUiOverlayStyle.light/dark：
-    // 它们会把 systemNavigationBarColor 设成黑色，小米等机型底部指示器区域会变黑。
-    final overlayStyle = SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: solidOpacity > 0.5
-          ? Brightness.dark
-          : Brightness.light,
-      statusBarBrightness: solidOpacity > 0.5
-          ? Brightness.light
-          : Brightness.dark,
-      systemNavigationBarColor: AppColors.tabBarBackground,
-      systemNavigationBarDividerColor: AppColors.tabBarBackground,
-      systemNavigationBarContrastEnforced: false,
-      systemStatusBarContrastEnforced: false,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    );
-
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: overlayStyle,
-      child: SizedBox(
-        height: barHeight,
-        child: Stack(
-          children: [
-            Opacity(
-              opacity: clearOpacity,
-              child: _NavBarContent(
-                statusBarHeight: statusBarHeight,
-                backgroundColor: Colors.transparent,
-                title: '',
-                titleColor: Colors.white,
-                iconColor: Colors.white,
-                onBack: onBack,
-                onMore: onMore,
-                useShadowIcon: true,
-              ),
+    return SizedBox(
+      height: barHeight,
+      child: Stack(
+        children: [
+          Opacity(
+            opacity: clearOpacity,
+            child: _NavBarContent(
+              statusBarHeight: statusBarHeight,
+              backgroundColor: Colors.transparent,
+              title: '',
+              titleColor: Colors.white,
+              iconColor: Colors.white,
+              onBack: onBack,
+              onMore: onMore,
+              useShadowIcon: true,
             ),
-            Opacity(
-              opacity: solidOpacity,
-              child: _NavBarContent(
-                statusBarHeight: statusBarHeight,
-                backgroundColor: AppColors.toolbar,
-                title: title,
-                titleColor: AppColors.titleText,
-                iconColor: AppColors.titleText,
-                onBack: onBack,
-                onMore: onMore,
-                useShadowIcon: false,
-              ),
+          ),
+          Opacity(
+            opacity: solidOpacity,
+            child: _NavBarContent(
+              statusBarHeight: statusBarHeight,
+              backgroundColor: AppColors.toolbar,
+              title: title,
+              titleColor: AppColors.titleText,
+              iconColor: AppColors.titleText,
+              onBack: onBack,
+              onMore: onMore,
+              useShadowIcon: false,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
