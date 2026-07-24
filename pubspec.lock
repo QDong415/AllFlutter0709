@@ -984,6 +984,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.5.0"
+  qiniu_flutter_sdk:
+    dependency: "direct main"
+    description:
+      name: qiniu_flutter_sdk
+      sha256: "76ebf0877f9bc91c98ccaa1a9d38617c71b0286bb8a2023558f8a8ce90dd00cf"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.6.1"
+  qiniu_sdk_base:
+    dependency: transitive
+    description:
+      name: qiniu_sdk_base
+      sha256: c99a6150e4d83a9ad65a591e220262225a112d2ec6a23c77ea68e637ee44c8fe
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.6.3"
   record:
     dependency: "direct main"
     description:

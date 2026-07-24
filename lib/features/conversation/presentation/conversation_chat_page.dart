@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
-import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_image_preview_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_scroll_helper.dart';
@@ -54,6 +54,14 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
 
   /// 在 dispose 里不能依赖 ref，提前拿到 controller 以便可靠清除 active 会话。
   ConversationController? _conversationController;
+
+  /// 对齐 iTopicX hisName / hisPhoto：路由带什么就用什么。
+  String get _peerName {
+    final name = widget.initialPeerName?.trim() ?? '';
+    return name.isEmpty ? '用户${widget.chatId}' : name;
+  }
+
+  String get _peerAvatar => widget.initialPeerAvatar?.trim() ?? '';
 
   final bool _isVoiceMode = false;
   bool _isPanelVisible = false;
@@ -230,6 +238,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
         controller: ref.read(conversationControllerProvider),
         conversationId: widget.chatId,
         text: text,
+        peerName: _peerName,
+        peerAvatar: _peerAvatar,
       );
       _textController.clear();
       // reverse 列表下新消息已在底部；仅 jump 校正，不做动画。
@@ -272,9 +282,13 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
         conversationId: widget.chatId,
         imageFile: imageFile,
         imageSize: imageSize,
+        peerName: _peerName,
+        peerAvatar: _peerAvatar,
       );
       _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
-    } catch (error) {
+    } catch (error, stackTrace) {
+      ChatSendLog.d('页面发图失败: $error');
+      ChatSendLog.d('$stackTrace');
       _showSnackBar(error.toString());
     } finally {
       if (mounted) {
@@ -387,64 +401,6 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
     return buildChatItems(messages).length;
   }
 
-  /// 解析对方展示昵称/头像：会话列表 > 消息 otherName > 路由预填 > 「用户+ID」。
-  ({String name, String avatar}) _resolvePeerDisplay({
-    required String chatId,
-    required List<ConversationSummary> conversations,
-    required List<ConversationMessage> messages,
-    String? initialPeerName,
-    String? initialPeerAvatar,
-  }) {
-    final fallbackName = '用户$chatId';
-    var name = '';
-    var avatar = '';
-
-    for (final item in conversations) {
-      if (item.conversationId == chatId) {
-        name = item.name.trim();
-        avatar = item.avatar.trim();
-        break;
-      }
-    }
-
-    if (name.isEmpty || name == fallbackName) {
-      for (final message in messages.reversed) {
-        final otherName = message.otherName.trim();
-        if (otherName.isNotEmpty && otherName != fallbackName) {
-          name = otherName;
-          break;
-        }
-      }
-    }
-
-    if (name.isEmpty || name == fallbackName) {
-      final initialName = initialPeerName?.trim() ?? '';
-      if (initialName.isNotEmpty) {
-        name = initialName;
-      }
-    }
-
-    if (avatar.isEmpty) {
-      for (final message in messages.reversed) {
-        final otherPhoto = message.otherPhoto.trim();
-        if (otherPhoto.isNotEmpty) {
-          avatar = otherPhoto;
-          break;
-        }
-      }
-    }
-
-    if (avatar.isEmpty) {
-      avatar = initialPeerAvatar?.trim() ?? '';
-    }
-
-    if (name.isEmpty) {
-      name = fallbackName;
-    }
-
-    return (name: name, avatar: avatar);
-  }
-
   @override
   Widget build(BuildContext context) {
     final controller = ref.read(conversationControllerProvider);
@@ -456,18 +412,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
         final messages = state is AsyncData<List<ConversationMessage>>
             ? state.value
             : const <ConversationMessage>[];
-        final conversations =
-            controller.conversationsState.asData?.value ??
-            const <ConversationSummary>[];
-        final peer = _resolvePeerDisplay(
-          chatId: widget.chatId,
-          conversations: conversations,
-          messages: messages,
-          initialPeerName: widget.initialPeerName,
-          initialPeerAvatar: widget.initialPeerAvatar,
-        );
-        final conversationName = peer.name;
-        final peerAvatar = peer.avatar;
+        final conversationName = _peerName;
+        final peerAvatar = _peerAvatar;
         final items = buildChatItems(
           messages,
           myAvatar: myAvatar,

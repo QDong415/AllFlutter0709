@@ -210,18 +210,13 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       throw Exception('请先登录');
     }
-    final peer = _resolvePeerInfo(
-      conversationId,
-      peerName: peerName,
-      peerAvatar: peerAvatar,
-    );
     final repository = _ref.read(conversationRepositoryProvider);
     final message = await repository.createPendingTextMessage(
       account: account,
       conversationId: conversationId,
       text: text,
-      peerName: peer.name,
-      peerAvatar: peer.avatar,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
     );
     await _appendAndNotify(conversationId, message);
     await refreshConversations();
@@ -248,10 +243,9 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       throw Exception('请先登录');
     }
-    final peer = _resolvePeerInfo(
-      conversationId,
-      peerName: peerName,
-      peerAvatar: peerAvatar,
+    ChatSendLog.d(
+      'Controller 发图 conversationId=$conversationId '
+      'path=${imageFile.path} size=${imageSize.width}x${imageSize.height}',
     );
     final repository = _ref.read(conversationRepositoryProvider);
     final message = await repository.createPendingImageMessage(
@@ -259,8 +253,12 @@ class ConversationController extends ChangeNotifier {
       conversationId: conversationId,
       imageFile: imageFile,
       imageSize: imageSize,
-      peerName: peer.name,
-      peerAvatar: peer.avatar,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+    );
+    ChatSendLog.d(
+      '本地 pending 已创建 clientId=${message.clientMessageId} '
+      'filename=${message.filename}',
     );
     await _appendAndNotify(conversationId, message);
     await refreshConversations();
@@ -270,47 +268,15 @@ class ConversationController extends ChangeNotifier {
         account: account,
         message: message,
       );
+      ChatSendLog.d('Controller 发图完成');
+    } catch (error, stackTrace) {
+      ChatSendLog.d('Controller 发图失败: $error');
+      ChatSendLog.d('$stackTrace');
+      rethrow;
     } finally {
       await refreshMessages(conversationId);
       await refreshConversations();
     }
-  }
-
-  /// 对齐 iTopicX createCommonChatModel：发出消息也写入对方头像/昵称。
-  ({String name, String avatar}) _resolvePeerInfo(
-    String conversationId, {
-    String peerName = '',
-    String peerAvatar = '',
-  }) {
-    if (peerName.isNotEmpty && peerAvatar.isNotEmpty) {
-      return (name: peerName, avatar: peerAvatar);
-    }
-
-    final conversations = conversationsState.asData?.value;
-    if (conversations != null) {
-      for (final item in conversations) {
-        if (item.conversationId == conversationId) {
-          return (
-            name: peerName.isNotEmpty ? peerName : item.name,
-            avatar: peerAvatar.isNotEmpty ? peerAvatar : item.avatar,
-          );
-        }
-      }
-    }
-
-    final messages = _messagesState[conversationId]?.asData?.value;
-    if (messages != null) {
-      for (final message in messages.reversed) {
-        if (message.otherPhoto.isNotEmpty || message.otherName.isNotEmpty) {
-          return (
-            name: peerName.isNotEmpty ? peerName : message.otherName,
-            avatar: peerAvatar.isNotEmpty ? peerAvatar : message.otherPhoto,
-          );
-        }
-      }
-    }
-
-    return (name: peerName, avatar: peerAvatar);
   }
 
   Future<void> syncPushClientId(String clientId) async {

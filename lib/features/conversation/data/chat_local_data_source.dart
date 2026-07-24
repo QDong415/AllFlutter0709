@@ -98,22 +98,8 @@ class ChatLocalDataSource {
         conversationId,
         db: db,
       );
-      var otherName = _readString(row['other_name']);
-      var otherPhoto = _readString(row['other_photo']);
-      // 最新一条可能是自己发的（other_photo 为空），回退到会话内任意非空头像。
-      if (otherPhoto.isEmpty || otherName.isEmpty) {
-        final peer = await _findPeerProfile(
-          userId,
-          conversationId,
-          db: db,
-        );
-        if (otherPhoto.isEmpty) {
-          otherPhoto = peer.photo;
-        }
-        if (otherName.isEmpty) {
-          otherName = peer.name;
-        }
-      }
+      final otherName = _readString(row['other_name']);
+      final otherPhoto = _readString(row['other_photo']);
       result.add(
         ConversationSummary(
           conversationId: conversationId,
@@ -128,34 +114,6 @@ class ChatLocalDataSource {
       );
     }
     return result;
-  }
-
-  /// 查找会话对方昵称/头像（优先非空 other_photo）。
-  Future<({String name, String photo})> _findPeerProfile(
-    String userId,
-    String conversationId, {
-    Database? db,
-  }) async {
-    final databaseRef = db ?? await database;
-    final rows = await databaseRef.rawQuery(
-      '''
-      SELECT other_name, other_photo FROM $_chatTable
-      WHERE userid = ? AND targetid = ?
-        AND (other_photo != '' OR other_name != '')
-      ORDER BY
-        CASE WHEN other_photo != '' THEN 0 ELSE 1 END,
-        dbid DESC
-      LIMIT 1
-      ''',
-      [userId, conversationId],
-    );
-    if (rows.isEmpty) {
-      return (name: '', photo: '');
-    }
-    return (
-      name: _readString(rows.first['other_name']),
-      photo: _readString(rows.first['other_photo']),
-    );
   }
 
   Future<List<ConversationMessage>> getMessages(

@@ -36,29 +36,37 @@ class ChatSendHelper {
     }
   }
 
-  /// 发送文本消息。
+  /// 发送文本消息（对齐 iTopicX：带上对方昵称/头像写入本地）。
   Future<void> sendText({
     required ConversationController controller,
     required String conversationId,
     required String text,
+    String peerName = '',
+    String peerAvatar = '',
   }) {
     return controller.sendTextMessage(
       conversationId: conversationId,
       text: text,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
     );
   }
 
-  /// 发送图片消息。
+  /// 发送图片消息（对齐 iTopicX：带上对方昵称/头像写入本地）。
   Future<void> sendImage({
     required ConversationController controller,
     required String conversationId,
     required File imageFile,
     required Size imageSize,
+    String peerName = '',
+    String peerAvatar = '',
   }) {
     return controller.sendImageMessage(
       conversationId: conversationId,
       imageFile: imageFile,
       imageSize: imageSize,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
     );
   }
 }
