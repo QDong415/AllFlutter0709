@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
@@ -233,7 +234,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CommonAppBar(title: '动态 Topic'),
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: AppColors.bodyBackground,
       body: EasyRefresh(
         header: const ClassicHeader(showMessage: false, showText: false),
         onRefresh: _onRefresh,

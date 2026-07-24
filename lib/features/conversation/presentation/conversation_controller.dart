@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
@@ -110,6 +111,7 @@ class ConversationController extends ChangeNotifier {
 
   Future<void> openConversation(String conversationId) async {
     _activeConversationId = conversationId;
+    ChatPushLog.d('openConversation: $conversationId');
     await ensureMessagesLoaded(conversationId);
     await markConversationRead(conversationId);
   }
@@ -117,6 +119,7 @@ class ConversationController extends ChangeNotifier {
   void closeConversation(String conversationId) {
     if (_activeConversationId == conversationId) {
       _activeConversationId = null;
+      ChatPushLog.d('closeConversation: $conversationId（已清除 active）');
     }
   }
 
@@ -133,23 +136,47 @@ class ConversationController extends ChangeNotifier {
 
   Future<void> syncMessagesFromServer() async {
     if (_syncing) {
+      ChatPushLog.d('syncMessagesFromServer 跳过：已在同步中');
       return;
     }
 
     final account = _ref.read(accountProvider);
     if (account == null) {
+      ChatPushLog.d('syncMessagesFromServer 跳过：未登录');
       return;
     }
 
     _syncing = true;
+    ChatPushLog.d(
+      'syncMessagesFromServer 开始 userId=${account.userId} '
+      'activeConversationId=$_activeConversationId',
+    );
     try {
       final repository = _ref.read(conversationRepositoryProvider);
-      await repository.syncPulledMessages(account.userId);
+      final inserted = await repository.syncPulledMessages(account.userId);
+      // 先刷新未读角标；只有「当前正在看的会话」才标已读，
+      // 避免离开聊天页后 activeId 残留导致新消息被立刻标已读、主页角标一直为 0。
+      await refreshConversations();
+      ChatPushLog.d(
+        'sync 后未读=$_totalUnreadCount inserted=$inserted '
+        'active=$_activeConversationId',
+      );
+
       if (_activeConversationId case final activeId?) {
+        ChatPushLog.d('正在查看会话，标记已读: $activeId');
         await repository.markConversationRead(account.userId, activeId);
         await refreshMessages(activeId);
+        await refreshConversations();
       }
-      await refreshConversations();
+
+      final unread = _totalUnreadCount;
+      final count = conversationsState.asData?.value.length ?? 0;
+      ChatPushLog.d(
+        'syncMessagesFromServer 完成 conversations=$count unread=$unread',
+      );
+    } catch (error, stackTrace) {
+      ChatPushLog.d('syncMessagesFromServer 失败: $error');
+      ChatPushLog.d('$stackTrace');
     } finally {
       _syncing = false;
     }
@@ -183,13 +210,18 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       throw Exception('请先登录');
     }
+    final peer = _resolvePeerInfo(
+      conversationId,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+    );
     final repository = _ref.read(conversationRepositoryProvider);
     final message = await repository.createPendingTextMessage(
       account: account,
       conversationId: conversationId,
       text: text,
-      peerName: peerName,
-      peerAvatar: peerAvatar,
+      peerName: peer.name,
+      peerAvatar: peer.avatar,
     );
     await _appendAndNotify(conversationId, message);
     await refreshConversations();
@@ -216,14 +248,19 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       throw Exception('请先登录');
     }
+    final peer = _resolvePeerInfo(
+      conversationId,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+    );
     final repository = _ref.read(conversationRepositoryProvider);
     final message = await repository.createPendingImageMessage(
       account: account,
       conversationId: conversationId,
       imageFile: imageFile,
       imageSize: imageSize,
-      peerName: peerName,
-      peerAvatar: peerAvatar,
+      peerName: peer.name,
+      peerAvatar: peer.avatar,
     );
     await _appendAndNotify(conversationId, message);
     await refreshConversations();
@@ -237,6 +274,43 @@ class ConversationController extends ChangeNotifier {
       await refreshMessages(conversationId);
       await refreshConversations();
     }
+  }
+
+  /// 对齐 iTopicX createCommonChatModel：发出消息也写入对方头像/昵称。
+  ({String name, String avatar}) _resolvePeerInfo(
+    String conversationId, {
+    String peerName = '',
+    String peerAvatar = '',
+  }) {
+    if (peerName.isNotEmpty && peerAvatar.isNotEmpty) {
+      return (name: peerName, avatar: peerAvatar);
+    }
+
+    final conversations = conversationsState.asData?.value;
+    if (conversations != null) {
+      for (final item in conversations) {
+        if (item.conversationId == conversationId) {
+          return (
+            name: peerName.isNotEmpty ? peerName : item.name,
+            avatar: peerAvatar.isNotEmpty ? peerAvatar : item.avatar,
+          );
+        }
+      }
+    }
+
+    final messages = _messagesState[conversationId]?.asData?.value;
+    if (messages != null) {
+      for (final message in messages.reversed) {
+        if (message.otherPhoto.isNotEmpty || message.otherName.isNotEmpty) {
+          return (
+            name: peerName.isNotEmpty ? peerName : message.otherName,
+            avatar: peerAvatar.isNotEmpty ? peerAvatar : message.otherPhoto,
+          );
+        }
+      }
+    }
+
+    return (name: peerName, avatar: peerAvatar);
   }
 
   Future<void> syncPushClientId(String clientId) async {

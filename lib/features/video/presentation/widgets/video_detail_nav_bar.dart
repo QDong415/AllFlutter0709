@@ -1,4 +1,5 @@
-import 'package:all_flutter0709/app/app.dart';
+import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,8 +33,8 @@ class VideoDetailNavBar extends StatelessWidget {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: alpha > 0.5 ? Brightness.dark : Brightness.light,
       statusBarBrightness: alpha > 0.5 ? Brightness.light : Brightness.dark,
-      systemNavigationBarColor: SocialApp.appSurfaceColor,
-      systemNavigationBarDividerColor: SocialApp.appSurfaceColor,
+      systemNavigationBarColor: AppColors.tabBarBackground,
+      systemNavigationBarDividerColor: AppColors.tabBarBackground,
       systemNavigationBarContrastEnforced: false,
       systemStatusBarContrastEnforced: false,
       systemNavigationBarIconBrightness: Brightness.dark,
@@ -42,7 +43,7 @@ class VideoDetailNavBar extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle,
       child: SizedBox(
-        height: topInset + kToolbarHeight,
+        height: topInset + AppDimens.toolbarHeight,
         child: Stack(
           children: [
             Opacity(
@@ -124,7 +125,7 @@ class _NavContent extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.only(top: topInset),
         child: SizedBox(
-          height: kToolbarHeight,
+          height: AppDimens.toolbarHeight,
           child: Row(
             children: [
               IconButton(

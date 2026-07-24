@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/common/widget/round_icon_label_chip.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
@@ -132,7 +133,7 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
     final topicModel = _topicModel;
     return Scaffold(
       appBar: const CommonAppBar(title: '动态详情'),
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: AppColors.bodyBackground,
       body: _buildBody(topicModel),
     );
   }

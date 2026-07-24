@@ -98,14 +98,28 @@ class ChatLocalDataSource {
         conversationId,
         db: db,
       );
+      var otherName = _readString(row['other_name']);
+      var otherPhoto = _readString(row['other_photo']);
+      // 最新一条可能是自己发的（other_photo 为空），回退到会话内任意非空头像。
+      if (otherPhoto.isEmpty || otherName.isEmpty) {
+        final peer = await _findPeerProfile(
+          userId,
+          conversationId,
+          db: db,
+        );
+        if (otherPhoto.isEmpty) {
+          otherPhoto = peer.photo;
+        }
+        if (otherName.isEmpty) {
+          otherName = peer.name;
+        }
+      }
       result.add(
         ConversationSummary(
           conversationId: conversationId,
           otherUserId: _readString(row['other_userid']),
-          name: _readString(row['other_name']).isEmpty
-              ? '用户$conversationId'
-              : _readString(row['other_name']),
-          avatar: _readString(row['other_photo']),
+          name: otherName.isEmpty ? '用户$conversationId' : otherName,
+          avatar: otherPhoto,
           latestMessage: ConversationMessage.fromDbMap(row).previewText,
           latestTimeSeconds: _readInt(row['create_time']),
           unreadCount: unreadCount,
@@ -114,6 +128,34 @@ class ChatLocalDataSource {
       );
     }
     return result;
+  }
+
+  /// 查找会话对方昵称/头像（优先非空 other_photo）。
+  Future<({String name, String photo})> _findPeerProfile(
+    String userId,
+    String conversationId, {
+    Database? db,
+  }) async {
+    final databaseRef = db ?? await database;
+    final rows = await databaseRef.rawQuery(
+      '''
+      SELECT other_name, other_photo FROM $_chatTable
+      WHERE userid = ? AND targetid = ?
+        AND (other_photo != '' OR other_name != '')
+      ORDER BY
+        CASE WHEN other_photo != '' THEN 0 ELSE 1 END,
+        dbid DESC
+      LIMIT 1
+      ''',
+      [userId, conversationId],
+    );
+    if (rows.isEmpty) {
+      return (name: '', photo: '');
+    }
+    return (
+      name: _readString(rows.first['other_name']),
+      photo: _readString(rows.first['other_photo']),
+    );
   }
 
   Future<List<ConversationMessage>> getMessages(
@@ -152,14 +194,15 @@ class ChatLocalDataSource {
     await db.insert(_chatTable, message.toDbMap(userId: userId));
   }
 
-  Future<void> insertMessages(
+  Future<int> insertMessages(
     String userId,
     List<ConversationMessage> messages,
   ) async {
     if (messages.isEmpty) {
-      return;
+      return 0;
     }
 
+    var inserted = 0;
     final db = await database;
     await db.transaction((txn) async {
       for (final message in messages) {
@@ -167,8 +210,10 @@ class ChatLocalDataSource {
           continue;
         }
         await txn.insert(_chatTable, message.toDbMap(userId: userId));
+        inserted++;
       }
     });
+    return inserted;
   }
 
   Future<void> updateMessageStatus(

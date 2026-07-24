@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
+import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
@@ -65,7 +66,8 @@ class ConversationRepository {
     return _localDataSource.markConversationRead(userId, conversationId);
   }
 
-  Future<void> syncPulledMessages(String userId) async {
+  Future<int> syncPulledMessages(String userId) async {
+    ChatPushLog.d('message/pull 请求 userId=$userId');
     final response = await _dio.get<Map<String, dynamic>>(_messagePullApi);
     final json = response.data;
     if (json == null) {
@@ -88,14 +90,18 @@ class ConversationRepository {
           .toList(growable: false);
     });
     if (!result.success) {
+      ChatPushLog.d('message/pull 失败: ${result.message}');
       throw Exception(result.message.isEmpty ? '拉取消息失败' : result.message);
     }
 
     final messages = result.data ?? const <ConversationMessage>[];
+    ChatPushLog.d('message/pull 返回 ${messages.length} 条');
     if (messages.isEmpty) {
-      return;
+      return 0;
     }
-    await _localDataSource.insertMessages(userId, messages);
+    final inserted = await _localDataSource.insertMessages(userId, messages);
+    ChatPushLog.d('message/pull 新写入 $inserted 条（含去重跳过）');
+    return inserted;
   }
 
   Future<ConversationMessage> createPendingTextMessage({

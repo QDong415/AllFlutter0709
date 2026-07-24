@@ -5,8 +5,9 @@ import 'package:all_flutter0709/features/conversation/presentation/models/chat_i
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+/// 聊天气泡列表单项（时间 tips / 文本 / 语音 / 图片）。
 class ChatListItemWidget extends StatelessWidget {
-  const ChatListItemWidget({required this.item, super.key, this.onImageTap});
+  const ChatListItemWidget({super.key, required this.item, this.onImageTap});
 
   final ChatItem item;
   final ValueChanged<ImageMessage>? onImageTap;
@@ -67,9 +68,16 @@ class _TimeItemWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Center(
-        child: Text(
-          item.label,
-          style: const TextStyle(color: Color(0xFF9B9B9B), fontSize: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFFDCDDDD),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            item.label,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
         ),
       ),
     );
@@ -93,29 +101,41 @@ class _MessageRow extends StatelessWidget {
 
   bool get _isRight => direction == MessageDirection.right;
 
+  bool get _showStatus =>
+      deliveryStatus == MessageDeliveryStatus.sending ||
+      deliveryStatus == MessageDeliveryStatus.failed;
+
   @override
   Widget build(BuildContext context) {
+    // 对齐 iTopicX：头像 43、气泡与头像间距约 5；
+    // 发送中/失败状态在气泡左侧（远离头像），marginRight 10。
+    const avatarGap = 10.0;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(top: 13),
       child: Row(
-        mainAxisAlignment: _isRight
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_isRight) ...[
-            Flexible(child: bubble),
-            const SizedBox(width: 6),
-            _MessageStatusIndicator(
-              status: deliveryStatus,
-              uploadProgress: uploadProgress,
-            ),
-            const SizedBox(width: 6),
+            const Spacer(),
+            if (_showStatus)
+              Padding(
+                padding: const EdgeInsets.only(top: 12, right: 10),
+                child: _MessageStatusIndicator(
+                  status: deliveryStatus,
+                  uploadProgress: uploadProgress,
+                ),
+              ),
+            bubble,
+            const SizedBox(width: avatarGap),
             _ChatAvatar(avatarUrl: avatarUrl),
+            const SizedBox(width: 10),
           ] else ...[
+            const SizedBox(width: 10),
             _ChatAvatar(avatarUrl: avatarUrl),
-            const SizedBox(width: 6),
-            Flexible(child: bubble),
+            const SizedBox(width: avatarGap),
+            Flexible(
+              child: Align(alignment: Alignment.centerLeft, child: bubble),
+            ),
           ],
         ],
       ),
@@ -130,15 +150,41 @@ class _ChatAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: 19,
-      backgroundColor: const Color(0xFFF0F0F0),
-      backgroundImage: avatarUrl.isNotEmpty
-          ? CachedNetworkImageProvider(avatarUrl)
-          : null,
-      child: avatarUrl.isEmpty
-          ? const Icon(Icons.person_outline_rounded, color: Color(0xFF999999))
-          : null,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        width: 43,
+        height: 43,
+        child: avatarUrl.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: avatarUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, _) => const ColoredBox(
+                  color: Color(0xFFF0F0F0),
+                  child: Icon(
+                    Icons.person_outline_rounded,
+                    color: Color(0xFF999999),
+                    size: 22,
+                  ),
+                ),
+                errorWidget: (_, _, _) => const ColoredBox(
+                  color: Color(0xFFF0F0F0),
+                  child: Icon(
+                    Icons.person_outline_rounded,
+                    color: Color(0xFF999999),
+                    size: 22,
+                  ),
+                ),
+              )
+            : const ColoredBox(
+                color: Color(0xFFF0F0F0),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  color: Color(0xFF999999),
+                  size: 22,
+                ),
+              ),
+      ),
     );
   }
 }
@@ -163,9 +209,9 @@ class _TextBubble extends StatelessWidget {
         TextSpan(
           text: segment,
           style: TextStyle(
-            color: isUrl ? const Color(0xFF4E7DDE) : const Color(0xFF222222),
+            color: isUrl ? const Color(0xFF3399FF) : const Color(0xFF222222),
             decoration: isUrl ? TextDecoration.underline : TextDecoration.none,
-            height: 1.4,
+            height: 1.25,
           ),
         ),
       );
@@ -176,10 +222,16 @@ class _TextBubble extends StatelessWidget {
 
     return _BubbleFrame(
       isRight: _isRight,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        child: RichText(
-          text: TextSpan(style: const TextStyle(fontSize: 17), children: spans),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 200, minHeight: 43),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 15),
+              children: spans,
+            ),
+          ),
         ),
       ),
     );
@@ -204,7 +256,7 @@ class _VoiceBubble extends StatelessWidget {
       isRight: _isRight,
       child: SizedBox(
         width: width,
-        height: 42,
+        height: 43,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Row(
@@ -216,7 +268,7 @@ class _VoiceBubble extends StatelessWidget {
                     Text(
                       '${item.seconds}"',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         color: Color(0xFF222222),
                       ),
                     ),
@@ -229,7 +281,7 @@ class _VoiceBubble extends StatelessWidget {
                     Text(
                       '${item.seconds}"',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         color: Color(0xFF222222),
                       ),
                     ),
@@ -251,33 +303,23 @@ class _BubbleFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final bubbleColor = isRight ? const Color(0xFF95EC69) : Colors.white;
 
-    return Padding(
-      padding: EdgeInsets.only(left: isRight ? 0 : 6, right: isRight ? 6 : 0),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: bubbleColor,
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0A000000),
-                  blurRadius: 6,
-                  offset: Offset(0, 1),
-                ),
-              ],
-            ),
-            child: child,
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: bubbleColor,
+            borderRadius: BorderRadius.circular(6),
           ),
-          Positioned(
-            top: 12,
-            left: isRight ? null : -5,
-            right: isRight ? -5 : null,
-            child: _BubbleTail(color: bubbleColor, isRight: isRight),
-          ),
-        ],
-      ),
+          child: child,
+        ),
+        Positioned(
+          top: 12,
+          left: isRight ? null : -5,
+          right: isRight ? -5 : null,
+          child: _BubbleTail(color: bubbleColor, isRight: isRight),
+        ),
+      ],
     );
   }
 }
@@ -349,10 +391,14 @@ class _ImageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const maxWidth = 180.0;
-    final aspectRatio = item.imageWidth / item.imageHeight;
-    final width = maxWidth;
-    final height = width / aspectRatio;
+    // 对齐 iTopicX：最大边约 155dp，高度上限 150。
+    const maxSide = 155.0;
+    const maxHeight = 150.0;
+    final rawW = item.imageWidth <= 0 ? maxSide : item.imageWidth;
+    final rawH = item.imageHeight <= 0 ? maxSide : item.imageHeight;
+    final scale = math.min(maxSide / rawW, maxHeight / rawH);
+    final width = math.max(55.0, rawW * scale);
+    final height = math.max(55.0, rawH * scale);
 
     final imageWidget = item.imagePath != null
         ? Image.file(File(item.imagePath!), fit: BoxFit.cover)
@@ -377,7 +423,7 @@ class _ImageBubble extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(4),
         child: Stack(
           children: [
             SizedBox(width: width, height: height, child: imageWidget),
@@ -434,7 +480,7 @@ class _MessageStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (status) {
       case MessageDeliveryStatus.sent:
-        return const SizedBox(width: 16, height: 16);
+        return const SizedBox.shrink();
       case MessageDeliveryStatus.sending:
         return SizedBox(
           width: 16,

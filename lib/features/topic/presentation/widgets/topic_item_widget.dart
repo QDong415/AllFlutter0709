@@ -1,3 +1,5 @@
+import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_comment_preview_list.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
@@ -52,7 +54,11 @@ class TopicItemWidget extends StatelessWidget {
         onTap: () => listener?.onItemTap(topicModel),
         child: Column(
           children: [
-            const Divider(height: 0.5),
+            const Divider(
+              height: AppDimens.dividerThickness,
+              thickness: AppDimens.dividerThickness,
+              color: AppColors.divider,
+            ),
             const SizedBox(height: 6),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -151,7 +157,11 @@ class TopicItemWidget extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            const Divider(height: 0.5),
+            const Divider(
+              height: AppDimens.dividerThickness,
+              thickness: AppDimens.dividerThickness,
+              color: AppColors.divider,
+            ),
             SizedBox(
               height: 48,
               child: Row(
@@ -186,7 +196,11 @@ class TopicItemWidget extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 0.5),
+            const Divider(
+              height: AppDimens.dividerThickness,
+              thickness: AppDimens.dividerThickness,
+              color: AppColors.divider,
+            ),
           ],
         ),
       ),

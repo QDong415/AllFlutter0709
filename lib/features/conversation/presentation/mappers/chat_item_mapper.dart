@@ -1,8 +1,14 @@
+import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:intl/intl.dart';
 
-List<ChatItem> buildChatItems(List<ConversationMessage> messages) {
+/// 将会话消息映射为聊天气泡列表项（含时间 tips）。
+List<ChatItem> buildChatItems(
+  List<ConversationMessage> messages, {
+  String myAvatar = '',
+  String peerAvatar = '',
+}) {
   final items = <ChatItem>[];
   ConversationMessage? previous;
 
@@ -13,18 +19,33 @@ List<ChatItem> buildChatItems(List<ConversationMessage> messages) {
         TimeItem(label: DateFormat('HH:mm').format(message.createTime)),
       );
     }
-    items.add(_mapMessage(message));
+    items.add(
+      _mapMessage(
+        message,
+        myAvatar: myAvatar,
+        peerAvatar: peerAvatar,
+      ),
+    );
     previous = message;
   }
 
   return items;
 }
 
-ChatItem _mapMessage(ConversationMessage message) {
+ChatItem _mapMessage(
+  ConversationMessage message, {
+  required String myAvatar,
+  required String peerAvatar,
+}) {
   final direction = message.isSender
       ? MessageDirection.right
       : MessageDirection.left;
-  final avatarUrl = message.avatarUrl;
+  // 己方头像用当前账号；对方用 otherPhoto，空则回退会话头像（对齐 iTopicX）。
+  final avatarFileName = message.isSender
+      ? myAvatar
+      : (message.otherPhoto.isNotEmpty ? message.otherPhoto : peerAvatar);
+  final avatarUrl =
+      ValueUtil.getQiniuUrlByFileName(avatarFileName, thumbnail: true) ?? '';
   final deliveryStatus = switch (message.status) {
     ConversationMessageStatus.sending => MessageDeliveryStatus.sending,
     ConversationMessageStatus.failed => MessageDeliveryStatus.failed,

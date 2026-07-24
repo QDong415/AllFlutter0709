@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_section.dart';
@@ -121,7 +122,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     final playerHeight = _playerHeight(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: AppColors.bodyBackground,
       body: Stack(
         children: [
           NotificationListener<ScrollNotification>(

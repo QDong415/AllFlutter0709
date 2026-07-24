@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/app.dart';
+import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,8 +13,8 @@ Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      systemNavigationBarColor: SocialApp.appSurfaceColor,
-      systemNavigationBarDividerColor: SocialApp.appSurfaceColor,
+      systemNavigationBarColor: AppColors.tabBarBackground,
+      systemNavigationBarDividerColor: AppColors.tabBarBackground,
       systemNavigationBarContrastEnforced: false,
       systemStatusBarContrastEnforced: false,
       systemNavigationBarIconBrightness: Brightness.dark,

@@ -7,13 +7,13 @@ import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
+import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/push/getui_push_config.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:getuiflut/getuiflut.dart';
-import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// 个推推送服务 Provider。
@@ -60,7 +60,6 @@ class GetuiPushService extends ChangeNotifier {
 
   final Ref _ref;
   final Getuiflut _plugin = Getuiflut();
-  final Logger _logger = Logger();
 
   bool _initialized = false;
   String _currentClientId = '';
@@ -273,7 +272,14 @@ class GetuiPushService extends ChangeNotifier {
   }) async {
     final decodedPayload = _extractBusinessPayload(payload);
     if (decodedPayload == null) {
-      _appendLog('未解析出业务 payload${fromClick ? '（点击）' : ''}');
+      final raw = payload['payload'] ??
+          payload['payloadMsg'] ??
+          payload['content'] ??
+          payload;
+      _appendLog(
+        '未解析出业务 payload${fromClick ? '（点击）' : ''}，原始内容=$raw '
+        '（聊天唤醒需要 JSON，例如 {"needpull":"1"}）',
+      );
       return;
     }
     _lastBusinessPayload = Map<String, dynamic>.from(decodedPayload);
@@ -289,8 +295,15 @@ class GetuiPushService extends ChangeNotifier {
     _appendLog('业务 payload: ${jsonEncode(payload)}');
 
     if (needPull || type == 1 || type == 2) {
+      _appendLog(
+        '触发 message/pull (needPull=$needPull type=$type)',
+      );
       await _ref.read(conversationControllerProvider).syncMessagesFromServer();
+      return;
     }
+    _appendLog(
+      '业务 payload 未触发拉消息 (needPull=$needPull type=$type)',
+    );
   }
 
   Map<String, dynamic>? _extractBusinessPayload(Map<String, dynamic> payload) {
@@ -577,11 +590,12 @@ class GetuiPushService extends ChangeNotifier {
     if (_eventLogs.length > _maxEventLogs) {
       _eventLogs.removeRange(_maxEventLogs, _eventLogs.length);
     }
-    _logger.d('[Getui] $message');
+    // logcat 过滤：adb logcat | grep ChatPush
+    ChatPushLog.d(message);
     notifyListeners();
   }
 
   Future<dynamic> _noopMap(Map<String, dynamic> message) async {
-    _appendLog('ignored event: ${jsonEncode(message)}');
+    _appendLog('ignored/unhandled SDK event: ${jsonEncode(message)}');
   }
 }

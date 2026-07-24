@@ -10,7 +10,8 @@ import io.flutter.embedding.android.FlutterActivity
 class MainActivity : FlutterActivity() {
 
     companion object {
-        private const val NAV_BAR_COLOR = 0xFFF7F2FA.toInt()
+        // 与 Flutter AppColors.tabBarBackground 保持一致
+        private const val NAV_BAR_COLOR = 0xFFFFFFFF.toInt()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
