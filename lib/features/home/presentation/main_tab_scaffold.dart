@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_shadows.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,9 +33,12 @@ class MainTabScaffold extends ConsumerWidget {
           listenable: controller,
           builder: (context, _) {
             final unreadCount = controller.totalUnreadCount;
-            // ColoredBox 铺满底部安全区，避免手势指示条区域与 Tab 底色不一致。
-            return ColoredBox(
-              color: AppColors.tabBarBackground,
+            // DecoratedBox 铺满底部安全区，并带上缘轻阴影。
+            return DecoratedBox(
+              decoration: const BoxDecoration(
+                color: AppColors.tabBarBackground,
+                boxShadow: AppShadows.upward,
+              ),
               child: SafeArea(
                 top: false,
                 child: BottomNavigationBar(

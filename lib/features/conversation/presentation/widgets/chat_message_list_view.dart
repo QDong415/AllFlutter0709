@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 聊天气泡消息列表：加载 / 错误 / 空态 / 消息列表。
 ///
-/// 使用 `reverse: true`，新消息自然出现在底部，避免先错位再滚底的抖动。
+/// 使用 `reverse: true` 保持新消息贴底滚动体验；
+/// 内容较少时通过 [Align] + [shrinkWrap] 顶到视觉上方，避免整页沉底。
 class ChatMessageListView extends StatelessWidget {
   const ChatMessageListView({
     super.key,
@@ -71,21 +72,25 @@ class ChatMessageListView extends StatelessWidget {
             }
             return false;
           },
-          child: ListView.builder(
-            controller: scrollController,
-            reverse: true,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(5, 8, 5, 0),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              // reverse 下列表 index 0 在底部，对应时间正序的最后一条。
-              final item = items[items.length - 1 - index];
-              return ChatListItemWidget(
-                item: item,
-                onImageTap: onImageTap,
-                onAvatarTap: onAvatarTap,
-              );
-            },
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ListView.builder(
+              controller: scrollController,
+              reverse: true,
+              shrinkWrap: true,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(5, 8, 5, 0),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                // reverse 下列表 index 0 在底部，对应时间正序的最后一条。
+                final item = items[items.length - 1 - index];
+                return ChatListItemWidget(
+                  item: item,
+                  onImageTap: onImageTap,
+                  onAvatarTap: onAvatarTap,
+                );
+              },
+            ),
           ),
         );
       },

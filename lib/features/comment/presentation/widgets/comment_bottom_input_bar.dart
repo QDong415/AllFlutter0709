@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/theme/app_shadows.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -34,13 +35,7 @@ class CommentBottomInputBar extends StatelessWidget {
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
+        boxShadow: AppShadows.upward,
       ),
       child: SafeArea(
         top: false,

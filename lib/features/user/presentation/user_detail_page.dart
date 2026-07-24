@@ -9,6 +9,7 @@ import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_list_base_state.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_follow_helper.dart';
@@ -51,7 +52,9 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   bool get _isSelf {
     final myId =
-        ProviderScope.containerOf(context).read(accountProvider)?.userId.trim() ??
+        ProviderScope.containerOf(
+          context,
+        ).read(accountProvider)?.userId.trim() ??
         '';
     return myId.isNotEmpty && myId == widget.userId.trim();
   }
@@ -183,7 +186,13 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   Future<void> _onChatTap() async {
     if (!context.ensureLoggedIn()) return;
-    await context.push('${AppRoutes.conversation}/chat/${widget.userId}');
+    await context.push(
+      '${AppRoutes.conversation}/chat/${widget.userId}',
+      extra: ConversationChatArgs(
+        peerName: _profileModel.name,
+        peerAvatar: _profileModel.avatar,
+      ),
+    );
     // 从聊天返回时 AnnotatedRegion 不一定会立刻重刷底部指示器，需主动恢复。
     if (!mounted) return;
     _applySystemUiOverlayStyle();

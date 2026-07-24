@@ -4,6 +4,7 @@ import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/signup_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_chat_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_page.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
 import 'package:all_flutter0709/features/home/presentation/main_tab_scaffold.dart';
 import 'package:all_flutter0709/features/me/presentation/me_page.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
@@ -129,7 +130,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: AppRoutes.conversationChat,
                     builder: (context, state) {
                       final chatId = state.pathParameters['chatId'] ?? '';
-                      return ConversationChatPage(chatId: chatId);
+                      final args = state.extra is ConversationChatArgs
+                          ? state.extra! as ConversationChatArgs
+                          : null;
+                      return ConversationChatPage(
+                        chatId: chatId,
+                        initialPeerName: args?.peerName,
+                        initialPeerAvatar: args?.peerAvatar,
+                      );
                     },
                   ),
                 ],

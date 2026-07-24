@@ -5,6 +5,7 @@ import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/conversation_list_item.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -59,6 +60,10 @@ class ConversationPage extends ConsumerWidget {
                               if (!context.ensureLoggedIn()) return;
                               context.push(
                                 '${AppRoutes.conversation}/chat/${item.conversationId}',
+                                extra: ConversationChatArgs(
+                                  peerName: item.name,
+                                  peerAvatar: item.avatar,
+                                ),
                               );
                             },
                           );
