@@ -47,4 +47,6 @@ flutter {
 dependencies {
     implementation("com.getui:gtsdk:3.3.12.0")
     implementation("com.getui:gtc:3.2.18.0")
+    // image_cropper(uCrop) 需要 AppCompat Theme
+    implementation("androidx.appcompat:appcompat:1.7.1")
 }

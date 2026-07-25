@@ -1,7 +1,9 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
+import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
 import 'package:all_flutter0709/features/auth/presentation/signup_page.dart';
+import 'package:all_flutter0709/features/auth/presentation/signup_profile_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_chat_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
@@ -33,14 +35,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refreshListenable,
     redirect: (context, state) {
       final loggedIn = ref.read(accountProvider) != null;
+      final location = state.matchedLocation;
       final isAuthPage =
-          state.matchedLocation == AppRoutes.login ||
-          state.matchedLocation == AppRoutes.signup;
+          location == AppRoutes.login ||
+          location == AppRoutes.signup ||
+          location == AppRoutes.signupProfile;
 
       // 未登录可浏览主流程；需登录操作由 AccountGuardX 按需跳转登录页。
       // 已登录访问登录/注册页时仍回到动态页。
       if (loggedIn && isAuthPage) {
         return AppRoutes.topic;
+      }
+
+      // 完善资料页必须带着第一步参数进入。
+      if (location == AppRoutes.signupProfile &&
+          state.extra is! SignupArgs) {
+        return AppRoutes.signup;
       }
 
       return null;
@@ -53,6 +63,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.signup,
         builder: (context, state) => const SignupPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.signupProfile,
+        builder: (context, state) {
+          final args = state.extra as SignupArgs;
+          return SignupProfilePage(args: args);
+        },
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,

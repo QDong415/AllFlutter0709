@@ -6,6 +6,7 @@ import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
+import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
@@ -13,7 +14,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
-import 'package:qiniu_flutter_sdk/qiniu_flutter_sdk.dart';
 import 'package:uuid/uuid.dart';
 
 final chatLocalDataSourceProvider = Provider<ChatLocalDataSource>((ref) {
@@ -27,26 +27,29 @@ final conversationRepositoryProvider = Provider<ConversationRepository>((ref) {
   return ConversationRepository(
     localDataSource: ref.watch(chatLocalDataSourceProvider),
     dio: HttpClient.instance.dio,
+    qiniuUploadService: ref.watch(qiniuUploadServiceProvider),
   );
 });
 
+/// 会话数据仓库：本地消息读写、拉取/发送聊天消息。
 class ConversationRepository {
   ConversationRepository({
     required ChatLocalDataSource localDataSource,
     required Dio dio,
+    required QiniuUploadService qiniuUploadService,
   }) : _localDataSource = localDataSource,
-       _dio = dio;
+       _dio = dio,
+       _qiniuUploadService = qiniuUploadService;
 
   static const _chatTypeSingle = 1;
-  static const _qiniuTokenApi = '/api/qiniu/uploadtoken';
   static const _messagePullApi = '/api/message/pull';
   static const _messageSendApi = '/api/chat/send';
   static const _modifyUserApi = '/api/user/modifyarray';
 
   final ChatLocalDataSource _localDataSource;
   final Dio _dio;
+  final QiniuUploadService _qiniuUploadService;
   final Uuid _uuid = const Uuid();
-  final Storage _qiniuStorage = Storage();
 
   Future<List<ConversationSummary>> getConversationList(String userId) {
     return _localDataSource.getConversationList(userId);
@@ -337,81 +340,27 @@ class ConversationRepository {
     }
   }
 
-  /// 对齐 iTopicX：用七牛官方 SDK 上传（自动选对区域，如 up-z2）。
+  /// 上传聊天图片到七牛，并把进度写入本地消息（1~95）。
   Future<void> _uploadImageToQiniu({
     required String userId,
     required String clientMessageId,
     required String filePath,
     required String filename,
   }) async {
-    ChatSendLog.d('请求上传凭证 $_qiniuTokenApi');
-    final token = await _fetchQiniuUploadToken();
-    ChatSendLog.d('拿到上传凭证 length=${token.length}');
-
-    final putController = PutController();
-    putController.addProgressListener((percent) {
-      final progress = (percent * 95).round().clamp(1, 95);
-      unawaited(
-        _localDataSource.updateUploadProgress(
-          userId,
-          clientMessageId,
-          progress,
-        ),
-      );
-    });
-
-    ChatSendLog.d('七牛 SDK putFile key=$filename path=$filePath');
-    try {
-      final response = await _qiniuStorage.putFile(
-        File(filePath),
-        token,
-        options: PutOptions(key: filename, controller: putController),
-      );
-      ChatSendLog.d(
-        '七牛 SDK 上传成功 key=${response.key} hash=${response.hash} '
-        'raw=${response.rawData}',
-      );
-    } catch (error, stackTrace) {
-      ChatSendLog.d('七牛 SDK 上传失败: $error');
-      ChatSendLog.d('$stackTrace');
-      rethrow;
-    }
-  }
-
-  Future<String> _fetchQiniuUploadToken() async {
-    try {
-      final response = await _dio.get<Map<String, dynamic>>(_qiniuTokenApi);
-      final json = response.data;
-      ChatSendLog.d('uploadtoken 原始响应: $json');
-      if (json == null) {
-        throw Exception('上传凭证为空');
-      }
-
-      final result = ApiResponse<Map<String, dynamic>>.fromJson(
-        json,
-        (dataJson) => (dataJson as Map).map(
-          (key, value) => MapEntry(key.toString(), value),
-        ),
-      );
-      if (!result.success) {
-        throw Exception(
-          result.message.isEmpty ? '上传凭证获取失败' : result.message,
+    await _qiniuUploadService.uploadFile(
+      file: File(filePath),
+      key: filename,
+      onProgress: (percent) {
+        final progress = (percent * 95).round().clamp(1, 95);
+        unawaited(
+          _localDataSource.updateUploadProgress(
+            userId,
+            clientMessageId,
+            progress,
+          ),
         );
-      }
-
-      final token = result.data?['token']?.toString() ?? '';
-      if (token.isEmpty) {
-        throw Exception('上传凭证为空');
-      }
-      return token;
-    } on DioException catch (error) {
-      ChatSendLog.d(
-        '获取 uploadtoken 失败 type=${error.type} '
-        'status=${error.response?.statusCode} '
-        'data=${error.response?.data} message=${error.message}',
-      );
-      rethrow;
-    }
+      },
+    );
   }
 
   String _buildImageFileName({

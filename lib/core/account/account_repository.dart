@@ -74,6 +74,67 @@ class AccountRepository {
     return account;
   }
 
+  /// 发送手机验证码（对齐 iTopicX：`POST /api/user/coderequire`）。
+  Future<void> requestSmsCode({required String mobile}) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/user/coderequire',
+      data: {'mobile': mobile},
+      options: Options(contentType: Headers.formUrlEncodedContentType),
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<void>.fromJson(json);
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '验证码发送失败' : result.message);
+    }
+  }
+
+  /// 注册账号（对齐 iTopicX：`POST /api/user/register`）。
+  Future<AccountModel> register({
+    required String mobile,
+    required String code,
+    required String name,
+    required String password,
+    String avatar = '',
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/user/register',
+      data: {
+        'mobile': mobile,
+        'code': code,
+        'name': name,
+        'password': password,
+        'avatar': avatar,
+      },
+      options: Options(contentType: Headers.formUrlEncodedContentType),
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<AccountModel>.fromJson(
+      json,
+      (dataJson) => AccountModel.fromJson(dataJson as Map<String, dynamic>),
+    );
+
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '注册失败' : result.message);
+    }
+
+    final account = result.data;
+    if (account == null || !account.isValid) {
+      throw Exception('注册成功，但用户信息为空');
+    }
+
+    return account;
+  }
+
   Future<void> persistAccount(AccountModel account) {
     return _preferences.setString(
       _currentAccountStorageKey,

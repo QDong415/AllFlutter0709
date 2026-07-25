@@ -64,6 +64,7 @@ dependencies:
   path: ^1.9.1
   http_parser: ^4.1.2
   qiniu_flutter_sdk: ^0.6.1
+  image_cropper: ^12.2.1
 
 dev_dependencies:
   flutter_test:

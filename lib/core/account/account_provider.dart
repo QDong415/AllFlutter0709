@@ -26,6 +26,26 @@ class AccountNotifier extends Notifier<AccountModel?> {
     state = account;
   }
 
+  /// 注册并落登录态。
+  Future<void> register({
+    required String mobile,
+    required String code,
+    required String name,
+    required String password,
+    String avatar = '',
+  }) async {
+    final account = await _repository.register(
+      mobile: mobile,
+      code: code,
+      name: name,
+      password: password,
+      avatar: avatar,
+    );
+    await _repository.persistAccount(account);
+    HttpClient.instance.updateUserId(account.userId);
+    state = account;
+  }
+
   Future<void> setAccount(AccountModel account) async {
     await _repository.persistAccount(account);
     HttpClient.instance.updateUserId(account.userId);
