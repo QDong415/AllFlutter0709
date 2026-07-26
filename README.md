@@ -1,5 +1,15 @@
 # Social App（Flutter 学习工程）
 
+<p align="center">
+  <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260726153202_35_2125.jpg" width="280" />
+  &nbsp;&nbsp;
+  <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260726154132_37_2125.jpg" width="280" />
+</p>
+
+<p align="center">
+  <img src="http://qiniu.itopic.com.cn/httpqiniu.itopic.com.cnapp-flutter-release.apk.png" width="200" />
+</p>
+
 一个偏真实业务的 Flutter 社交客户端示例：动态、视频、聊天、登录注册都有，但**重点不是业务本身，而是怎么把 Flutter 工程搭清楚**。
 
 ---
