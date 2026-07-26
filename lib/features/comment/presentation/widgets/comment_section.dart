@@ -438,6 +438,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
             child: ListView.builder(
               controller: _scrollController,
               padding: widget.listPadding,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               itemCount: _buildVisibleItemCount(),
               itemBuilder: (context, index) {
                 if (index == 0) {

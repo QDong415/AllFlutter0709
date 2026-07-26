@@ -28,7 +28,7 @@ class AccountRepository {
   final SharedPreferences _preferences;
   final Dio _dio;
 
-  AccountModel? restoreAccount() {
+  AccountModel? readAccountFromStorage() {
     final rawJson = _preferences.getString(_currentAccountStorageKey);
     if (rawJson == null || rawJson.isEmpty) {
       return null;
@@ -135,7 +135,7 @@ class AccountRepository {
     return account;
   }
 
-  Future<void> persistAccount(AccountModel account) {
+  Future<void> writeAccountToStorage(AccountModel account) {
     return _preferences.setString(
       _currentAccountStorageKey,
       jsonEncode(account.toJson()),

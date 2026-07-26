@@ -183,7 +183,11 @@ void _openPreview(
   List<TopicPictureModel> pictures,
   int initialIndex,
 ) {
-  Navigator.of(context, rootNavigator: true).push(
+  // 打开大图前清掉输入焦点，避免关闭预览时系统把焦点还给评论框并弹出键盘。
+  FocusManager.instance.primaryFocus?.unfocus();
+
+  Navigator.of(context, rootNavigator: true)
+      .push(
     PageRouteBuilder<void>(
       opaque: false,
       transitionDuration: const Duration(milliseconds: 220),
@@ -207,7 +211,13 @@ void _openPreview(
         );
       },
     ),
-  );
+  )
+      .whenComplete(() {
+    // pop 后 Flutter 可能恢复先前焦点，下一帧再清一次。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
+  });
 }
 
 class _PicturePlaceholder extends StatelessWidget {

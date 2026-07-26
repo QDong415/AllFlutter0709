@@ -12,7 +12,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
 
   @override
   AccountModel? build() {
-    final account = _repository.restoreAccount();
+    final account = _repository.readAccountFromStorage();
     HttpClient.instance.updateUserId(account?.userId);
     return account;
   }
@@ -21,7 +21,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
 
   Future<void> login({required String mobile, required String password}) async {
     final account = await _repository.login(mobile: mobile, password: password);
-    await _repository.persistAccount(account);
+    await _repository.writeAccountToStorage(account);
     HttpClient.instance.updateUserId(account.userId);
     state = account;
   }
@@ -41,13 +41,13 @@ class AccountNotifier extends Notifier<AccountModel?> {
       password: password,
       avatar: avatar,
     );
-    await _repository.persistAccount(account);
+    await _repository.writeAccountToStorage(account);
     HttpClient.instance.updateUserId(account.userId);
     state = account;
   }
 
   Future<void> setAccount(AccountModel account) async {
-    await _repository.persistAccount(account);
+    await _repository.writeAccountToStorage(account);
     HttpClient.instance.updateUserId(account.userId);
     state = account;
   }
@@ -59,7 +59,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
     }
 
     final next = current.copyWith(name: name);
-    await _repository.persistAccount(next);
+    await _repository.writeAccountToStorage(next);
     state = next;
   }
 
@@ -70,7 +70,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
     }
 
     final next = current.copyWith(avatar: avatar);
-    await _repository.persistAccount(next);
+    await _repository.writeAccountToStorage(next);
     state = next;
   }
 

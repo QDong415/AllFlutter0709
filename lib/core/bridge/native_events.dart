@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/core/bridge/native_channel.dart';
-import 'package:all_flutter0709/core/bridge/native_event.dart';
+import 'package:all_flutter0709/core/bridge/native_event_model.dart';
 import 'package:all_flutter0709/core/bridge/native_methods.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
