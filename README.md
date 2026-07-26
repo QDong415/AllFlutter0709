@@ -6,6 +6,7 @@
   <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260726154132_37_2125.jpg" width="280" />
 </p>
 
+### android扫码体验 ：
 <p align="center">
   <img src="http://qiniu.itopic.com.cn/httpqiniu.itopic.com.cnapp-flutter-release.apk.png" width="200" />
 </p>
