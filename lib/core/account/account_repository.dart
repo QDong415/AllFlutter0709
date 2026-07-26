@@ -74,7 +74,7 @@ class AccountRepository {
     return account;
   }
 
-  /// 发送手机验证码（对齐 iTopicX：`POST /api/user/coderequire`）。
+  /// 发送手机验证码（`POST /api/user/coderequire`）。
   Future<void> requestSmsCode({required String mobile}) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/user/coderequire',
@@ -93,7 +93,7 @@ class AccountRepository {
     }
   }
 
-  /// 注册账号（对齐 iTopicX：`POST /api/user/register`）。
+  /// 注册账号（`POST /api/user/register`）。
   Future<AccountModel> register({
     required String mobile,
     required String code,

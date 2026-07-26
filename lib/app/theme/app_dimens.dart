@@ -1,4 +1,4 @@
-/// 应用统一尺寸，对齐 QKotlin `dimens.xml` 壳层数值。
+/// 应用统一尺寸。
 abstract final class AppDimens {
   /// 导航栏高度（QKotlin `toolbar_height` = 45dp）
   static const double toolbarHeight = 45;

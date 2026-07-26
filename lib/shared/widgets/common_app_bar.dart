@@ -4,7 +4,7 @@ import 'package:all_flutter0709/app/theme/app_shadows.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// 通用导航栏：高度 / 色值对齐 QKotlin Toolbar，标题居中。
+/// 通用导航栏，标题居中。
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CommonAppBar({
     required this.title,

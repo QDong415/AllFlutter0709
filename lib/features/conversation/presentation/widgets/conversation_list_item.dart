@@ -3,7 +3,7 @@ import 'package:all_flutter0709/features/conversation/data/models/conversation_s
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-/// 会话列表单行；布局对齐 iTopicX `listitem_conversation.xml`。
+/// 会话列表单行。
 class ConversationListItem extends StatelessWidget {
   const ConversationListItem({
     super.key,
@@ -174,7 +174,7 @@ class _ConversationAvatar extends StatelessWidget {
   }
 }
 
-/// 对齐 iTopicX `ValueUtil.getTimeStringFromNow`：1 天内显示 HH:mm，否则 yyyy-MM-dd。
+/// 1 天内显示 HH:mm，否则 yyyy-MM-dd。
 String _formatConversationTime(int timeSeconds) {
   final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
   final timeGap = nowSeconds - timeSeconds;

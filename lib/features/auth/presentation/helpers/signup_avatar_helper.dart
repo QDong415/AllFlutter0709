@@ -65,7 +65,7 @@ class SignupAvatarHelper {
     return _qiniuUploadService.uploadFile(file: file, key: _buildAvatarKey());
   }
 
-  /// 对齐 iTopicX：`user-{yyyyMMddHHmmss}-{0~9999}`。
+  /// 头像文件名：`user-{yyyyMMddHHmmss}-{0~9999}`。
   String _buildAvatarKey() {
     final time = DateFormat('yyyyMMddHHmmss').format(DateTime.now());
     final suffix = _random.nextInt(10000);

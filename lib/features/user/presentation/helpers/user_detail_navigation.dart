@@ -10,7 +10,7 @@ class UserDetailArgs {
   final String? avatar;
 }
 
-/// 跳转用户个人主页，参数对齐 iTopicX `jumpToHisInfoActivity`。
+/// 跳转用户个人主页。
 void openUserDetailPage(
   BuildContext context, {
   required String userId,

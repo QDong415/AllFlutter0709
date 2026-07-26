@@ -3,7 +3,7 @@ import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:dio/dio.dart';
 
-/// 用户主页相关网络请求，对齐 iTopicX `user/profile` / `follow/follow`。
+/// 用户主页相关网络请求。
 class UserRepository {
   const UserRepository();
 

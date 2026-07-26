@@ -36,7 +36,7 @@ class ChatSendHelper {
     }
   }
 
-  /// 发送文本消息（对齐 iTopicX：带上对方昵称/头像写入本地）。
+  /// 发送文本消息（带上对方昵称/头像写入本地）。
   Future<void> sendText({
     required ConversationController controller,
     required String conversationId,
@@ -52,7 +52,7 @@ class ChatSendHelper {
     );
   }
 
-  /// 发送图片消息（对齐 iTopicX：带上对方昵称/头像写入本地）。
+  /// 发送图片消息（带上对方昵称/头像写入本地）。
   Future<void> sendImage({
     required ConversationController controller,
     required String conversationId,

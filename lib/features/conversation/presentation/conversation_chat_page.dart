@@ -55,7 +55,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
   /// 在 dispose 里不能依赖 ref，提前拿到 controller 以便可靠清除 active 会话。
   ConversationController? _conversationController;
 
-  /// 对齐 iTopicX hisName / hisPhoto：路由带什么就用什么。
+  /// 对方昵称/头像：路由带什么就用什么。
   String get _peerName {
     final name = widget.initialPeerName?.trim() ?? '';
     return name.isEmpty ? '用户${widget.chatId}' : name;
@@ -71,7 +71,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
   int _recordDurationSeconds = 0;
   double _currentAmplitude = -45;
 
-  /// 已记录的软键盘高度；面板打开期间锁定，不随收键盘动画缩小（对齐 iTopicX FuncLayout）。
+  /// 已记录的软键盘高度；面板打开期间锁定，不随收键盘动画缩小。
   static const double _defaultKeyboardHeight = 280;
   double _recordedKeyboardHeight = _defaultKeyboardHeight;
   double _bottomInset = 0;
@@ -143,7 +143,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
 
   void _handleFocusChange() {
     if (_focusNode.hasFocus) {
-      // 点输入框：收起“+”面板，让出软键盘占位（对齐 iTopicX）。
+      // 点输入框：收起“+”面板，让出软键盘占位。
       if (_isPanelVisible) {
         setState(() {
           _isPanelVisible = false;
@@ -164,7 +164,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
     }
   }
 
-  /// 收起键盘与“+”面板（对齐 iTopicX ekBar.reset）。
+  /// 收起键盘与“+”面板。
   void _resetInputState() {
     if (!_focusNode.hasFocus && !_isPanelVisible) {
       return;
@@ -197,7 +197,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
       return;
     }
 
-    // 打开面板：锁定当前键盘高度作占位，再收键盘（对齐 iTopicX toggleFuncView）。
+    // 打开面板：锁定当前键盘高度作占位，再收键盘。
     final inset = MediaQuery.viewInsetsOf(context).bottom;
     setState(() {
       if (inset > 0) {
@@ -425,7 +425,6 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
         }
 
         // 不用 resizeToAvoidBottomInset：底部 Func 区在「键盘 inset / 面板高度」间切换，
-        // 对齐 iTopicX SoftKeyboardSizeWatchLayout + FuncLayout。
         final funcAreaHeight = _isPanelVisible
             ? _recordedKeyboardHeight
             : _bottomInset;

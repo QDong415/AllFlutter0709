@@ -1,4 +1,4 @@
-/// 用户主页资料，对齐 iTopicX `UserBean` / `user/profile`。
+/// 用户主页资料。
 class UserProfileModel {
   const UserProfileModel({
     required this.userId,

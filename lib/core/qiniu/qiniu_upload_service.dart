@@ -47,7 +47,7 @@ class QiniuUploadService {
         token,
         options: PutOptions(key: key, controller: putController),
       );
-      // 对齐 iTopicX：优先取自定义 returnBody 里的 filename。
+      // 优先取自定义 returnBody 里的 filename。
       final rawFilename = response.rawData['filename']?.toString().trim() ?? '';
       final uploadedKey = rawFilename.isNotEmpty
           ? rawFilename

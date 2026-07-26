@@ -40,7 +40,7 @@ ChatItem _mapMessage(
   final direction = message.isSender
       ? MessageDirection.right
       : MessageDirection.left;
-  // 己方头像用当前账号；对方用 otherPhoto，空则回退会话头像（对齐 iTopicX）。
+  // 己方头像用当前账号；对方用 otherPhoto，空则回退会话头像。
   final avatarFileName = message.isSender
       ? myAvatar
       : (message.otherPhoto.isNotEmpty ? message.otherPhoto : peerAvatar);

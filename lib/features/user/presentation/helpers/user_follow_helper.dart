@@ -1,6 +1,6 @@
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 
-/// 关注关系常量，对齐 iTopicX `FollowManager`。
+/// 关注关系常量。
 abstract final class FollowRelation {
   static const int none = 0;
   static const int following = 1;

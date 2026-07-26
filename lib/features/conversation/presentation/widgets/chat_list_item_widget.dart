@@ -118,7 +118,7 @@ class _MessageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 对齐 iTopicX：头像 43、气泡与头像间距约 5；
+    // 头像 43、气泡与头像间距约 5
     // 发送中/失败状态在气泡左侧（远离头像），marginRight 10。
     const avatarGap = 10.0;
     return Padding(
@@ -406,7 +406,7 @@ class _ImageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 对齐 iTopicX：最大边约 155dp，高度上限 150。
+    // 最大边约 155dp，高度上限 150。
     const maxSide = 155.0;
     const maxHeight = 150.0;
     final rawW = item.imageWidth <= 0 ? maxSide : item.imageWidth;

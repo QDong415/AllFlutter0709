@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// 会话列表页；UI 对齐 iTopicX `ConversationFragment`。
+/// 会话列表页。
 class ConversationPage extends ConsumerWidget {
   const ConversationPage({super.key});
 

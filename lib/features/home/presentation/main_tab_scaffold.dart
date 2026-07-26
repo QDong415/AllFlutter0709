@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// 主 Tab 壳：底部栏对齐 QKotlin BottomNavigationView（白底、56、主色选中）。
+/// 主 Tab 壳：底部栏（白底、56、主色选中）。
 class MainTabScaffold extends ConsumerWidget {
   const MainTabScaffold({super.key, required this.navigationShell});
 

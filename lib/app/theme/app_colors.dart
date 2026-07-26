@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 应用统一色板，对齐 QKotlin `colors.xml` 中实际在用的壳层配色。
+/// 应用统一色板。
 ///
 /// 业务强调色（如点赞橙）与壳层主色分离，避免全局被红覆盖。
 abstract final class AppColors {
