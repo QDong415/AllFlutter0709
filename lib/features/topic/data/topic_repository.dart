@@ -43,21 +43,21 @@ class TopicRepository {
     return topic;
   }
 
-  /// 拉取动态列表；[toUserId] 非空时只查该用户动态（对齐 iTopicX `to_userid`）。
+  /// 拉取动态列表；
   Future<TopicPageResult> getTopicList({
     required int page,
-    String? toUserId,
+    Map<String, dynamic>? customParameters,
   }) async {
     final queryParameters = <String, dynamic>{
       'page': page,
       'showpraises': '1',
       'showcomments': '1',
     };
-    final userId = toUserId?.trim() ?? '';
-    if (userId.isNotEmpty) {
-      queryParameters['to_userid'] = userId;
-    }
 
+    if (customParameters != null) {
+      queryParameters.addAll(customParameters);
+    }
+    
     final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
       '/api/topic/getlist',
       queryParameters: queryParameters,

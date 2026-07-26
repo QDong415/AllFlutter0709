@@ -1,17 +1,19 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/features/video/presentation/widgets/video_detail_player_controls.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+/// 视频详情页播放器：自管单击显隐控件 / 双击点赞，避免触发 Chewie 默认遮罩
 class VideoDetailPlayer extends StatefulWidget {
   const VideoDetailPlayer({
+    super.key,
     required this.videoUrl,
     required this.coverUrl,
     required this.height,
     required this.onDoubleTap,
-    super.key,
   });
 
   final String? videoUrl;
@@ -25,14 +27,16 @@ class VideoDetailPlayer extends StatefulWidget {
 
 class _VideoDetailPlayerState extends State<VideoDetailPlayer>
     with SingleTickerProviderStateMixin {
+  static const _controlsAutoHide = Duration(seconds: 3);
+
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _isInitializing = false;
   String? _errorText;
-
-  DateTime? _lastTapAt;
-  Offset? _lastTapPosition;
+  bool _showControls = false;
   bool _showDoubleTapHeart = false;
+  Timer? _hideControlsTimer;
+
   late final AnimationController _heartController;
   late final Animation<double> _heartScale;
   late final Animation<double> _heartOpacity;
@@ -80,6 +84,7 @@ class _VideoDetailPlayerState extends State<VideoDetailPlayer>
 
   @override
   void dispose() {
+    _hideControlsTimer?.cancel();
     _heartController.dispose();
     _disposePlayer();
     super.dispose();
@@ -93,6 +98,7 @@ class _VideoDetailPlayerState extends State<VideoDetailPlayer>
       setState(() {
         _isInitializing = false;
         _errorText = '视频地址无效';
+        _showControls = false;
       });
       return;
     }
@@ -101,6 +107,7 @@ class _VideoDetailPlayerState extends State<VideoDetailPlayer>
     setState(() {
       _isInitializing = true;
       _errorText = null;
+      _showControls = false;
     });
 
     final controller = VideoPlayerController.networkUrl(Uri.parse(url));
@@ -119,6 +126,7 @@ class _VideoDetailPlayerState extends State<VideoDetailPlayer>
         looping: false,
         allowFullScreen: false,
         allowMuting: true,
+        showControls: false,
         showControlsOnInitialize: false,
         aspectRatio: controller.value.aspectRatio == 0
             ? null
@@ -152,93 +160,148 @@ class _VideoDetailPlayerState extends State<VideoDetailPlayer>
   }
 
   void _disposePlayer() {
+    _hideControlsTimer?.cancel();
+    _hideControlsTimer = null;
     _chewieController?.dispose();
     _chewieController = null;
     _videoController?.dispose();
     _videoController = null;
   }
 
-  void _handlePointerDown(PointerDownEvent event) {
-    final now = DateTime.now();
-    final lastAt = _lastTapAt;
-    final lastPos = _lastTapPosition;
-    final isDoubleTap =
-        lastAt != null &&
-        lastPos != null &&
-        now.difference(lastAt) < const Duration(milliseconds: 300) &&
-        (event.localPosition - lastPos).distance < 48;
-
-    if (isDoubleTap) {
-      _lastTapAt = null;
-      _lastTapPosition = null;
-      widget.onDoubleTap();
-      setState(() {
-        _showDoubleTapHeart = true;
-      });
-      _heartController.forward(from: 0);
+  void _scheduleHideControls() {
+    _hideControlsTimer?.cancel();
+    final videoController = _videoController;
+    if (videoController == null || !videoController.value.isPlaying) {
       return;
     }
+    _hideControlsTimer = Timer(_controlsAutoHide, () {
+      if (!mounted) return;
+      setState(() {
+        _showControls = false;
+      });
+    });
+  }
 
-    _lastTapAt = now;
-    _lastTapPosition = event.localPosition;
+  void _toggleControls() {
+    setState(() {
+      _showControls = !_showControls;
+    });
+    if (_showControls) {
+      _scheduleHideControls();
+    } else {
+      _hideControlsTimer?.cancel();
+    }
+  }
+
+  void _handleDoubleTapLike() {
+    _hideControlsTimer?.cancel();
+    if (_showControls) {
+      setState(() {
+        _showControls = false;
+      });
+    }
+    widget.onDoubleTap();
+    setState(() {
+      _showDoubleTapHeart = true;
+    });
+    _heartController.forward(from: 0);
+  }
+
+  void _handlePlayPause() {
+    final videoController = _videoController;
+    if (videoController == null) return;
+
+    if (videoController.value.isPlaying) {
+      videoController.pause();
+      _hideControlsTimer?.cancel();
+    } else {
+      final finished =
+          videoController.value.duration > Duration.zero &&
+          videoController.value.position >= videoController.value.duration;
+      if (finished) {
+        unawaited(videoController.seekTo(Duration.zero));
+      }
+      unawaited(videoController.play());
+      _scheduleHideControls();
+    }
+    setState(() {});
+  }
+
+  void _handleToggleMute() {
+    final videoController = _videoController;
+    if (videoController == null) return;
+    final muted = videoController.value.volume <= 0;
+    unawaited(videoController.setVolume(muted ? 1 : 0));
+    _scheduleHideControls();
   }
 
   @override
   Widget build(BuildContext context) {
     final chewie = _chewieController;
+    final videoController = _videoController;
     final ready =
-        chewie != null && (_videoController?.value.isInitialized ?? false);
+        chewie != null && (videoController?.value.isInitialized ?? false);
 
-    return Listener(
-      behavior: HitTestBehavior.deferToChild,
-      onPointerDown: _handlePointerDown,
-      child: ColoredBox(
-        color: Colors.black,
-        child: SizedBox(
-          width: double.infinity,
-          height: widget.height,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (ready)
-                Chewie(controller: chewie)
-              else if (_errorText != null)
-                _ErrorCover(
-                  coverUrl: widget.coverUrl,
-                  message: _errorText!,
-                  onRetry: () {
-                    unawaited(_initPlayer());
-                  },
-                )
-              else
-                _LoadingCover(
-                  coverUrl: widget.coverUrl,
-                  isLoading: _isInitializing,
-                ),
-              if (_showDoubleTapHeart)
-                IgnorePointer(
-                  child: Center(
-                    child: AnimatedBuilder(
-                      animation: _heartController,
-                      builder: (context, child) {
-                        return Opacity(
-                          opacity: _heartOpacity.value,
-                          child: Transform.scale(
-                            scale: _heartScale.value,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: const Icon(
-                        Icons.favorite_rounded,
-                        size: 88,
-                        color: Color(0xE6F46533),
-                      ),
+    return ColoredBox(
+      color: Colors.black,
+      child: SizedBox(
+        width: double.infinity,
+        height: widget.height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (ready)
+              Chewie(controller: chewie)
+            else if (_errorText != null)
+              _ErrorCover(
+                coverUrl: widget.coverUrl,
+                message: _errorText!,
+                onRetry: () {
+                  unawaited(_initPlayer());
+                },
+              )
+            else
+              _LoadingCover(
+                coverUrl: widget.coverUrl,
+                isLoading: _isInitializing,
+              ),
+            if (ready && !_showControls)
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _toggleControls,
+                onDoubleTap: _handleDoubleTapLike,
+              ),
+            if (ready && _showControls && videoController != null)
+              VideoDetailPlayerControls(
+                controller: videoController,
+                onBackgroundTap: _toggleControls,
+                onBackgroundDoubleTap: _handleDoubleTapLike,
+                onPlayPause: _handlePlayPause,
+                onToggleMute: _handleToggleMute,
+              ),
+            if (_showDoubleTapHeart)
+              IgnorePointer(
+                child: Center(
+                  child: AnimatedBuilder(
+                    animation: _heartController,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _heartOpacity.value,
+                        child: Transform.scale(
+                          scale: _heartScale.value,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: const Icon(
+                      Icons.favorite_rounded,
+                      size: 88,
+                      color: Color(0xE6F46533),
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

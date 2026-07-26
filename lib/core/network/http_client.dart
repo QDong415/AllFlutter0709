@@ -29,19 +29,39 @@ class HttpClient {
           InterceptorsWrapper(
             onRequest: (options, handler) {
               _appendUserId(options);
-              _logger.d('[HTTP] ${options.method} ${options.uri}');
+              _logger.d(
+                '[HTTP] ${options.method} ${options.uri} '
+                'data=${_formatRequestData(options.data)}',
+              );
               handler.next(options);
             },
             onResponse: (response, handler) {
-              _logger.d('[HTTP] ${response.statusCode} ${response.realUri}');
+              _logger.d(
+                '[HTTP] ${response.statusCode} ${response.realUri} '
+                'data=${response.data}',
+              );
               handler.next(response);
             },
             onError: (error, handler) {
-              _logger.e('[HTTP] ${error.message}');
+              _logger.e(
+                '[HTTP] ${error.message} '
+                'data=${_formatRequestData(error.requestOptions.data)}',
+              );
               handler.next(error);
             },
           ),
         );
+
+  Object? _formatRequestData(Object? data) {
+    if (data is FormData) {
+      return <String, Object?>{
+        for (final field in data.fields) field.key: field.value,
+        for (final file in data.files)
+          file.key: 'MultipartFile(${file.value.filename})',
+      };
+    }
+    return data;
+  }
 
   void _appendUserId(RequestOptions options) {
     final userId = _userId ?? '';

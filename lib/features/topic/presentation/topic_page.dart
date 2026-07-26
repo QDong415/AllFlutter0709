@@ -10,4 +10,10 @@ class TopicPage extends StatefulWidget {
 
 class _TopicPageState extends TopicListBaseState<TopicPage>  {
 
+  @override
+  Map<String, dynamic>? customParameters() {
+    //为了演示，我指定返回评论数 >=2 的动态
+    Map<String, dynamic> map = {"commentcount" : 2};
+    return map;
+  }
 }

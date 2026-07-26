@@ -52,11 +52,6 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   @protected
   bool get useDefaultScaffold => true;
 
-  @protected
-  Future<TopicPageResult> fetchTopicPage(int page) {
-    return topicRepository.getTopicList(page: page);
-  }
-
   /// 默认 AppBar；返回 null 表示不展示。
   @protected
   PreferredSizeWidget? buildAppBar() {
@@ -66,6 +61,11 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   /// 列表顶部 Header；非 null 时列表改为 CustomScrollView。
   @protected
   Widget? buildListHeader() => null;
+
+  @protected
+  Map<String, dynamic>? customParameters() {
+    return null;
+  }
 
   @override
   void initState() {
@@ -78,7 +78,8 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     final requestPage = isRefresh ? 1 : _nextPage;
 
     try {
-      final result = await fetchTopicPage(requestPage);
+      final TopicPageResult result = await topicRepository.getTopicList(page: requestPage, customParameters: customParameters());
+
       if (!mounted) return;
 
       setState(() {

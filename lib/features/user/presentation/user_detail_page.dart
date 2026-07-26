@@ -87,8 +87,9 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   }
 
   @override
-  Future<TopicPageResult> fetchTopicPage(int page) {
-    return topicRepository.getTopicList(page: page, toUserId: widget.userId);
+  Map<String, dynamic>? customParameters() {
+    Map<String, dynamic> map = {"toUserId" : widget.userId};
+    return map;
   }
 
   @override
