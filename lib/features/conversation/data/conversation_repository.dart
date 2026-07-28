@@ -45,6 +45,7 @@ class ConversationRepository {
   static const _messagePullApi = '/api/message/pull';
   static const _messageSendApi = '/api/chat/send';
   static const _modifyUserApi = '/api/user/modifyarray';
+  static const _doRegActionApi = '/api/user/doregaction';
 
   final ChatLocalDataSource _localDataSource;
   final Dio _dio;
@@ -269,6 +270,9 @@ class ConversationRepository {
     }
   }
 
+  /// 将当前登录账号绑定到个推 CID（`POST /api/user/modifyarray`）。
+  ///
+  /// 绑定成功后会再请求 [notifyDoRegAction]，与原生一致。
   Future<void> updatePushClientId({
     required String clientId,
     required AccountModel account,
@@ -290,6 +294,21 @@ class ConversationRepository {
     final result = ApiResponse<void>.fromJson(json);
     if (!result.success) {
       throw Exception(result.message.isEmpty ? 'CID 同步失败' : result.message);
+    }
+
+    // CID 绑定成功后通知 PHP：可推送小秘书默认消息等注册后续动作
+    await notifyDoRegAction();
+  }
+
+  /// 通知服务端执行注册后续动作（`POST /api/user/doregaction`）。
+  Future<void> notifyDoRegAction() async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        _doRegActionApi,
+        data: <String, dynamic>{},
+        options: Options(contentType: Headers.formUrlEncodedContentType),
+      );
+    } catch (_) {
     }
   }
 

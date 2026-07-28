@@ -4,6 +4,8 @@
   <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260726153202_35_2125.jpg" width="280" />
   &nbsp;&nbsp;
   <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260726154132_37_2125.jpg" width="280" />
+  &nbsp;&nbsp;
+  <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260728092057_41_2125.jpg" width="280" />
 </p>
 
 ### android扫码体验 ：

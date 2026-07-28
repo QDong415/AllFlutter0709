@@ -279,6 +279,7 @@ class ConversationController extends ChangeNotifier {
     }
   }
 
+  /// 已登录且本地 CID 与账号不一致时，上报 `modifyarray` 并调用 `doregaction`。
   Future<void> syncPushClientId(String clientId) async {
     final account = _ref.read(accountProvider);
     if (account == null || clientId.trim().isEmpty || account.cid == clientId) {
