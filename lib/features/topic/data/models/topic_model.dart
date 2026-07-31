@@ -164,6 +164,7 @@ class TopicModel {
     required this.comments,
     this.content,
     this.avatar,
+    this.videoUrl,
   });
 
   final String tid;
@@ -178,6 +179,13 @@ class TopicModel {
   final List<TopicCommentModel> comments;
   final String? content;
   final String? avatar;
+  final String? videoUrl;
+
+  /// 是否包含可播放视频。
+  bool get hasVideo {
+    final url = videoUrl?.trim() ?? '';
+    return url.isNotEmpty;
+  }
 
   factory TopicModel.fromJson(Map<String, dynamic> json) {
     return TopicModel(
@@ -193,6 +201,10 @@ class TopicModel {
       displayTime: _formatTime(_TopicJsonParser.parseInt(json['create_time'])),
       pictures: parsePictures(json['pictures']),
       comments: _parseComments(json['comments']),
+      videoUrl: ValueUtil.getQiniuUrlByFileName(
+        _TopicJsonParser.parseNullableString(json['videourl']),
+        keepOriginal: true,
+      ),
     );
   }
 
@@ -209,6 +221,7 @@ class TopicModel {
     List<TopicCommentModel>? comments,
     String? content,
     String? avatar,
+    String? videoUrl,
   }) {
     return TopicModel(
       tid: tid ?? this.tid,
@@ -223,6 +236,7 @@ class TopicModel {
       comments: comments ?? this.comments,
       content: content ?? this.content,
       avatar: avatar ?? this.avatar,
+      videoUrl: videoUrl ?? this.videoUrl,
     );
   }
 

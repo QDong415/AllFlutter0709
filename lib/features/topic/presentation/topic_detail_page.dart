@@ -8,6 +8,7 @@ import 'package:all_flutter0709/features/comment/presentation/widgets/comment_se
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
@@ -217,6 +218,7 @@ class _TopicDetailHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarUrl = topic.avatar ?? '';
     final content = topic.content?.trim() ?? '';
+    final videoUrl = topic.videoUrl?.trim() ?? '';
 
     return Container(
       width: double.infinity,
@@ -308,7 +310,16 @@ class _TopicDetailHeader extends StatelessWidget {
               ),
             ),
           ],
-          if (topic.pictures.isNotEmpty) ...[
+          if (videoUrl.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            TopicFeedVideoPlayer(
+              videoUrl: videoUrl,
+              coverPicture: topic.pictures.isNotEmpty
+                  ? topic.pictures.first
+                  : null,
+              play: true,
+            ),
+          ] else if (topic.pictures.isNotEmpty) ...[
             const SizedBox(height: 12),
             TopicPictureGrid(pictures: topic.pictures),
           ],

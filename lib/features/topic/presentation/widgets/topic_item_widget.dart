@@ -3,11 +3,13 @@ import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_comment_preview_list.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+/// 动态列表项点击 / 分享 / 点赞等交互回调。
 abstract class TopicItemActionListener {
   void onItemTap(TopicModel topic);
 
@@ -34,16 +36,27 @@ abstract class TopicItemActionListener {
   );
 }
 
+/// 单条动态卡片（头像 / 正文 / 图片或视频 / 评论预览 / 操作栏）。
 class TopicItemWidget extends StatelessWidget {
-  const TopicItemWidget({required this.topicModel, super.key, this.listener});
+  const TopicItemWidget({
+    super.key,
+    required this.topicModel,
+    this.listener,
+    this.playVideo = false,
+  });
 
   final TopicModel topicModel;
   final TopicItemActionListener? listener;
+
+  /// 列表可视区内时由外部置为 true，触发视频自动播放。
+  final bool playVideo;
 
   @override
   Widget build(BuildContext context) {
     final avatarUrl = topicModel.avatar ?? '';
     final content = topicModel.content?.trim() ?? '';
+    final videoUrl = topicModel.videoUrl?.trim() ?? '';
+    final hasVideo = videoUrl.isNotEmpty;
     final commentCount = topicModel.commentCount > 0
         ? topicModel.commentCount
         : 0;
@@ -121,7 +134,19 @@ class TopicItemWidget extends StatelessWidget {
                 ),
               ),
             ],
-            if (topicModel.pictures.isNotEmpty) ...[
+            if (hasVideo) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TopicFeedVideoPlayer(
+                  videoUrl: videoUrl,
+                  coverPicture: topicModel.pictures.isNotEmpty
+                      ? topicModel.pictures.first
+                      : null,
+                  play: playVideo,
+                ),
+              ),
+            ] else if (topicModel.pictures.isNotEmpty) ...[
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

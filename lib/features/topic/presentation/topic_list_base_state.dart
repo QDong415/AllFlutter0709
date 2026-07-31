@@ -12,6 +12,7 @@ import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inview_notifier_list/inview_notifier_list.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -130,36 +131,74 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     _topics[index] = topic;
   }
 
+  String _videoInViewId(TopicModel topicModel) => 'video-${topicModel.tid}';
+
+  List<String> _initialVideoInViewIds() {
+    for (final topicModel in _topics) {
+      if (topicModel.hasVideo) {
+        return <String>[_videoInViewId(topicModel)];
+      }
+    }
+    return const <String>[];
+  }
+
+  bool _isCenterInView(
+    double deltaTop,
+    double deltaBottom,
+    double viewPortDimension,
+  ) {
+    return deltaTop < (0.5 * viewPortDimension) &&
+        deltaBottom > (0.5 * viewPortDimension);
+  }
+
+  Widget _buildTopicListItem(int index) {
+    final topicModel = _topics[index];
+    final item = topicModel.hasVideo
+        ? InViewNotifierWidget(
+            id: _videoInViewId(topicModel),
+            builder: (context, isInView, _) {
+              return TopicItemWidget(
+                topicModel: topicModel,
+                listener: this,
+                playVideo: isInView,
+              );
+            },
+          )
+        : TopicItemWidget(topicModel: topicModel, listener: this);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        item,
+        if (index < _topics.length - 1) const SizedBox(height: 10),
+      ],
+    );
+  }
+
   /// 构建动态列表（可选 physics，便于嵌套滚动）。
   @protected
   Widget buildTopicListView({ScrollPhysics? physics}) {
     final header = buildListHeader();
     if (header == null) {
-      return ListView.separated(
+      return InViewNotifierList(
         physics: physics,
+        initialInViewIds: _initialVideoInViewIds(),
+        isInViewPortCondition: _isCenterInView,
         itemCount: _topics.length,
-        itemBuilder: (context, index) {
-          return TopicItemWidget(topicModel: _topics[index], listener: this);
-        },
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        builder: (context, index) => _buildTopicListItem(index),
       );
     }
 
-    return CustomScrollView(
+    return InViewNotifierCustomScrollView(
       physics: physics,
+      initialInViewIds: _initialVideoInViewIds(),
+      isInViewPortCondition: _isCenterInView,
       slivers: [
         SliverToBoxAdapter(child: header),
         SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
-            if (index.isOdd) {
-              return const SizedBox(height: 10);
-            }
-            final topicIndex = index ~/ 2;
-            return TopicItemWidget(
-              topicModel: _topics[topicIndex],
-              listener: this,
-            );
-          }, childCount: _topics.isEmpty ? 0 : _topics.length * 2 - 1),
+            return _buildTopicListItem(index);
+          }, childCount: _topics.length),
         ),
       ],
     );

@@ -5,15 +5,47 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_pictur
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+/// 动态图片九宫格；单图尺寸算法可供视频封面复用。
 class TopicPictureGrid extends StatelessWidget {
   const TopicPictureGrid({super.key, required this.pictures});
 
   final List<TopicPictureModel> pictures;
 
   static const double _spacing = 6;
-  static const double _singleMaxExtent = 220;
-  static const double _singleMinExtent = 120;
-  static const double _radius = 8;
+  static const double singleMaxExtent = 220;
+  static const double singleMinExtent = 120;
+  static const double radius = 8;
+
+  /// 计算单张图片（或视频封面）展示尺寸，与列表单图逻辑一致。
+  static Size resolveSinglePictureSize({
+    required int? width,
+    required int? height,
+    required double maxWidth,
+  }) {
+    final limitedMax = math.min(maxWidth, singleMaxExtent);
+    final pictureWidth = width ?? 0;
+    final pictureHeight = height ?? 0;
+
+    if (pictureWidth <= 0 || pictureHeight <= 0) {
+      return Size(limitedMax, limitedMax);
+    }
+
+    if (pictureWidth >= pictureHeight) {
+      final resolvedWidth = limitedMax;
+      final resolvedHeight = math.max(
+        singleMinExtent,
+        resolvedWidth * pictureHeight / pictureWidth,
+      );
+      return Size(resolvedWidth, resolvedHeight);
+    }
+
+    final resolvedHeight = limitedMax;
+    final resolvedWidth = math.max(
+      singleMinExtent,
+      resolvedHeight * pictureWidth / pictureHeight,
+    );
+    return Size(resolvedWidth, resolvedHeight);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +56,16 @@ class TopicPictureGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (pictures.length == 1) {
-          final size = _resolveSinglePictureSize(
-            picture: pictures.first,
+          final picture = pictures.first;
+          final size = resolveSinglePictureSize(
+            width: picture.width,
+            height: picture.height,
             maxWidth: constraints.maxWidth,
           );
           return _SinglePictureItem(
             index: 0,
             pictures: pictures,
-            picture: pictures.first,
+            picture: picture,
             size: size,
           );
         }
@@ -132,7 +166,7 @@ class _PictureTile extends StatelessWidget {
       child: Hero(
         tag: picture.heroTag,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(TopicPictureGrid._radius),
+          borderRadius: BorderRadius.circular(TopicPictureGrid.radius),
           child: CachedNetworkImage(
             imageUrl: picture.thumbnailUrl,
             width: width,
@@ -147,35 +181,6 @@ class _PictureTile extends StatelessWidget {
       ),
     );
   }
-}
-
-Size _resolveSinglePictureSize({
-  required TopicPictureModel picture,
-  required double maxWidth,
-}) {
-  final limitedMax = math.min(maxWidth, TopicPictureGrid._singleMaxExtent);
-  final pictureWidth = picture.width ?? 0;
-  final pictureHeight = picture.height ?? 0;
-
-  if (pictureWidth <= 0 || pictureHeight <= 0) {
-    return Size(limitedMax, limitedMax);
-  }
-
-  if (pictureWidth >= pictureHeight) {
-    final width = limitedMax;
-    final height = math.max(
-      TopicPictureGrid._singleMinExtent,
-      width * pictureHeight / pictureWidth,
-    );
-    return Size(width, height);
-  }
-
-  final height = limitedMax;
-  final width = math.max(
-    TopicPictureGrid._singleMinExtent,
-    height * pictureWidth / pictureHeight,
-  );
-  return Size(width, height);
 }
 
 void _openPreview(

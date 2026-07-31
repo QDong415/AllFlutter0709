@@ -648,6 +648,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.20.3"
+  inview_notifier_list:
+    dependency: "direct main"
+    description:
+      name: inview_notifier_list
+      sha256: d33a40a0a22a192df69b30e9097257df8be56a20a9693831a2d2a25838fb3b73
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.1.0"
   io:
     dependency: transitive
     description:
