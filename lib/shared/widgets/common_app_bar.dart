@@ -1,8 +1,8 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/app/theme/app_shadows.dart';
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// 通用导航栏，标题居中。
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -33,15 +33,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
-          systemNavigationBarColor: AppColors.tabBarBackground,
-          systemNavigationBarDividerColor: AppColors.tabBarBackground,
-          systemNavigationBarContrastEnforced: false,
-          systemNavigationBarIconBrightness: Brightness.dark,
-        ),
+        systemOverlayStyle: AppSystemUi.overlayStyle,
         title: Text(
           title,
           style: const TextStyle(

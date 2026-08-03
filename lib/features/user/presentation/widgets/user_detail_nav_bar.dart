@@ -1,27 +1,6 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
-/// 个人主页系统栏样式：只切换状态栏图标明暗，底部导航栏始终保持白底。
-///
-/// 不要用 [SystemUiOverlayStyle.light] / [SystemUiOverlayStyle.dark]，
-/// 它们会把 `systemNavigationBarColor` 设成黑色。
-SystemUiOverlayStyle userDetailSystemUiOverlayStyle({
-  required double collapseProgress,
-}) {
-  final solid = collapseProgress.clamp(0.0, 1.0) > 0.5;
-  return SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: solid ? Brightness.dark : Brightness.light,
-    statusBarBrightness: solid ? Brightness.light : Brightness.dark,
-    systemNavigationBarColor: AppColors.tabBarBackground,
-    systemNavigationBarDividerColor: AppColors.tabBarBackground,
-    systemNavigationBarContrastEnforced: false,
-    systemStatusBarContrastEnforced: false,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  );
-}
 
 /// 个人主页双层导航：透明层与实色层按滚动比例渐变。
 class UserDetailNavBar extends StatelessWidget {

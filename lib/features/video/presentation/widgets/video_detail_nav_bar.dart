@@ -1,5 +1,5 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,17 +27,8 @@ class VideoDetailNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top;
     final alpha = scrollAlpha.clamp(0.0, 1.0);
-    // 只切换状态栏图标明暗，不要用 SystemUiOverlayStyle.light/dark：
-    // 它们会把 systemNavigationBarColor 设成黑色，小米等机型底部指示器区域会变黑。
-    final overlayStyle = SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: alpha > 0.5 ? Brightness.dark : Brightness.light,
-      statusBarBrightness: alpha > 0.5 ? Brightness.light : Brightness.dark,
-      systemNavigationBarColor: AppColors.tabBarBackground,
-      systemNavigationBarDividerColor: AppColors.tabBarBackground,
-      systemNavigationBarContrastEnforced: false,
-      systemStatusBarContrastEnforced: false,
-      systemNavigationBarIconBrightness: Brightness.dark,
+    final overlayStyle = AppSystemUi.overlayStyleWithStatusBarIcons(
+      darkIcons: alpha > 0.5,
     );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(

@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:all_flutter0709/app/router/app_router.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/core/bridge/native_events.dart';
 import 'package:all_flutter0709/core/push/getui_push_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 应用根 Widget：挂路由、主题，并完成推送 / Bridge 等启动初始化。
@@ -62,15 +62,7 @@ class _SocialAppState extends ConsumerState<SocialApp> {
           ),
           iconTheme: IconThemeData(color: AppColors.titleText),
           actionsIconTheme: IconThemeData(color: AppColors.titleText),
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
-            statusBarBrightness: Brightness.light,
-            systemNavigationBarColor: AppColors.tabBarBackground,
-            systemNavigationBarDividerColor: AppColors.tabBarBackground,
-            systemNavigationBarContrastEnforced: false,
-            systemNavigationBarIconBrightness: Brightness.dark,
-          ),
+          systemOverlayStyle: AppSystemUi.overlayStyle,
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: AppColors.tabBarBackground,

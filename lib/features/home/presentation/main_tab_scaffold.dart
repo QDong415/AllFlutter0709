@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_shadows.dart';
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,21 +13,11 @@ class MainTabScaffold extends ConsumerWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  static const _systemNavStyle = SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    statusBarBrightness: Brightness.light,
-    systemNavigationBarColor: AppColors.tabBarBackground,
-    systemNavigationBarDividerColor: AppColors.tabBarBackground,
-    systemNavigationBarContrastEnforced: false,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  );
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(conversationControllerProvider);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: _systemNavStyle,
+      value: AppSystemUi.overlayStyle,
       child: Scaffold(
         body: navigationShell,
         bottomNavigationBar: ListenableBuilder(

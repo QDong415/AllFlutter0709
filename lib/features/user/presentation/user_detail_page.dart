@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
@@ -191,11 +192,13 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   }
 
   SystemUiOverlayStyle get _systemUiOverlayStyle {
-    return userDetailSystemUiOverlayStyle(collapseProgress: _collapseProgress);
+    return AppSystemUi.overlayStyleWithStatusBarIcons(
+      darkIcons: _collapseProgress.clamp(0.0, 1.0) > 0.5,
+    );
   }
 
   void _applySystemUiOverlayStyle() {
-    SystemChrome.setSystemUIOverlayStyle(_systemUiOverlayStyle);
+    AppSystemUi.apply(_systemUiOverlayStyle);
   }
 
   Future<void> _onChatTap() async {

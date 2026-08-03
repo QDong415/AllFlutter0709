@@ -2,9 +2,12 @@ import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// 系统状态栏 / 导航栏样式。
+/// 系统状态栏 / 导航栏样式（全应用唯一来源）。
+///
+/// 不要直接使用 [SystemUiOverlayStyle.light] / [SystemUiOverlayStyle.dark]，
+/// 它们会把 `systemNavigationBarColor` 设成黑色，小米等机型底部指示区会变黑。
 abstract final class AppSystemUi {
-  /// 默认（白底导航栏，深色图标），与主 Tab / 普通页一致。
+  /// 默认：白底导航栏 + 深色图标（主 Tab / 普通页）。
   static const SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: AppColors.tabBarBackground,
@@ -16,7 +19,7 @@ abstract final class AppSystemUi {
     statusBarBrightness: Brightness.light,
   );
 
-  /// 全屏媒体预览（黑底）：底部系统导航栏黑色，图标浅色。
+  /// 全屏媒体预览：黑底导航栏 + 浅色图标。
   static const SystemUiOverlayStyle fullscreenMediaOverlayStyle =
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -28,6 +31,18 @@ abstract final class AppSystemUi {
         statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.dark,
       );
+
+  /// 在 [overlayStyle]（白底导航栏）基础上，只切换状态栏图标明暗。
+  ///
+  /// 用于个人主页 / 视频详情等「顶栏随滚动变实色」的场景。
+  static SystemUiOverlayStyle overlayStyleWithStatusBarIcons({
+    required bool darkIcons,
+  }) {
+    return overlayStyle.copyWith(
+      statusBarIconBrightness: darkIcons ? Brightness.dark : Brightness.light,
+      statusBarBrightness: darkIcons ? Brightness.light : Brightness.dark,
+    );
+  }
 
   /// 立即应用到系统栏（部分机型仅靠 [AnnotatedRegion] 不可靠）。
   static void apply(SystemUiOverlayStyle style) {
