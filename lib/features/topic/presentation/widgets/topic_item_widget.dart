@@ -11,13 +11,13 @@ import 'package:flutter/material.dart';
 
 /// 动态列表项点击 / 分享 / 点赞等交互回调。
 abstract class TopicItemActionListener {
-  void onItemTap(TopicModel topic);
+  Future<void> onItemTap(TopicModel topic);
 
   void onShareTap(TopicModel topic);
 
   void onAvatarTap(TopicModel topic);
 
-  void onCommentTap(TopicModel topic);
+  Future<void> onCommentTap(TopicModel topic);
 
   void onLikeTap(TopicModel topic);
 
@@ -43,6 +43,7 @@ class TopicItemWidget extends StatelessWidget {
     required this.topicModel,
     this.listener,
     this.playVideo = false,
+    this.videoResumeNonce = 0,
   });
 
   final TopicModel topicModel;
@@ -50,6 +51,9 @@ class TopicItemWidget extends StatelessWidget {
 
   /// 列表可视区内时由外部置为 true，触发视频自动播放。
   final bool playVideo;
+
+  /// 从详情返回等场景递增，迫使内嵌视频重新同步播放状态。
+  final int videoResumeNonce;
 
   @override
   Widget build(BuildContext context) {
@@ -144,6 +148,7 @@ class TopicItemWidget extends StatelessWidget {
                       ? topicModel.pictures.first
                       : null,
                   play: playVideo,
+                  resumeNonce: videoResumeNonce,
                 ),
               ),
             ] else if (topicModel.pictures.isNotEmpty) ...[

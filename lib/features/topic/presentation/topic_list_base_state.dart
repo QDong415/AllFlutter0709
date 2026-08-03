@@ -31,6 +31,9 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   bool _hasMore = true;
   PageState _pageState = PageState.loading;
 
+  /// 从详情等页面返回后递增，驱动列表内视频重新同步播放。
+  int _videoResumeNonce = 0;
+
   @protected
   List<TopicModel> get topics => _topics;
 
@@ -161,6 +164,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
                 topicModel: topicModel,
                 listener: this,
                 playVideo: isInView,
+                videoResumeNonce: _videoResumeNonce,
               );
             },
           )
@@ -221,8 +225,13 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   }
 
   @override
-  void onItemTap(TopicModel topic) {
-    context.push('${AppRoutes.topic}/detail/${topic.tid}', extra: topic);
+  Future<void> onItemTap(TopicModel topic) async {
+    await context.push('${AppRoutes.topic}/detail/${topic.tid}', extra: topic);
+    if (!mounted) return;
+    // 返回列表后 play 标志可能未变，但底层播放器已被详情页抢走并暂停。
+    setState(() {
+      _videoResumeNonce++;
+    });
   }
 
   @override
@@ -275,8 +284,12 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   }
 
   @override
-  void onCommentTap(TopicModel topic) {
-    context.push('${AppRoutes.topic}/detail/${topic.tid}', extra: topic);
+  Future<void> onCommentTap(TopicModel topic) async {
+    await context.push('${AppRoutes.topic}/detail/${topic.tid}', extra: topic);
+    if (!mounted) return;
+    setState(() {
+      _videoResumeNonce++;
+    });
   }
 
   @override
