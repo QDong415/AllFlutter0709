@@ -154,7 +154,9 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
         deltaBottom > (0.5 * viewPortDimension);
   }
 
-  Widget _buildTopicListItem(int index) {
+  /// 构建单条动态（含视频 InView 自动播）；子类自定义列表时也可复用。
+  @protected
+  Widget buildTopicListItem(int index) {
     final topicModel = _topics[index];
     final item = topicModel.hasVideo
         ? InViewNotifierWidget(
@@ -168,7 +170,11 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
               );
             },
           )
-        : TopicItemWidget(topicModel: topicModel, listener: this);
+        : TopicItemWidget(
+            topicModel: topicModel,
+            listener: this,
+            videoResumeNonce: _videoResumeNonce,
+          );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -179,9 +185,27 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     );
   }
 
-  /// 构建动态列表（可选 physics，便于嵌套滚动）。
+  /// 动态列表 sliver（含 InView）；便于嵌在自定义 [CustomScrollView] 中。
   @protected
-  Widget buildTopicListView({ScrollPhysics? physics}) {
+  Widget buildTopicListSliver({EdgeInsetsGeometry? padding}) {
+    final list = SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        return buildTopicListItem(index);
+      }, childCount: _topics.length),
+    );
+    if (padding == null) return list;
+    return SliverPadding(padding: padding, sliver: list);
+  }
+
+  /// 构建动态列表（可选 physics / header / 底部 padding）。
+  ///
+  /// 有 [buildListHeader] 时使用 [InViewNotifierCustomScrollView]，
+  /// 否则使用 [InViewNotifierList]。
+  @protected
+  Widget buildTopicListView({
+    ScrollPhysics? physics,
+    EdgeInsetsGeometry? listPadding,
+  }) {
     final header = buildListHeader();
     if (header == null) {
       return InViewNotifierList(
@@ -189,7 +213,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
         initialInViewIds: _initialVideoInViewIds(),
         isInViewPortCondition: _isCenterInView,
         itemCount: _topics.length,
-        builder: (context, index) => _buildTopicListItem(index),
+        builder: (context, index) => buildTopicListItem(index),
       );
     }
 
@@ -199,11 +223,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
       isInViewPortCondition: _isCenterInView,
       slivers: [
         SliverToBoxAdapter(child: header),
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            return _buildTopicListItem(index);
-          }, childCount: _topics.length),
-        ),
+        buildTopicListSliver(padding: listPadding),
       ],
     );
   }

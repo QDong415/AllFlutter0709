@@ -1,14 +1,17 @@
+import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_video_preview_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 /// 动态列表内嵌极简视频播放器：无播放/暂停按钮，仅底部细进度条与倒计时。
 ///
 /// 点击后打开放大预览，并与预览页共用同一个 [VideoPlayerController]，进度无缝衔接。
+/// 离开当前表面（切 Tab、push 二级页）时暂停；放大预览期间除外。
 /// 展示尺寸与 [TopicPictureGrid] 单张图片一致。
 class TopicFeedVideoPlayer extends StatefulWidget {
   const TopicFeedVideoPlayer({
@@ -37,6 +40,7 @@ class TopicFeedVideoPlayer extends StatefulWidget {
 class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
   VideoPlayerController? _controller;
   TopicVideoControllerHandoff? _previewHandoff;
+  GoRouter? _router;
   bool _isInitializing = false;
   bool _isOpeningPreview = false;
   String? _errorText;
@@ -54,30 +58,37 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     }
   }
 
+  /// 订阅 GoRouter，以便在切 Tab / push 二级页时主动 pause/resume。
+  ///
+  /// 为什么放在 [didChangeDependencies] 而不是 [initState]：
+  /// 1. `GoRouter.of(context)` 依赖 InheritedWidget，只能在 dependencies 就绪后取；
+  /// 2. Shell 用 IndexedStack 保活各 Tab，切走后本组件不一定 rebuild，
+  ///    若不主动 listen，就收不到「已经离开列表」的信号，视频会继续播。
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.maybeOf(context);
+    if (!identical(router, _router)) {
+      _router?.routerDelegate.removeListener(_onRouteChanged);
+      _router = router;
+      _router?.routerDelegate.addListener(_onRouteChanged);
+    }
+  }
+
+  /// 外部参数变化时同步播放器（同一 State 未 dispose 的前提下）。
+  ///
+  /// - [play]：InView 进出可视区时 pause / play
+  /// - [resumeNonce]：从详情返回等场景下 play 未变，靠 nonce 强制再同步一次
   @override
   void didUpdateWidget(covariant TopicFeedVideoPlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.videoUrl != widget.videoUrl) {
-      if (_isPreviewOpen) {
-        // 预览占用中不重建 controller，避免打断放大页。
-        return;
-      }
-      _disposeController();
-      if (widget.play) {
-        _ensureInitializedAndSyncPlay();
-      } else if (mounted) {
-        setState(() {
-          _errorText = null;
-          _isInitializing = false;
-        });
-      }
-      return;
-    }
 
+    // 可视区播放开关变了（滑入 / 滑出中间区域）
     if (oldWidget.play != widget.play && !_isPreviewOpen) {
       _syncPlayState();
     }
 
+    // 外部强制续播信号（如 push 详情再 pop 回来）
     if (oldWidget.resumeNonce != widget.resumeNonce && !_isPreviewOpen) {
       _syncPlayState();
     }
@@ -85,6 +96,9 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
 
   @override
   void dispose() {
+    _router?.routerDelegate.removeListener(_onRouteChanged);
+    _router = null;
+
     final handoff = _previewHandoff;
     if (handoff != null) {
       handoff.listDisposed = true;
@@ -94,6 +108,11 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       _disposeController();
     }
     super.dispose();
+  }
+
+  void _onRouteChanged() {
+    if (!mounted || _isPreviewOpen) return;
+    _syncPlayState();
   }
 
   Future<void> _ensureInitializedAndSyncPlay() async {
@@ -162,12 +181,34 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     setState(() {});
   }
 
+  /// 当前播放器所在表面是否对用户可见（可播放）。
+  ///
+  /// - Shell 内：仅当前位于动态 Tab 根路由 `/topic` 时可见。
+  /// - Shell 外（个人主页、动态详情等）：看 [TickerMode]，被更高路由盖住则暂停。
+  /// - 放大预览：由 [_isPreviewOpen] 短路，不走此逻辑。
+  bool _isSurfaceActive() {
+    if (!mounted) return false;
+
+    final tickersEnabled =
+        _tickersEnabled ?? TickerMode.valuesOf(context).enabled;
+    if (!tickersEnabled) return false;
+
+    final shell = StatefulNavigationShell.maybeOf(context);
+    if (shell != null) {
+      final location = GoRouter.of(context).state.matchedLocation;
+      return location == AppRoutes.topic;
+    }
+
+    // 根栈页面（如 /user/:id）：只要没被上层盖住即可播。
+    return true;
+  }
+
   void _syncPlayState() {
     if (_isPreviewOpen) return;
 
     final controller = _controller;
     if (controller == null) {
-      if (widget.play) {
+      if (widget.play && _isSurfaceActive()) {
         _ensureInitializedAndSyncPlay();
       }
       return;
@@ -177,10 +218,7 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       return;
     }
 
-    // 被上层路由盖住时不续播，避免与详情页播放器抢占，返回后由
-    // [_onTickerModeChanged] 再同步。
-    final tickersEnabled = _tickersEnabled ?? true;
-    if (widget.play && tickersEnabled) {
+    if (widget.play && _isSurfaceActive()) {
       if (!controller.value.isPlaying) {
         controller.play();
       }
@@ -189,18 +227,9 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     }
   }
 
-  void _onTickerModeChanged(bool enabled) {
+  void _onTickerModeChanged() {
     if (!mounted || _isPreviewOpen) return;
-    if (enabled) {
-      _syncPlayState();
-    } else {
-      final controller = _controller;
-      if (controller != null &&
-          controller.value.isInitialized &&
-          controller.value.isPlaying) {
-        controller.pause();
-      }
-    }
+    _syncPlayState();
   }
 
   void _disposeController() {
@@ -299,7 +328,7 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       _tickersEnabled = tickersEnabled;
       if (previous != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _onTickerModeChanged(tickersEnabled);
+          _onTickerModeChanged();
         });
       }
     }

@@ -6,10 +6,8 @@ import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
-import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
-import 'package:all_flutter0709/features/topic/presentation/topic_list_base_state.dart';
-import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
+import 'package:all_flutter0709/features/topic/presentation/topic_list_base_state.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_follow_helper.dart';
@@ -88,8 +86,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   @override
   Map<String, dynamic>? customParameters() {
-    Map<String, dynamic> map = {"toUserId" : widget.userId};
-    return map;
+    return {'toUserId': widget.userId};
   }
 
   @override
@@ -97,6 +94,22 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   @override
   bool get useDefaultScaffold => false;
+
+  /// 复用基类 [buildTopicListView] 的 header 钩子。
+  @override
+  Widget? buildListHeader() {
+    return UserDetailHeader(
+      profileModel: _profileModel,
+      coverHeight: _coverHeight(context),
+      stretchOffset: _stretchOffset,
+      isSelf: _isSelf,
+      isFollowLoading: _isFollowLoading,
+      onAvatarTap: _onAvatarTap,
+      onChatTap: _onChatTap,
+      onFollowTap: _onFollowTap,
+      onEditTap: _onEditTap,
+    );
+  }
 
   Future<void> _loadProfile() async {
     try {
@@ -234,82 +247,50 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   }
 
   Widget _buildScrollBody(ScrollPhysics physics) {
-    final coverHeight = _coverHeight(context);
-
     return NotificationListener<ScrollNotification>(
       onNotification: _onScrollNotification,
-      child: CustomScrollView(
-        physics: physics,
-        slivers: [
-          SliverToBoxAdapter(
-            child: UserDetailHeader(
-              profileModel: _profileModel,
-              coverHeight: coverHeight,
-              stretchOffset: _stretchOffset,
-              isSelf: _isSelf,
-              isFollowLoading: _isFollowLoading,
-              onAvatarTap: _onAvatarTap,
-              onChatTap: _onChatTap,
-              onFollowTap: _onFollowTap,
-              onEditTap: _onEditTap,
-            ),
+      child: switch (pageState) {
+        PageState.success => buildTopicListView(
+          physics: physics,
+          listPadding: const EdgeInsets.only(bottom: 24),
+        ),
+        PageState.loading => _buildHeaderStateScrollView(
+          physics: physics,
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+        PageState.empty => _buildHeaderStateScrollView(
+          physics: physics,
+          child: PageStateView(
+            state: PageState.empty,
+            emptyText: emptyText,
+            successWidget: const SizedBox.shrink(),
           ),
-          ..._buildListSlivers(),
-        ],
-      ),
+        ),
+        PageState.error => _buildHeaderStateScrollView(
+          physics: physics,
+          child: PageStateView(
+            state: PageState.error,
+            errorText: errorText,
+            successWidget: const SizedBox.shrink(),
+          ),
+        ),
+      },
     );
   }
 
-  List<Widget> _buildListSlivers() {
-    switch (pageState) {
-      case PageState.loading:
-        return [
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ];
-      case PageState.empty:
-        return [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: PageStateView(
-              state: PageState.empty,
-              emptyText: emptyText,
-              successWidget: const SizedBox.shrink(),
-            ),
-          ),
-        ];
-      case PageState.error:
-        return [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: PageStateView(
-              state: PageState.error,
-              errorText: errorText,
-              successWidget: const SizedBox.shrink(),
-            ),
-          ),
-        ];
-      case PageState.success:
-        return [
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 24),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                if (index.isOdd) {
-                  return const SizedBox(height: 10);
-                }
-                final topicIndex = index ~/ 2;
-                return TopicItemWidget(
-                  topicModel: topics[topicIndex],
-                  listener: this,
-                );
-              }, childCount: topics.isEmpty ? 0 : topics.length * 2 - 1),
-            ),
-          ),
-        ];
-    }
+  /// 非 success 时仍展示 header + 状态占位（无需 InView）。
+  Widget _buildHeaderStateScrollView({
+    required ScrollPhysics physics,
+    required Widget child,
+  }) {
+    return CustomScrollView(
+      physics: physics,
+      slivers: [
+        if (buildListHeader() case final header?)
+          SliverToBoxAdapter(child: header),
+        SliverFillRemaining(hasScrollBody: false, child: child),
+      ],
+    );
   }
 
   @override
