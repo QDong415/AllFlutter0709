@@ -1,5 +1,5 @@
 import 'package:all_flutter0709/app/app.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,18 +10,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final preferences = await SharedPreferences.getInstance();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: AppColors.tabBarBackground,
-      systemNavigationBarDividerColor: AppColors.tabBarBackground,
-      systemNavigationBarContrastEnforced: false,
-      systemStatusBarContrastEnforced: false,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-    ),
-  );
+  AppSystemUi.apply(AppSystemUi.overlayStyle);
   runApp(
     ProviderScope(
       overrides: [sharedPreferencesProvider.overrideWithValue(preferences)],

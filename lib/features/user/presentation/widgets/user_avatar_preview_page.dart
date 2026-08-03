@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
@@ -24,31 +25,35 @@ class UserAvatarPreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DismissiblePage(
-      direction: DismissiblePageDismissDirection.vertical,
-      onDismissed: () => Navigator.of(context).pop(),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            Center(
-              child: PhotoView(
-                imageProvider: CachedNetworkImageProvider(imageUrl),
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 3,
-                backgroundDecoration: const BoxDecoration(color: Colors.black),
-              ),
-            ),
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, color: Colors.white),
+    return FullscreenMediaSystemUi(
+      child: DismissiblePage(
+        direction: DismissiblePageDismissDirection.vertical,
+        onDismissed: () => Navigator.of(context).pop(),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            children: [
+              Center(
+                child: PhotoView(
+                  imageProvider: CachedNetworkImageProvider(imageUrl),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 3,
+                  backgroundDecoration: const BoxDecoration(
+                    color: Colors.black,
+                  ),
                 ),
               ),
-            ),
-          ],
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

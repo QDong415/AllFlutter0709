@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:dio/dio.dart';
 import 'package:dismissible_page/dismissible_page.dart';
@@ -137,75 +138,79 @@ class _TopicPicturePreviewPageState extends State<TopicPicturePreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return DismissiblePage(
-      direction: DismissiblePageDismissDirection.vertical,
-      backgroundColor: Colors.black,
-      startingOpacity: 1,
-      dragSensitivity: 0.7,
-      minRadius: 0,
-      maxRadius: 24,
-      onDragUpdate: (details) {
-        final nextOpacity = details.opacity.clamp(0.0, 1.0);
-        if (_overlayOpacity == nextOpacity) return;
-        setState(() {
-          _overlayOpacity = nextOpacity;
-        });
-      },
-      onDismissed: () => Navigator.of(context).maybePop(),
-      child: Scaffold(
+    return FullscreenMediaSystemUi(
+      child: DismissiblePage(
+        direction: DismissiblePageDismissDirection.vertical,
         backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Positioned.fill(
-              child: PhotoViewGallery.builder(
-                pageController: _pageController,
-                itemCount: widget.pictures.length,
-                backgroundDecoration: const BoxDecoration(color: Colors.black),
-                scrollPhysics: const BouncingScrollPhysics(),
-                onPageChanged: (index) {
-                  if (_currentIndex == index) return;
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                builder: (context, index) {
-                  final picture = widget.pictures[index];
-                  return PhotoViewGalleryPageOptions(
-                    imageProvider: NetworkImage(_imageUrlOf(picture)),
-                    minScale: PhotoViewComputedScale.contained,
-                    initialScale: PhotoViewComputedScale.contained,
-                    maxScale: PhotoViewComputedScale.covered * 4,
-                    tightMode: true,
-                    onTapUp: (context, details, controllerValue) {
-                      Navigator.of(context).maybePop();
-                    },
-                    heroAttributes: PhotoViewHeroAttributes(
-                      tag: picture.heroTag,
-                    ),
-                  );
-                },
+        startingOpacity: 1,
+        dragSensitivity: 0.7,
+        minRadius: 0,
+        maxRadius: 24,
+        onDragUpdate: (details) {
+          final nextOpacity = details.opacity.clamp(0.0, 1.0);
+          if (_overlayOpacity == nextOpacity) return;
+          setState(() {
+            _overlayOpacity = nextOpacity;
+          });
+        },
+        onDismissed: () => Navigator.of(context).maybePop(),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: PhotoViewGallery.builder(
+                  pageController: _pageController,
+                  itemCount: widget.pictures.length,
+                  backgroundDecoration: const BoxDecoration(
+                    color: Colors.black,
+                  ),
+                  scrollPhysics: const BouncingScrollPhysics(),
+                  onPageChanged: (index) {
+                    if (_currentIndex == index) return;
+                    setState(() {
+                      _currentIndex = index;
+                    });
+                  },
+                  builder: (context, index) {
+                    final picture = widget.pictures[index];
+                    return PhotoViewGalleryPageOptions(
+                      imageProvider: NetworkImage(_imageUrlOf(picture)),
+                      minScale: PhotoViewComputedScale.contained,
+                      initialScale: PhotoViewComputedScale.contained,
+                      maxScale: PhotoViewComputedScale.covered * 4,
+                      tightMode: true,
+                      onTapUp: (context, details, controllerValue) {
+                        Navigator.of(context).maybePop();
+                      },
+                      heroAttributes: PhotoViewHeroAttributes(
+                        tag: picture.heroTag,
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onLongPress: _showImageActions,
-                child: const SizedBox.expand(),
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onLongPress: _showImageActions,
+                  child: const SizedBox.expand(),
+                ),
               ),
-            ),
-            Positioned(
-              top: MediaQuery.paddingOf(context).top + 8,
-              left: 16,
-              right: 16,
-              child: _PreviewTopBar(
-                opacity: _overlayOpacity,
-                currentIndex: _currentIndex,
-                total: widget.pictures.length,
-                onBackTap: () => Navigator.of(context).maybePop(),
+              Positioned(
+                top: MediaQuery.paddingOf(context).top + 8,
+                left: 16,
+                right: 16,
+                child: _PreviewTopBar(
+                  opacity: _overlayOpacity,
+                  currentIndex: _currentIndex,
+                  total: widget.pictures.length,
+                  onBackTap: () => Navigator.of(context).maybePop(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

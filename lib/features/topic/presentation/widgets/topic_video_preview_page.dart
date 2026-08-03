@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:dio/dio.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
@@ -209,81 +210,83 @@ class _TopicVideoPreviewPageState extends State<TopicVideoPreviewPage> {
     final value = _controller.value;
     final initialized = value.isInitialized;
 
-    return DismissiblePage(
-      direction: DismissiblePageDismissDirection.vertical,
-      backgroundColor: Colors.black,
-      startingOpacity: 1,
-      dragSensitivity: 0.7,
-      minRadius: 0,
-      maxRadius: 24,
-      onDragUpdate: (details) {
-        final nextOpacity = details.opacity.clamp(0.0, 1.0);
-        if (_overlayOpacity == nextOpacity) return;
-        setState(() {
-          _overlayOpacity = nextOpacity;
-        });
-      },
-      onDismissed: () => Navigator.of(context).maybePop(),
-      child: Scaffold(
+    return FullscreenMediaSystemUi(
+      child: DismissiblePage(
+        direction: DismissiblePageDismissDirection.vertical,
         backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _togglePlayPause,
-                onLongPress: _showActions,
-                child: Center(
-                  child: initialized
-                      ? AspectRatio(
-                          aspectRatio: value.aspectRatio == 0
-                              ? 16 / 9
-                              : value.aspectRatio,
-                          child: VideoPlayer(_controller),
-                        )
-                      : const ColoredBox(color: Colors.black),
-                ),
-              ),
-            ),
-            if (initialized && !value.isPlaying)
-              IgnorePointer(
-                child: Center(
-                  child: Icon(
-                    Icons.play_circle_filled_rounded,
-                    size: 72,
-                    color: Colors.white.withValues(alpha: 0.85),
+        startingOpacity: 1,
+        dragSensitivity: 0.7,
+        minRadius: 0,
+        maxRadius: 24,
+        onDragUpdate: (details) {
+          final nextOpacity = details.opacity.clamp(0.0, 1.0);
+          if (_overlayOpacity == nextOpacity) return;
+          setState(() {
+            _overlayOpacity = nextOpacity;
+          });
+        },
+        onDismissed: () => Navigator.of(context).maybePop(),
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _togglePlayPause,
+                  onLongPress: _showActions,
+                  child: Center(
+                    child: initialized
+                        ? AspectRatio(
+                            aspectRatio: value.aspectRatio == 0
+                                ? 16 / 9
+                                : value.aspectRatio,
+                            child: VideoPlayer(_controller),
+                          )
+                        : const ColoredBox(color: Colors.black),
                   ),
                 ),
               ),
-            if (initialized)
+              if (initialized && !value.isPlaying)
+                IgnorePointer(
+                  child: Center(
+                    child: Icon(
+                      Icons.play_circle_filled_rounded,
+                      size: 72,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+              if (initialized)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: AnimatedOpacity(
+                    opacity: _overlayOpacity,
+                    duration: const Duration(milliseconds: 120),
+                    child: _BottomSeekBar(controller: _controller),
+                  ),
+                ),
               Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
+                top: MediaQuery.paddingOf(context).top + 8,
+                left: 16,
                 child: AnimatedOpacity(
                   opacity: _overlayOpacity,
                   duration: const Duration(milliseconds: 120),
-                  child: _BottomSeekBar(controller: _controller),
-                ),
-              ),
-            Positioned(
-              top: MediaQuery.paddingOf(context).top + 8,
-              left: 16,
-              child: AnimatedOpacity(
-                opacity: _overlayOpacity,
-                duration: const Duration(milliseconds: 120),
-                child: IconButton(
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black45,
-                    foregroundColor: Colors.white,
+                  child: IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black45,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back),
                   ),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_back),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
