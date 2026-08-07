@@ -176,9 +176,11 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     }
   }
 
+  /// 当前播放器内部状态一变就会通知所有 listener，包括：
+  /// 播放位置前进（几乎每帧/定期）、play / pause 、缓冲、初始化完成等
   void _onControllerTick() {
     if (!mounted || _isPreviewOpen) return;
-    setState(() {});
+    setState(() {}); //为了刷新进度条和倒计时，每秒回调一次
   }
 
   /// 当前播放器所在表面是否对用户可见（可播放）。
@@ -192,6 +194,8 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     final tickersEnabled =
         _tickersEnabled ?? TickerMode.valuesOf(context).enabled;
     if (!tickersEnabled) return false;
+    // enabled == false（被盖住）→ pause
+    // enabled == true（又露出来）→ 按 play 决定要不要继续播
 
     final shell = StatefulNavigationShell.maybeOf(context);
     if (shell != null) {
@@ -225,11 +229,6 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     } else if (controller.value.isPlaying) {
       controller.pause();
     }
-  }
-
-  void _onTickerModeChanged() {
-    if (!mounted || _isPreviewOpen) return;
-    _syncPlayState();
   }
 
   void _disposeController() {
@@ -266,10 +265,11 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     controller.removeListener(_onControllerTick);
 
     final handoff = TopicVideoControllerHandoff(controller);
-    _previewHandoff = handoff;
 
     // 先从列表树卸下 VideoPlayer，再挂到放大页，避免同一 controller 双挂载。
-    setState(() {});
+    setState(() {
+      _previewHandoff = handoff;
+    });
     await SchedulerBinding.instance.endOfFrame;
 
     try {
@@ -290,10 +290,9 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       videoUrl: widget.videoUrl,
     );
 
-    _previewHandoff = null;
-
     if (handoff.listDisposed) {
       _controller = null;
+      _previewHandoff = null;
       return;
     }
 
@@ -302,6 +301,7 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
         await controller.dispose();
       } catch (_) {}
       _controller = null;
+      _previewHandoff = null;
       return;
     }
 
@@ -310,8 +310,10 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       await controller.setLooping(true);
     } catch (_) {}
     controller.addListener(_onControllerTick);
+    setState(() {
+      _previewHandoff = null;
+    });
     _syncPlayState();
-    if (mounted) setState(() {});
   }
 
   @override
@@ -326,9 +328,10 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
     if (_tickersEnabled != tickersEnabled) {
       final previous = _tickersEnabled;
       _tickersEnabled = tickersEnabled;
-      if (previous != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _onTickerModeChanged();
+      if (previous != null) { // 第一次 build 时 _tickersEnabled 还是 null，只做初始化，不立刻 pause/play，避免和 initState 里的初始化抢一遍。
+        WidgetsBinding.instance.addPostFrameCallback((_) {//不在 build 里直接 play/pause（build 应尽量纯展示）。等当前帧画完再改播放状态，更安全。
+          if (!mounted || _isPreviewOpen) return;
+          _syncPlayState();
         });
       }
     }

@@ -1,5 +1,5 @@
 ---
-description: Flutter 编码规范（Model 命名、Widget key、中文注释）
+description: Flutter 编码规范（Model/List/Map 命名、Widget key、中文注释）
 globs: "**/*.dart"
 alwaysApply: false
 ---
@@ -22,7 +22,21 @@ final UserModel user;
 final TopicModel topic;
 ```
 
-## 2. Widget 构造方法
+## 2. List / Map 命名
+
+`List` 类型变量名必须以 `List` 结尾；`Map` 类型变量名必须以 `Map` 结尾。
+
+```dart
+// ✅
+final List<UserModel> userModelList;
+final Map<String, TopicModel> topicModelMap;
+
+// ❌
+final List<UserModel> users;
+final Map<String, TopicModel> topics;
+```
+
+## 3. Widget 构造方法
 
 `key`（含 `super.key`）必须放在构造参数第一位。
 
@@ -40,7 +54,7 @@ const UserAvatarWidget({
 });
 ```
 
-## 3. Class 注释
+## 4. Class 注释
 
 手写 Class 必须加中文文档注释，说明职责；禁止无意义注释。
 
@@ -51,7 +65,7 @@ class UserAvatarWidget {}
 
 例外：极短 private 内部类、生成代码中的 Class。
 
-## 4. Public 方法注释
+## 5. Public 方法注释
 
 手写 public 方法 / getter / setter 必须加中文文档注释。private 方法不强制。
 
@@ -62,7 +76,7 @@ Future<void> loadUserDetail(String userId) async {}
 
 例外：一目了然的简单 getter/setter、纯 `override`（如 `build` / `dispose`）、接口转发实现。
 
-## 5. 界面文件拆分
+## 6. 界面文件拆分
 
 新增或大改界面时，不要把整页堆在一个 dart 文件里。按下面拆，直接执行，不必再去翻其他旧页面源码。
 
