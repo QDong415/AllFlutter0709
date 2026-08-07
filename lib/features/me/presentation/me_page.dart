@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/push/getui_push_service.dart';
@@ -22,7 +23,12 @@ class MePage extends ConsumerWidget {
     return Scaffold(
       appBar: const CommonAppBar(title: '我的 Me'),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          AppDimens.glassTabBarContentInset,
+        ),
         children: [
           Card(
             child: ListTile(

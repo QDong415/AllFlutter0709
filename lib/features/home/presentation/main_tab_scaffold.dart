@@ -1,13 +1,13 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
-import 'package:all_flutter0709/app/theme/app_shadows.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
-/// 主 Tab 壳：底部栏（白底、56、主色选中）。
+/// 主 Tab 壳：底部液态玻璃 TabBar（[GlassTabBar]），内容区由 go_router shell 保活。
 class MainTabScaffold extends ConsumerWidget {
   const MainTabScaffold({super.key, required this.navigationShell});
 
@@ -18,57 +18,53 @@ class MainTabScaffold extends ConsumerWidget {
     final controller = ref.read(conversationControllerProvider);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AppSystemUi.overlayStyle,
-      child: Scaffold(
+      child: GlassScaffold(
+        backgroundColor: AppColors.bodyBackground,
+        statusBarStyle: GlassStatusBarStyle.none,
+        extendBody: true,
+        // 各 Tab 页自带 Material AppBar，顶部不做 glass edge fade。
+        topEdgeFade: false,
+        bottomEdgeFade: true,
         body: navigationShell,
-        bottomNavigationBar: ListenableBuilder(
+        bottomBar: ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
             final unreadCount = controller.totalUnreadCount;
-            // DecoratedBox 铺满底部安全区，并带上缘轻阴影。
-            return DecoratedBox(
-              decoration: const BoxDecoration(
-                color: AppColors.tabBarBackground,
-                boxShadow: AppShadows.upward,
-              ),
-              child: SafeArea(
-                top: false,
-                child: BottomNavigationBar(
-                  key: ValueKey('main-tabs-unread-$unreadCount'),
-                  currentIndex: navigationShell.currentIndex,
-                  backgroundColor: AppColors.tabBarBackground,
-                  selectedItemColor: AppColors.primary,
-                  unselectedItemColor: AppColors.tabUnselected,
-                  type: BottomNavigationBarType.fixed,
-                  elevation: 0,
-                  selectedFontSize: 12,
-                  unselectedFontSize: 12,
-                  onTap: (index) {
-                    navigationShell.goBranch(
-                      index,
-                      initialLocation: index == navigationShell.currentIndex,
-                    );
-                  },
-                  items: MainTabItem.values
-                      .map(
-                        (tab) => BottomNavigationBarItem(
-                          icon: _TabIcon(
-                            icon: tab.icon,
-                            badgeCount: tab == MainTabItem.conversation
-                                ? unreadCount
-                                : 0,
-                          ),
-                          activeIcon: _TabIcon(
-                            icon: tab.selectedIcon,
-                            badgeCount: tab == MainTabItem.conversation
-                                ? unreadCount
-                                : 0,
-                          ),
-                          label: tab.label,
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
+            return GlassTabBar.bottom(
+              key: ValueKey('main-tabs-unread-$unreadCount'),
+              selectedIndex: navigationShell.currentIndex,
+              selectedIconColor: AppColors.primary,
+              selectedLabelColor: AppColors.primary,
+              unselectedIconColor: AppColors.tabUnselected,
+              unselectedLabelColor: AppColors.tabUnselected,
+              // iOS 26 默认选中胶囊：深色半透明，而不是品牌主色淡红。
+              indicatorColor: const Color(0x1A000000),
+              labelFontSize: 12,
+              onTabSelected: (index) {
+                navigationShell.goBranch(
+                  index,
+                  initialLocation: index == navigationShell.currentIndex,
+                );
+              },
+              tabs: MainTabItem.values
+                  .map(
+                    (tab) => GlassTab(
+                      icon: _TabIcon(
+                        icon: tab.icon,
+                        badgeCount: tab == MainTabItem.conversation
+                            ? unreadCount
+                            : 0,
+                      ),
+                      activeIcon: _TabIcon(
+                        icon: tab.selectedIcon,
+                        badgeCount: tab == MainTabItem.conversation
+                            ? unreadCount
+                            : 0,
+                      ),
+                      label: tab.label,
+                    ),
+                  )
+                  .toList(),
             );
           },
         ),
@@ -111,6 +107,7 @@ enum MainTabItem {
   final IconData selectedIcon;
 }
 
+/// Tab 图标；聊天 Tab 可带未读角标。
 class _TabIcon extends StatelessWidget {
   const _TabIcon({required this.icon, required this.badgeCount});
 
@@ -119,10 +116,13 @@ class _TabIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Badge.count(
-      isLabelVisible: badgeCount > 0,
+    final iconWidget = Icon(icon, size: 24);
+    if (badgeCount <= 0) {
+      return iconWidget;
+    }
+    return GlassBadge(
       count: badgeCount > 99 ? 99 : badgeCount,
-      child: Icon(icon, size: 24),
+      child: iconWidget,
     );
   }
 }

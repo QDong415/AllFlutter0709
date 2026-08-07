@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:all_flutter0709/features/video/data/video_repository.dart';
 import 'package:all_flutter0709/features/video/presentation/widgets/video_item_widget.dart';
@@ -91,7 +92,7 @@ class _VideoPageState extends State<VideoPage> {
 
   Widget _buildListView() {
     return MasonryGridView.builder(
-      padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, AppDimens.glassTabBarContentInset),
       gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
       ),

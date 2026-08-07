@@ -7,11 +7,11 @@ import 'package:flutter/services.dart';
 /// 不要直接使用 [SystemUiOverlayStyle.light] / [SystemUiOverlayStyle.dark]，
 /// 它们会把 `systemNavigationBarColor` 设成黑色，小米等机型底部指示区会变黑。
 abstract final class AppSystemUi {
-  /// 默认：白底导航栏 + 深色图标（主 Tab / 普通页）。
+  /// 默认：透明系统导航栏 + 深色图标（配合液态玻璃底栏 / edge-to-edge）。
   static const SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    systemNavigationBarColor: AppColors.tabBarBackground,
-    systemNavigationBarDividerColor: AppColors.tabBarBackground,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
     systemNavigationBarContrastEnforced: false,
     systemStatusBarContrastEnforced: false,
     systemNavigationBarIconBrightness: Brightness.dark,
@@ -32,7 +32,7 @@ abstract final class AppSystemUi {
         statusBarBrightness: Brightness.dark,
       );
 
-  /// 在 [overlayStyle]（白底导航栏）基础上，只切换状态栏图标明暗。
+  /// 在 [overlayStyle]（透明导航栏）基础上，只切换状态栏图标明暗。
   ///
   /// 用于个人主页 / 视频详情等「顶栏随滚动变实色」的场景。
   static SystemUiOverlayStyle overlayStyleWithStatusBarIcons({
@@ -50,7 +50,7 @@ abstract final class AppSystemUi {
   }
 }
 
-/// 包裹全屏媒体预览：进入时导航栏变黑，离开后恢复默认白底。
+/// 包裹全屏媒体预览：进入时导航栏变黑，离开后恢复默认透明导航栏。
 class FullscreenMediaSystemUi extends StatefulWidget {
   const FullscreenMediaSystemUi({super.key, required this.child});
 

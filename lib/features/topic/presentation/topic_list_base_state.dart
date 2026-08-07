@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
@@ -201,15 +202,19 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   ///
   /// 有 [buildListHeader] 时使用 [InViewNotifierCustomScrollView]，
   /// 否则使用 [InViewNotifierList]。
+  /// 未传 [listPadding] 时默认带玻璃底栏留白，避免末项被挡住。
   @protected
   Widget buildTopicListView({
     ScrollPhysics? physics,
     EdgeInsetsGeometry? listPadding,
   }) {
+    final effectivePadding = listPadding ??
+        const EdgeInsets.only(bottom: AppDimens.glassTabBarContentInset);
     final header = buildListHeader();
     if (header == null) {
       return InViewNotifierList(
         physics: physics,
+        padding: effectivePadding.resolve(TextDirection.ltr),
         initialInViewIds: _initialVideoInViewIds(),
         isInViewPortCondition: _isCenterInView,
         itemCount: _topics.length,
@@ -223,7 +228,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
       isInViewPortCondition: _isCenterInView,
       slivers: [
         SliverToBoxAdapter(child: header),
-        buildTopicListSliver(padding: listPadding),
+        buildTopicListSliver(padding: effectivePadding),
       ],
     );
   }

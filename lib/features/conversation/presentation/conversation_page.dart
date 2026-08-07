@@ -52,6 +52,9 @@ class ConversationPage extends ConsumerWidget {
                     return RefreshIndicator(
                       onRefresh: controller.syncMessagesFromServer,
                       child: ListView.separated(
+                        padding: const EdgeInsets.only(
+                          bottom: AppDimens.glassTabBarContentInset,
+                        ),
                         itemBuilder: (context, index) {
                           final item = conversations[index];
                           return ConversationListItem(
