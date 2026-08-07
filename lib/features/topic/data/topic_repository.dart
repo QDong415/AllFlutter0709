@@ -2,8 +2,8 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/network/page_data.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
-import 'package:dio/dio.dart';
 
+/// 动态列表分页结果。
 class TopicPageResult {
   const TopicPageResult({
     required this.items,
@@ -14,11 +14,13 @@ class TopicPageResult {
   final bool hasMore;
 }
 
+/// 动态相关网络请求。
 class TopicRepository {
   const TopicRepository();
 
+  /// 拉取动态详情。
   Future<TopicModel> getTopicDetail({required String tid}) async {
-    final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
+    final response = await HttpClient.instance.get(
       '/api/topic/detail',
       queryParameters: {'tid': tid},
     );
@@ -43,7 +45,7 @@ class TopicRepository {
     return topic;
   }
 
-  /// 拉取动态列表；
+  /// 拉取动态列表。
   Future<TopicPageResult> getTopicList({
     required int page,
     Map<String, dynamic>? customParameters,
@@ -57,8 +59,8 @@ class TopicRepository {
     if (customParameters != null) {
       queryParameters.addAll(customParameters);
     }
-    
-    final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
+
+    final response = await HttpClient.instance.get(
       '/api/topic/getlist',
       queryParameters: queryParameters,
     );
@@ -86,12 +88,13 @@ class TopicRepository {
     return TopicPageResult(items: items, hasMore: hasMore);
   }
 
+  /// 点赞 / 取消点赞动态。
   Future<void> likeTopic({
     required String tid,
     required bool isLiked,
     required int likeCount,
   }) async {
-    final response = await HttpClient.instance.dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/topic/like',
       data: <String, dynamic>{
         'dataid': tid,
@@ -101,7 +104,6 @@ class TopicRepository {
         'likecount': '$likeCount',
         'type': '1',
       },
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;

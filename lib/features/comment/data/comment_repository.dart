@@ -1,8 +1,8 @@
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_model.dart';
-import 'package:dio/dio.dart';
 
+/// 评论目标类型（动态 / 视频）。
 enum CommentTargetType {
   topic('1'),
   video('2');
@@ -12,15 +12,17 @@ enum CommentTargetType {
   final String apiValue;
 }
 
+/// 评论相关网络请求。
 class CommentRepository {
   const CommentRepository();
 
+  /// 拉取一级评论列表。
   Future<CommentPageResult> getCommentList({
     required String targetId,
     required CommentTargetType type,
     required int page,
   }) async {
-    final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
+    final response = await HttpClient.instance.get(
       '/api/comment/getlist',
       queryParameters: <String, dynamic>{
         'tid': targetId,
@@ -50,11 +52,12 @@ class CommentRepository {
         );
   }
 
+  /// 拉取子评论列表。
   Future<CommentPageResult> getChildCommentList({
     required String parentCid,
     required String startCid,
   }) async {
-    final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
+    final response = await HttpClient.instance.get(
       '/api/comment/childlist',
       queryParameters: <String, dynamic>{
         'pcid': parentCid,
@@ -83,6 +86,7 @@ class CommentRepository {
         );
   }
 
+  /// 提交评论或回复。
   Future<CommentSubmitResult> submitComment({
     required String targetId,
     required CommentTargetType type,
@@ -102,10 +106,9 @@ class CommentRepository {
       if (toUserName != null && toUserName.isNotEmpty) 'to_name': toUserName,
     };
 
-    final response = await HttpClient.instance.dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/comment/submit',
       data: payload,
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;
@@ -124,12 +127,13 @@ class CommentRepository {
     return result.data ?? CommentSubmitResult(cid: '', tempId: tempId);
   }
 
+  /// 点赞 / 取消点赞评论。
   Future<void> likeComment({
     required String cid,
     required bool isLiked,
     required int likeCount,
   }) async {
-    final response = await HttpClient.instance.dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/comment/like',
       data: <String, dynamic>{
         'dataid': cid,
@@ -139,7 +143,6 @@ class CommentRepository {
         'likecount': '$likeCount',
         'type': '2',
       },
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;

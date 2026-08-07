@@ -2,6 +2,9 @@ import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 
+/// 全局 HTTP 客户端：统一 baseUrl、超时、日志与 userid 注入。
+///
+/// Repository 请调用 [get] / [post]，不要直接访问 Dio。
 class HttpClient {
   HttpClient._();
 
@@ -10,12 +13,7 @@ class HttpClient {
   final Logger _logger = Logger();
   String? _userId;
 
-  void updateUserId(String? value) {
-    final nextUserId = value?.trim();
-    _userId = nextUserId == null || nextUserId.isEmpty ? null : nextUserId;
-  }
-
-  late final Dio dio =
+  late final Dio _dio =
       Dio(
           BaseOptions(
             baseUrl: AppEnv.apiBaseUrl,
@@ -51,6 +49,40 @@ class HttpClient {
             },
           ),
         );
+
+  /// 更新当前登录用户 id（请求拦截器会自动附带 `userid`）。
+  void updateUserId(String? value) {
+    final nextUserId = value?.trim();
+    _userId = nextUserId == null || nextUserId.isEmpty ? null : nextUserId;
+  }
+
+  /// GET 请求。
+  Future<Response<Map<String, dynamic>>> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _dio.get<Map<String, dynamic>>(
+      path,
+      queryParameters: queryParameters,
+    );
+  }
+
+  /// POST 请求；默认 `application/x-www-form-urlencoded`（与现有接口一致）。
+  Future<Response<Map<String, dynamic>>> post(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    bool formUrlEncoded = true,
+  }) {
+    return _dio.post<Map<String, dynamic>>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: formUrlEncoded
+          ? Options(contentType: Headers.formUrlEncodedContentType)
+          : null,
+    );
+  }
 
   Object? _formatRequestData(Object? data) {
     if (data is FormData) {

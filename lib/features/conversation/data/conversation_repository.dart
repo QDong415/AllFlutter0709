@@ -10,7 +10,6 @@ import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
@@ -26,7 +25,6 @@ final chatLocalDataSourceProvider = Provider<ChatLocalDataSource>((ref) {
 final conversationRepositoryProvider = Provider<ConversationRepository>((ref) {
   return ConversationRepository(
     localDataSource: ref.watch(chatLocalDataSourceProvider),
-    dio: HttpClient.instance.dio,
     qiniuUploadService: ref.watch(qiniuUploadServiceProvider),
   );
 });
@@ -35,10 +33,8 @@ final conversationRepositoryProvider = Provider<ConversationRepository>((ref) {
 class ConversationRepository {
   ConversationRepository({
     required ChatLocalDataSource localDataSource,
-    required Dio dio,
     required QiniuUploadService qiniuUploadService,
   }) : _localDataSource = localDataSource,
-       _dio = dio,
        _qiniuUploadService = qiniuUploadService;
 
   static const _chatTypeSingle = 1;
@@ -48,7 +44,6 @@ class ConversationRepository {
   static const _doRegActionApi = '/api/user/doregaction';
 
   final ChatLocalDataSource _localDataSource;
-  final Dio _dio;
   final QiniuUploadService _qiniuUploadService;
   final Uuid _uuid = const Uuid();
 
@@ -73,7 +68,7 @@ class ConversationRepository {
 
   Future<int> syncPulledMessages(String userId) async {
     ChatPushLog.d('message/pull 请求 userId=$userId');
-    final response = await _dio.get<Map<String, dynamic>>(_messagePullApi);
+    final response = await HttpClient.instance.get(_messagePullApi);
     final json = response.data;
     if (json == null) {
       throw Exception('服务器返回为空');
@@ -281,10 +276,9 @@ class ConversationRepository {
       return;
     }
 
-    final response = await _dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       _modifyUserApi,
       data: {'cid': clientId},
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
     final json = response.data;
     if (json == null) {
@@ -303,10 +297,9 @@ class ConversationRepository {
   /// 通知服务端执行注册后续动作（`POST /api/user/doregaction`）。
   Future<void> notifyDoRegAction() async {
     try {
-      await _dio.post<Map<String, dynamic>>(
+      await HttpClient.instance.post(
         _doRegActionApi,
         data: <String, dynamic>{},
-        options: Options(contentType: Headers.formUrlEncodedContentType),
       );
     } catch (_) {
     }
@@ -326,7 +319,7 @@ class ConversationRepository {
       'filename=$filename extend=$extend',
     );
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await HttpClient.instance.post(
         _messageSendApi,
         data: {
           'targetid': targetId,
@@ -337,7 +330,6 @@ class ConversationRepository {
           'extend': extend,
           'username': username,
         },
-        options: Options(contentType: Headers.formUrlEncodedContentType),
       );
       final json = response.data;
       ChatSendLog.d('chat/send 响应: $json');
@@ -349,12 +341,8 @@ class ConversationRepository {
       if (!result.success) {
         throw Exception(result.message.isEmpty ? '发送失败' : result.message);
       }
-    } on DioException catch (error) {
-      ChatSendLog.d(
-        'chat/send DioException type=${error.type} '
-        'status=${error.response?.statusCode} '
-        'data=${error.response?.data} message=${error.message}',
-      );
+    } catch (error) {
+      ChatSendLog.d('chat/send 失败: $error');
       rethrow;
     }
   }

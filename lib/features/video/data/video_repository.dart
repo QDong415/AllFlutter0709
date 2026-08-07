@@ -2,8 +2,8 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/network/page_data.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
-import 'package:dio/dio.dart';
 
+/// 视频列表分页结果。
 class VideoPageResult {
   const VideoPageResult({required this.items, required this.hasMore});
 
@@ -11,11 +11,13 @@ class VideoPageResult {
   final bool hasMore;
 }
 
+/// 视频相关网络请求。
 class VideoRepository {
   const VideoRepository();
 
+  /// 拉取视频列表。
   Future<VideoPageResult> getVideoList({required int page}) async {
-    final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
+    final response = await HttpClient.instance.get(
       '/api/video/getlist',
       queryParameters: {'page': page},
     );
@@ -43,12 +45,13 @@ class VideoRepository {
     return VideoPageResult(items: items, hasMore: hasMore);
   }
 
+  /// 点赞 / 取消点赞视频。
   Future<void> likeVideo({
     required String videoId,
     required bool isLiked,
     required int likeCount,
   }) async {
-    final response = await HttpClient.instance.dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/video/like',
       data: <String, dynamic>{
         'dataid': videoId,
@@ -58,7 +61,6 @@ class VideoRepository {
         'likecount': '$likeCount',
         'type': '3',
       },
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;

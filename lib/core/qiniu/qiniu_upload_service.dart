@@ -2,25 +2,23 @@ import 'dart:io';
 
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qiniu_flutter_sdk/qiniu_flutter_sdk.dart';
 
 /// 七牛云上传服务 Provider。
 final qiniuUploadServiceProvider = Provider<QiniuUploadService>((ref) {
-  return QiniuUploadService(dio: HttpClient.instance.dio);
+  return QiniuUploadService();
 });
 
 /// 七牛云文件上传服务。
 ///
 /// 负责获取上传凭证并用官方 SDK 上传文件，与具体业务（聊天发图、头像等）解耦。
 class QiniuUploadService {
-  QiniuUploadService({required Dio dio}) : _dio = dio;
+  QiniuUploadService();
 
   static const _uploadTokenApi = '/api/qiniu/uploadtoken';
 
-  final Dio _dio;
   final Storage _storage = Storage();
 
   /// 上传本地文件到七牛云。
@@ -69,7 +67,7 @@ class QiniuUploadService {
   /// 获取七牛上传凭证。
   Future<String> fetchUploadToken() async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(_uploadTokenApi);
+      final response = await HttpClient.instance.get(_uploadTokenApi);
       final json = response.data;
       debugPrint('[QiniuUpload] uploadtoken 原始响应: $json');
       if (json == null) {
@@ -93,12 +91,8 @@ class QiniuUploadService {
         throw Exception('上传凭证为空');
       }
       return token;
-    } on DioException catch (error) {
-      debugPrint(
-        '[QiniuUpload] 获取 uploadtoken 失败 type=${error.type} '
-        'status=${error.response?.statusCode} '
-        'data=${error.response?.data} message=${error.message}',
-      );
+    } catch (error) {
+      debugPrint('[QiniuUpload] 获取 uploadtoken 失败: $error');
       rethrow;
     }
   }

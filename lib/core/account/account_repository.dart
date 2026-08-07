@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,20 +13,19 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   return AccountRepository(
     preferences: ref.watch(sharedPreferencesProvider),
-    dio: HttpClient.instance.dio,
   );
 });
 
+/// 账号仓库：登录/注册/验证码请求，以及本地账号读写。
 class AccountRepository {
-  AccountRepository({required SharedPreferences preferences, required Dio dio})
-    : _preferences = preferences,
-      _dio = dio;
+  AccountRepository({required SharedPreferences preferences})
+    : _preferences = preferences;
 
   static const _currentAccountStorageKey = 'current-account';
 
   final SharedPreferences _preferences;
-  final Dio _dio;
 
+  /// 从本地读取当前账号；无效数据会清除并返回 null。
   AccountModel? readAccountFromStorage() {
     final rawJson = _preferences.getString(_currentAccountStorageKey);
     if (rawJson == null || rawJson.isEmpty) {
@@ -42,14 +40,14 @@ class AccountRepository {
     }
   }
 
+  /// 账号密码登录（`POST /api/user/login`）。
   Future<AccountModel> login({
     required String mobile,
     required String password,
   }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/user/login',
       data: {'mobile': mobile, 'password': password},
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;
@@ -76,10 +74,9 @@ class AccountRepository {
 
   /// 发送手机验证码（`POST /api/user/coderequire`）。
   Future<void> requestSmsCode({required String mobile}) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/user/coderequire',
       data: {'mobile': mobile},
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;
@@ -101,7 +98,7 @@ class AccountRepository {
     required String password,
     String avatar = '',
   }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/user/register',
       data: {
         'mobile': mobile,
@@ -110,7 +107,6 @@ class AccountRepository {
         'password': password,
         'avatar': avatar,
       },
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;
@@ -135,6 +131,7 @@ class AccountRepository {
     return account;
   }
 
+  /// 将账号写入本地存储。
   Future<void> writeAccountToStorage(AccountModel account) {
     return _preferences.setString(
       _currentAccountStorageKey,
@@ -142,6 +139,7 @@ class AccountRepository {
     );
   }
 
+  /// 清除本地账号。
   Future<void> clearAccount() {
     return _preferences.remove(_currentAccountStorageKey);
   }

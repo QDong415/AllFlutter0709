@@ -1,7 +1,6 @@
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
-import 'package:dio/dio.dart';
 
 /// 用户主页相关网络请求。
 class UserRepository {
@@ -9,7 +8,7 @@ class UserRepository {
 
   /// 拉取用户资料。
   Future<UserProfileModel> getUserProfile({required String toUserId}) async {
-    final response = await HttpClient.instance.dio.get<Map<String, dynamic>>(
+    final response = await HttpClient.instance.get(
       '/api/user/profile',
       queryParameters: {'to_userid': toUserId},
     );
@@ -37,10 +36,9 @@ class UserRepository {
 
   /// 关注 / 取消关注，返回最新关系状态（0/1/2/3）。
   Future<int> followUser({required String toUserId}) async {
-    final response = await HttpClient.instance.dio.post<Map<String, dynamic>>(
+    final response = await HttpClient.instance.post(
       '/api/follow/follow',
       data: <String, dynamic>{'to_userid': toUserId},
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
 
     final json = response.data;
@@ -61,10 +59,9 @@ class UserRepository {
     if (followStatus == 1 || followStatus == 3) {
       // 对齐 Android：关注成功后通知服务端 didfollow（失败忽略）。
       try {
-        await HttpClient.instance.dio.post<Map<String, dynamic>>(
+        await HttpClient.instance.post(
           '/api/follow/didfollow',
           data: <String, dynamic>{'to_userid': toUserId},
-          options: Options(contentType: Headers.formUrlEncodedContentType),
         );
       } catch (_) {}
     }
