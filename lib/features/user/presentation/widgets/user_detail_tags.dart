@@ -19,6 +19,12 @@ class UserDetailTags extends StatelessWidget {
         spacing: 6,
         runSpacing: 6,
         children: [
+          if (profileModel.isAi)
+            const _TagChip(
+              label: 'AI',
+              backgroundColor: Color(0xFFE8F1FF),
+              textColor: Color(0xFF3B7CFF),
+            ),
           if (profileModel.hasGender)
             _TagChip(
               label: profileModel.genderLabel ?? '',
@@ -50,11 +56,13 @@ class _TagChip extends StatelessWidget {
     required this.label,
     required this.backgroundColor,
     this.iconAsset,
+    this.textColor = const Color(0xFF666666),
   });
 
   final String label;
   final Color backgroundColor;
   final String? iconAsset;
+  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -74,9 +82,9 @@ class _TagChip extends StatelessWidget {
           ],
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF666666),
+              color: textColor,
               height: 1.1,
             ),
           ),

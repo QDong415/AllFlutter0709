@@ -66,6 +66,7 @@ class ConversationPage extends ConsumerWidget {
                                 extra: ConversationChatArgs(
                                   peerName: item.name,
                                   peerAvatar: item.avatar,
+                                  peerUserType: item.userType,
                                 ),
                               );
                             },

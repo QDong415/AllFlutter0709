@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -93,15 +94,25 @@ class ConversationListItem extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: _nameColor,
-                                fontSize: 16,
-                                height: 1.2,
-                              ),
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: _nameColor,
+                                      fontSize: 16,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                if (summaryModel.isAi) ...[
+                                  const SizedBox(width: 6),
+                                  const UserAiTag(compact: true),
+                                ],
+                              ],
                             ),
                           ),
                           const SizedBox(width: 8),

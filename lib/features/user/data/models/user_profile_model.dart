@@ -1,3 +1,5 @@
+import 'package:all_flutter0709/core/account/user_type.dart';
+
 /// 用户主页资料。
 class UserProfileModel {
   const UserProfileModel({
@@ -14,6 +16,7 @@ class UserProfileModel {
     required this.topicCount,
     required this.videoCount,
     required this.follow,
+    this.userType = UserType.human,
   });
 
   final String userId;
@@ -31,6 +34,9 @@ class UserProfileModel {
 
   /// 关注关系：0 未关注 / 1 已关注 / 2 TA关注我 / 3 互关。
   final int follow;
+
+  /// 账号类型：0 真人 / 1 AI。
+  final int userType;
 
   /// 性别文案；0 或未知返回 null。
   String? get genderLabel {
@@ -53,8 +59,11 @@ class UserProfileModel {
   /// 是否展示城市标签。
   bool get hasCity => cityName.trim().isNotEmpty;
 
+  /// 是否为 AI 账号。
+  bool get isAi => UserType.isAi(userType);
+
   /// 是否有任意资料标签。
-  bool get hasAnyTag => hasGender || hasAge || hasCity;
+  bool get hasAnyTag => isAi || hasGender || hasAge || hasCity;
 
   UserProfileModel copyWith({
     String? userId,
@@ -70,6 +79,7 @@ class UserProfileModel {
     int? topicCount,
     int? videoCount,
     int? follow,
+    int? userType,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -85,6 +95,7 @@ class UserProfileModel {
       topicCount: topicCount ?? this.topicCount,
       videoCount: videoCount ?? this.videoCount,
       follow: follow ?? this.follow,
+      userType: userType ?? this.userType,
     );
   }
 
@@ -103,6 +114,7 @@ class UserProfileModel {
       topicCount: _readInt(json['topiccount']),
       videoCount: _readInt(json['videocount']),
       follow: _readInt(json['follow']),
+      userType: UserType.parse(json['user_type']),
     );
   }
 

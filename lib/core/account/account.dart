@@ -1,3 +1,6 @@
+import 'package:all_flutter0709/core/account/user_type.dart';
+
+/// 当前登录账号。
 class AccountModel {
   const AccountModel({
     required this.userId,
@@ -18,6 +21,7 @@ class AccountModel {
     required this.topicCount,
     required this.videoCount,
     required this.follow,
+    this.userType = UserType.human,
   });
 
   final String userId;
@@ -39,7 +43,13 @@ class AccountModel {
   final int videoCount;
   final int follow;
 
+  /// 账号类型：0 真人 / 1 AI。
+  final int userType;
+
   bool get isValid => userId.trim().isNotEmpty;
+
+  /// 是否为 AI 账号。
+  bool get isAi => UserType.isAi(userType);
 
   AccountModel copyWith({
     String? userId,
@@ -60,6 +70,7 @@ class AccountModel {
     int? topicCount,
     int? videoCount,
     int? follow,
+    int? userType,
   }) {
     return AccountModel(
       userId: userId ?? this.userId,
@@ -80,6 +91,7 @@ class AccountModel {
       topicCount: topicCount ?? this.topicCount,
       videoCount: videoCount ?? this.videoCount,
       follow: follow ?? this.follow,
+      userType: userType ?? this.userType,
     );
   }
 
@@ -103,6 +115,7 @@ class AccountModel {
       'topiccount': topicCount,
       'videocount': videoCount,
       'follow': follow,
+      'user_type': userType,
     };
   }
 
@@ -126,6 +139,7 @@ class AccountModel {
       topicCount: _readInt(json['topiccount']),
       videoCount: _readInt(json['videocount']),
       follow: _readInt(json['follow']),
+      userType: UserType.parse(json['user_type']),
     );
   }
 

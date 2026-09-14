@@ -305,6 +305,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
       userId: topic.userId,
       name: topic.userName,
       avatar: topic.avatar,
+      userType: topic.userType,
     );
   }
 
@@ -330,6 +331,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
       userId: userId,
       name: userName,
       avatar: avatar,
+      userType: comment.userType,
     );
   }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 
 enum ConversationMessageType {
@@ -58,6 +59,7 @@ class ConversationMessage {
     required this.isRead,
     this.localFilePath = '',
     this.uploadProgress = 0,
+    this.otherUserType = UserType.human,
   });
 
   final int? localId;
@@ -78,6 +80,12 @@ class ConversationMessage {
   final bool isRead;
   final String localFilePath;
   final int uploadProgress;
+
+  /// 对方账号类型：0 真人 / 1 AI。
+  final int otherUserType;
+
+  /// 对方是否为 AI 账号。
+  bool get isAi => UserType.isAi(otherUserType);
 
   DateTime get createTime =>
       DateTime.fromMillisecondsSinceEpoch(createTimeSeconds * 1000);
@@ -144,6 +152,7 @@ class ConversationMessage {
     bool? isRead,
     String? localFilePath,
     int? uploadProgress,
+    int? otherUserType,
   }) {
     return ConversationMessage(
       localId: localId ?? this.localId,
@@ -164,6 +173,7 @@ class ConversationMessage {
       isRead: isRead ?? this.isRead,
       localFilePath: localFilePath ?? this.localFilePath,
       uploadProgress: uploadProgress ?? this.uploadProgress,
+      otherUserType: otherUserType ?? this.otherUserType,
     );
   }
 
@@ -188,6 +198,7 @@ class ConversationMessage {
       'hadread': isRead ? 1 : 0,
       'local_file_path': localFilePath,
       'upload_progress': uploadProgress,
+      'other_user_type': otherUserType,
     };
   }
 
@@ -213,6 +224,7 @@ class ConversationMessage {
       isRead: _readInt(map['hadread']) == 1,
       localFilePath: _readString(map['local_file_path']),
       uploadProgress: _readInt(map['upload_progress']),
+      otherUserType: UserType.parse(map['other_user_type']),
     );
   }
 
@@ -239,6 +251,7 @@ class ConversationMessage {
       extend: _readString(json['extend']),
       isSender: false,
       isRead: false,
+      otherUserType: UserType.parse(json['other_user_type']),
     );
   }
 

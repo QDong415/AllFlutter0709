@@ -6,6 +6,7 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_conten
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -97,13 +98,23 @@ class TopicItemWidget extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          topicModel.userName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF304F84),
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                topicModel.userName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF304F84),
+                                ),
+                              ),
+                            ),
+                            if (topicModel.isAi) ...[
+                              const SizedBox(width: 6),
+                              const UserAiTag(compact: true),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(

@@ -83,6 +83,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             userId: userId,
             initialName: args?.name,
             initialAvatar: args?.avatar,
+            initialUserType: args?.userType,
           );
         },
       ),
@@ -154,6 +155,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                         chatId: chatId,
                         initialPeerName: args?.peerName,
                         initialPeerAvatar: args?.peerAvatar,
+                        initialPeerUserType: args?.peerUserType,
                       );
                     },
                   ),

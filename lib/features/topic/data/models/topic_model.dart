@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 
 abstract final class _TopicJsonParser {
@@ -93,6 +94,7 @@ class TopicCommentModel {
     required this.pictures,
     this.avatar,
     this.toAvatar,
+    this.userType = UserType.human,
   });
 
   final String cid;
@@ -108,6 +110,12 @@ class TopicCommentModel {
   final List<TopicPictureModel> pictures;
   final String? avatar;
   final String? toAvatar;
+
+  /// 评论作者账号类型：0 真人 / 1 AI。
+  final int userType;
+
+  /// 是否为 AI 账号。
+  bool get isAi => UserType.isAi(userType);
 
   bool get hasReplyTarget =>
       toUserId.isNotEmpty && toUserId != '0' && toUserName.isNotEmpty;
@@ -129,6 +137,7 @@ class TopicCommentModel {
         pictures: <TopicPictureModel>[],
         avatar: null,
         toAvatar: null,
+        userType: UserType.human,
       );
     }
 
@@ -146,6 +155,7 @@ class TopicCommentModel {
       pictures: TopicModel.parsePictures(json['pictures']),
       avatar: ValueUtil.getQiniuUrlByFileName(json['avatar']?.toString()),
       toAvatar: ValueUtil.getQiniuUrlByFileName(json['to_avatar']?.toString()),
+      userType: UserType.parse(json['user_type']),
     );
   }
 }
@@ -165,6 +175,7 @@ class TopicModel {
     this.content,
     this.avatar,
     this.videoUrl,
+    this.userType = UserType.human,
   });
 
   final String tid;
@@ -180,6 +191,12 @@ class TopicModel {
   final String? content;
   final String? avatar;
   final String? videoUrl;
+
+  /// 发布者账号类型：0 真人 / 1 AI。
+  final int userType;
+
+  /// 是否为 AI 账号。
+  bool get isAi => UserType.isAi(userType);
 
   /// 是否包含可播放视频。
   bool get hasVideo {
@@ -205,6 +222,7 @@ class TopicModel {
         _TopicJsonParser.parseNullableString(json['videourl']),
         keepOriginal: true,
       ),
+      userType: UserType.parse(json['user_type']),
     );
   }
 
@@ -222,6 +240,7 @@ class TopicModel {
     String? content,
     String? avatar,
     String? videoUrl,
+    int? userType,
   }) {
     return TopicModel(
       tid: tid ?? this.tid,
@@ -237,6 +256,7 @@ class TopicModel {
       content: content ?? this.content,
       avatar: avatar ?? this.avatar,
       videoUrl: videoUrl ?? this.videoUrl,
+      userType: userType ?? this.userType,
     );
   }
 

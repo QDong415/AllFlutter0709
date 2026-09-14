@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 
 abstract final class _VideoJsonParser {
@@ -40,6 +41,7 @@ class VideoModel {
     required this.userId,
     required this.userName,
     required this.avatarUrl,
+    this.userType = UserType.human,
   });
 
   final String videoId;
@@ -58,6 +60,12 @@ class VideoModel {
   final String userId;
   final String userName;
   final String? avatarUrl;
+
+  /// 发布者账号类型：0 真人 / 1 AI。
+  final int userType;
+
+  /// 是否为 AI 账号。
+  bool get isAi => UserType.isAi(userType);
 
   factory VideoModel.fromJson(Map<String, dynamic> json) {
     final createTime = _VideoJsonParser.parseInt(json['create_time']);
@@ -87,6 +95,7 @@ class VideoModel {
         _VideoJsonParser.parseNullableString(json['avatar']),
         thumbnail: true,
       ),
+      userType: UserType.parse(json['user_type']),
     );
   }
 
@@ -107,6 +116,7 @@ class VideoModel {
     String? userId,
     String? userName,
     String? avatarUrl,
+    int? userType,
   }) {
     return VideoModel(
       videoId: videoId ?? this.videoId,
@@ -125,6 +135,7 @@ class VideoModel {
       userId: userId ?? this.userId,
       userName: userName ?? this.userName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      userType: userType ?? this.userType,
     );
   }
 

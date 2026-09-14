@@ -8,7 +8,7 @@ class ChatLocalDataSource {
   ChatLocalDataSource();
 
   static const _databaseName = 'conversation.db';
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2;
   static const _chatTable = 'chat';
 
   Database? _database;
@@ -35,6 +35,7 @@ class ChatLocalDataSource {
             other_userid TEXT DEFAULT '',
             other_name TEXT DEFAULT '',
             other_photo TEXT DEFAULT '',
+            other_user_type INTEGER DEFAULT 0,
             content TEXT DEFAULT '',
             create_time INTEGER NOT NULL,
             state INTEGER NOT NULL,
@@ -57,6 +58,13 @@ class ChatLocalDataSource {
         await db.execute(
           'CREATE INDEX idx_chat_user_client_msgid ON $_chatTable(userid, client_messageid)',
         );
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE $_chatTable ADD COLUMN other_user_type INTEGER DEFAULT 0',
+          );
+        }
       },
     );
     _database = db;
@@ -110,6 +118,7 @@ class ChatLocalDataSource {
           latestTimeSeconds: _readInt(row['create_time']),
           unreadCount: unreadCount,
           type: _readInt(row['type'], fallback: 1),
+          userType: _readInt(row['other_user_type']),
         ),
       );
     }

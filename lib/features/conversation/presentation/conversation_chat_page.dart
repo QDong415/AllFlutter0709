@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
@@ -17,6 +18,7 @@ import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_list_view.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_recording_overlay.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,7 @@ class ConversationChatPage extends ConsumerStatefulWidget {
     required this.chatId,
     this.initialPeerName,
     this.initialPeerAvatar,
+    this.initialPeerUserType,
   });
 
   final String chatId;
@@ -38,6 +41,9 @@ class ConversationChatPage extends ConsumerStatefulWidget {
 
   /// 路由预填的对方头像。
   final String? initialPeerAvatar;
+
+  /// 路由预填的对方账号类型。
+  final int? initialPeerUserType;
 
   @override
   ConsumerState<ConversationChatPage> createState() =>
@@ -64,6 +70,10 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   }
 
   String get _peerAvatar => widget.initialPeerAvatar?.trim() ?? '';
+
+  int get _peerUserType => widget.initialPeerUserType ?? 0;
+
+  bool get _peerIsAi => UserType.isAi(_peerUserType);
 
   bool _isVoiceMode = false;
   bool _isRecording = false;
@@ -216,6 +226,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         text: text,
         peerName: _peerName,
         peerAvatar: _peerAvatar,
+        peerUserType: _peerUserType,
       );
       _textController.clear();
       // reverse 列表下新消息已在底部；仅 jump 校正，不做动画。
@@ -259,6 +270,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         imageSize: imageSize,
         peerName: _peerName,
         peerAvatar: _peerAvatar,
+        peerUserType: _peerUserType,
       );
       _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
     } catch (error, stackTrace) {
@@ -410,6 +422,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
             resizeToAvoidBottomInset: false,
             appBar: CommonAppBar(
               title: conversationName,
+              titleTrailing: _peerIsAi ? const UserAiTag() : null,
               actions: const [SizedBox(width: 12)],
               onLeadingPressed: () => Navigator.of(context).pop(),
             ),
@@ -453,6 +466,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                                 userId: account?.userId ?? widget.chatId,
                                 name: account?.name,
                                 avatar: account?.avatar,
+                                userType: account?.userType,
                               );
                               return;
                             }
@@ -461,6 +475,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                               userId: widget.chatId,
                               name: conversationName,
                               avatar: peerAvatar,
+                              userType: _peerUserType,
                             );
                           },
                         ),

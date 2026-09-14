@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -78,14 +79,24 @@ class VideoItemWidget extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      video.userName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF666666),
-                      ),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            video.userName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF666666),
+                            ),
+                          ),
+                        ),
+                        if (video.isAi) ...[
+                          const SizedBox(width: 4),
+                          const UserAiTag(compact: true),
+                        ],
+                      ],
                     ),
                   ),
                 ],

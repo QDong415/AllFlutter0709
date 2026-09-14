@@ -54,6 +54,7 @@ class MePage extends ConsumerWidget {
                   userId: account.userId,
                   name: account.name,
                   avatar: account.avatar,
+                  userType: account.userType,
                 );
               },
             ),

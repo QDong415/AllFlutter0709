@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 
@@ -46,6 +47,7 @@ class CommentModel {
     required this.pictures,
     required this.children,
     required this.sendState,
+    this.userType = UserType.human,
   });
 
   final String cid;
@@ -66,6 +68,12 @@ class CommentModel {
   final List<TopicPictureModel> pictures;
   final List<CommentModel> children;
   final CommentSendState sendState;
+
+  /// 评论作者账号类型：0 真人 / 1 AI。
+  final int userType;
+
+  /// 是否为 AI 账号。
+  bool get isAi => UserType.isAi(userType);
 
   bool get isRoot => parentCid.isEmpty || parentCid == '0';
   bool get hasReplyTarget =>
@@ -99,6 +107,7 @@ class CommentModel {
         pictures: <TopicPictureModel>[],
         children: <CommentModel>[],
         sendState: CommentSendState.normal,
+        userType: UserType.human,
       );
     }
 
@@ -127,6 +136,7 @@ class CommentModel {
       pictures: TopicModel.parsePictures(json['pictures']),
       children: _parseChildren(json['items']),
       sendState: CommentSendState.normal,
+      userType: UserType.parse(json['user_type']),
     );
   }
 
@@ -149,6 +159,7 @@ class CommentModel {
     List<TopicPictureModel>? pictures,
     List<CommentModel>? children,
     CommentSendState? sendState,
+    int? userType,
   }) {
     return CommentModel(
       cid: cid ?? this.cid,
@@ -169,6 +180,7 @@ class CommentModel {
       pictures: pictures ?? this.pictures,
       children: children ?? this.children,
       sendState: sendState ?? this.sendState,
+      userType: userType ?? this.userType,
     );
   }
 

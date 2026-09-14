@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_action_buttons.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_cover.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_tags.dart';
@@ -181,13 +182,23 @@ class UserDetailHeader extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
-                child: Text(
-                  profileModel.name.isEmpty ? '加载中' : profileModel.name,
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        profileModel.name.isEmpty ? '加载中' : profileModel.name,
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    if (profileModel.isAi) ...[
+                      const SizedBox(width: 8),
+                      const UserAiTag(),
+                    ],
+                  ],
                 ),
               ),
               Padding(

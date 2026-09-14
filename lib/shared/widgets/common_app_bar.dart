@@ -9,11 +9,15 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CommonAppBar({
     super.key,
     required this.title,
+    this.titleTrailing,
     this.actions,
     this.onLeadingPressed,
   });
 
   final String title;
+
+  /// 标题右侧附加内容，例如 AI 标签。
+  final Widget? titleTrailing;
   final List<Widget>? actions;
 
   /// 导航栏返回；为 null 时走系统默认 `maybePop`。
@@ -46,14 +50,33 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: onLeadingPressed,
               ),
         systemOverlayStyle: AppSystemUi.overlayStyle,
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: AppColors.titleText,
-            fontSize: AppDimens.toolbarTitleSize,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
+        title: titleTrailing == null
+            ? Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.titleText,
+                  fontSize: AppDimens.toolbarTitleSize,
+                  fontWeight: FontWeight.w400,
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.titleText,
+                        fontSize: AppDimens.toolbarTitleSize,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  titleTrailing!,
+                ],
+              ),
         actions: actions,
       ),
     );

@@ -205,6 +205,7 @@ class ConversationController extends ChangeNotifier {
     required String text,
     String peerName = '',
     String peerAvatar = '',
+    int peerUserType = 0,
   }) async {
     final account = _ref.read(accountProvider);
     if (account == null) {
@@ -217,6 +218,7 @@ class ConversationController extends ChangeNotifier {
       text: text,
       peerName: peerName,
       peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
     );
     await _appendAndNotify(conversationId, message);
     await refreshConversations();
@@ -238,6 +240,7 @@ class ConversationController extends ChangeNotifier {
     required Size imageSize,
     String peerName = '',
     String peerAvatar = '',
+    int peerUserType = 0,
   }) async {
     final account = _ref.read(accountProvider);
     if (account == null) {
@@ -255,6 +258,7 @@ class ConversationController extends ChangeNotifier {
       imageSize: imageSize,
       peerName: peerName,
       peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
     );
     ChatSendLog.d(
       '本地 pending 已创建 clientId=${message.clientMessageId} '

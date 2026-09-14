@@ -36,23 +36,25 @@ class ChatSendHelper {
     }
   }
 
-  /// 发送文本消息（带上对方昵称/头像写入本地）。
+  /// 发送文本消息（带上对方昵称/头像/身份类型写入本地）。
   Future<void> sendText({
     required ConversationController controller,
     required String conversationId,
     required String text,
     String peerName = '',
     String peerAvatar = '',
+    int peerUserType = 0,
   }) {
     return controller.sendTextMessage(
       conversationId: conversationId,
       text: text,
       peerName: peerName,
       peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
     );
   }
 
-  /// 发送图片消息（带上对方昵称/头像写入本地）。
+  /// 发送图片消息（带上对方昵称/头像/身份类型写入本地）。
   Future<void> sendImage({
     required ConversationController controller,
     required String conversationId,
@@ -60,6 +62,7 @@ class ChatSendHelper {
     required Size imageSize,
     String peerName = '',
     String peerAvatar = '',
+    int peerUserType = 0,
   }) {
     return controller.sendImageMessage(
       conversationId: conversationId,
@@ -67,6 +70,7 @@ class ChatSendHelper {
       imageSize: imageSize,
       peerName: peerName,
       peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
     );
   }
 }

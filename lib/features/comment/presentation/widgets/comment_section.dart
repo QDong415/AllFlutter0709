@@ -494,6 +494,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                       userId: comment.userId,
                       name: comment.userName,
                       avatar: comment.avatar,
+                      userType: comment.userType,
                     );
                   },
                 );

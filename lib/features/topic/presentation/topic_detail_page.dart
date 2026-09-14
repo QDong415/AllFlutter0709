@@ -12,6 +12,7 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_v
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -240,6 +241,7 @@ class _TopicDetailHeader extends StatelessWidget {
                     userId: topic.userId,
                     name: topic.userName,
                     avatar: topic.avatar,
+                    userType: topic.userType,
                   );
                 },
                 child: CircleAvatar(
@@ -262,15 +264,26 @@ class _TopicDetailHeader extends StatelessWidget {
                           userId: topic.userId,
                           name: topic.userName,
                           avatar: topic.avatar,
+                          userType: topic.userType,
                         );
                       },
-                      child: Text(
-                        topic.userName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF304F84),
-                        ),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              topic.userName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF304F84),
+                              ),
+                            ),
+                          ),
+                          if (topic.isAi) ...[
+                            const SizedBox(width: 6),
+                            const UserAiTag(compact: true),
+                          ],
+                        ],
                       ),
                     ),
                     const SizedBox(height: 6),

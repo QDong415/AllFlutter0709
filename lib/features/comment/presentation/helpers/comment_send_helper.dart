@@ -58,6 +58,7 @@ class CommentSendHelper {
       pictures: const [],
       children: const [],
       sendState: CommentSendState.sending,
+      userType: account.userType,
     );
   }
 

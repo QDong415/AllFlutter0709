@@ -2,6 +2,7 @@ import 'package:all_flutter0709/features/comment/data/models/comment_display_mod
 import 'package:all_flutter0709/features/comment/data/models/comment_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -70,6 +71,10 @@ class CommentItem extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                if (comment.isAi) ...[
+                                  const SizedBox(width: 6),
+                                  const UserAiTag(compact: true),
+                                ],
                                 if (isAuthor) ...[
                                   const SizedBox(width: 6),
                                   const _AuthorBadge(),

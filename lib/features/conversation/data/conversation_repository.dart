@@ -110,6 +110,7 @@ class ConversationRepository {
     required String text,
     String peerName = '',
     String peerAvatar = '',
+    int peerUserType = 0,
   }) async {
     final message = ConversationMessage(
       msgId: 0,
@@ -127,6 +128,7 @@ class ConversationRepository {
       extend: '',
       isSender: true,
       isRead: true,
+      otherUserType: peerUserType,
     );
     await _localDataSource.insertMessage(account.userId, message);
     final saved = await _localDataSource.findMessageByClientId(
@@ -172,6 +174,7 @@ class ConversationRepository {
     required Size imageSize,
     String peerName = '',
     String peerAvatar = '',
+    int peerUserType = 0,
   }) async {
     final filename = _buildImageFileName(
       conversationId: conversationId,
@@ -197,6 +200,7 @@ class ConversationRepository {
       isSender: true,
       isRead: true,
       localFilePath: imageFile.path,
+      otherUserType: peerUserType,
     );
     await _localDataSource.insertMessage(account.userId, message);
     final saved = await _localDataSource.findMessageByClientId(

@@ -29,11 +29,14 @@ class UserDetailPage extends StatefulWidget {
     required this.userId,
     this.initialName,
     this.initialAvatar,
+    this.initialUserType,
   });
 
   final String userId;
   final String? initialName;
   final String? initialAvatar;
+  /// 预填账号类型，接口返回前即可展示 AI 标签。
+  final int? initialUserType;
 
   @override
   State<UserDetailPage> createState() => _UserDetailPageState();
@@ -81,6 +84,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
       topicCount: 0,
       videoCount: 0,
       follow: 0,
+      userType: widget.initialUserType ?? 0,
     );
     unawaited(_loadProfile());
   }
@@ -208,6 +212,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
       extra: ConversationChatArgs(
         peerName: _profileModel.name,
         peerAvatar: _profileModel.avatar,
+        peerUserType: _profileModel.userType,
       ),
     );
     // 从聊天返回时 AnnotatedRegion 不一定会立刻重刷底部指示器，需主动恢复。
