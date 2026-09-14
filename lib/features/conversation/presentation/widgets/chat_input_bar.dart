@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// QInputBarView 资源（来自 QKeyboardEmotionView，不含表情按钮）。
+/// QInputBarView 资源（来自 QKeyboardEmotionView）。
 abstract final class ChatInputAssets {
   static const voice = 'assets/icons/chat/qinput/q_chat_voice.png';
   static const keyboard = 'assets/icons/chat/qinput/q_chat_keyboard.png';
@@ -46,21 +46,24 @@ abstract final class QInputBarMetrics {
       (barMinHeight - switchButtonSize) / 2; // 9
 }
 
-/// 聊天底部输入栏：对齐 QInputBarView（无表情按钮）。
+/// 聊天底部输入栏：对齐 QInputBarView（语音 | 输入 | 表情 | +/发送）。
 ///
-/// 扩展面板由页面底部 Func 占位区承接。
+/// 底部安全区与键盘/面板高度由底部容器承接。
 class ChatInputBar extends StatelessWidget {
   const ChatInputBar({
     super.key,
     required this.isVoiceMode,
+    required this.isEmojiPanel,
     required this.isRecording,
     required this.willCancelRecording,
     required this.recordingDurationText,
     required this.controller,
     required this.focusNode,
-    required this.applyBottomSafeArea,
+    required this.readOnly,
     required this.onToggleVoiceMode,
+    required this.onToggleEmoji,
     required this.onTogglePanel,
+    required this.onInputPointerUp,
     required this.onSendText,
     required this.onVoiceLongPressStart,
     required this.onVoiceLongPressMoveUpdate,
@@ -68,14 +71,17 @@ class ChatInputBar extends StatelessWidget {
   });
 
   final bool isVoiceMode;
+  final bool isEmojiPanel;
   final bool isRecording;
   final bool willCancelRecording;
   final String recordingDurationText;
   final TextEditingController controller;
   final FocusNode focusNode;
-  final bool applyBottomSafeArea;
+  final bool readOnly;
   final VoidCallback onToggleVoiceMode;
+  final VoidCallback onToggleEmoji;
   final VoidCallback onTogglePanel;
+  final VoidCallback onInputPointerUp;
   final VoidCallback onSendText;
   final GestureLongPressStartCallback onVoiceLongPressStart;
   final GestureLongPressMoveUpdateCallback onVoiceLongPressMoveUpdate;
@@ -92,86 +98,99 @@ class ChatInputBar extends StatelessWidget {
           top: BorderSide(color: QInputBarColors.barBorder, width: hairline),
         ),
       ),
-      child: SafeArea(
-        top: false,
-        bottom: applyBottomSafeArea,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isRecording)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                child: Text(
-                  willCancelRecording
-                      ? '松开手指，取消发送'
-                      : '手指上滑，取消发送  $recordingDurationText',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: willCancelRecording
-                        ? const Color(0xFFD93025)
-                        : const Color(0xFF8A8A8A),
-                    fontSize: 12,
-                  ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isRecording)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Text(
+                willCancelRecording
+                    ? '松开手指，取消发送'
+                    : '手指上滑，取消发送  $recordingDurationText',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: willCancelRecording
+                      ? const Color(0xFFD93025)
+                      : const Color(0xFF8A8A8A),
+                  fontSize: 12,
                 ),
               ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                QInputBarMetrics.horizontalPadding,
-                QInputBarMetrics.verticalPadding,
-                QInputBarMetrics.horizontalPadding,
-                QInputBarMetrics.verticalPadding,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _SwitchIconButton(
-                    asset: isVoiceMode
-                        ? ChatInputAssets.keyboard
-                        : ChatInputAssets.voice,
-                    onTap: onToggleVoiceMode,
-                  ),
-                  const SizedBox(width: QInputBarMetrics.textViewHorizontalMargin),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: isVoiceMode
-                          ? _VoiceHoldButton(
-                              key: const ValueKey('voice_button'),
-                              isRecording: isRecording,
-                              willCancelRecording: willCancelRecording,
-                              onLongPressStart: onVoiceLongPressStart,
-                              onLongPressMoveUpdate: onVoiceLongPressMoveUpdate,
-                              onLongPressEnd: onVoiceLongPressEnd,
-                            )
-                          : _TextInputField(
-                              key: const ValueKey('text_input'),
-                              controller: controller,
-                              focusNode: focusNode,
-                              onSendText: onSendText,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: QInputBarMetrics.textViewHorizontalMargin),
-                  ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: controller,
-                    builder: (context, value, _) {
-                      final hasText = value.text.trim().isNotEmpty;
-                      // 对齐 QInputBarView：有文字显示发送，空内容显示「+」。
-                      if (hasText && !isVoiceMode) {
-                        return _SendTextButton(onTap: onSendText);
-                      }
-                      return _SwitchIconButton(
-                        asset: ChatInputAssets.extend,
-                        onTap: onTogglePanel,
-                        usePointerDown: true,
-                      );
-                    },
-                  ),
-                ],
-              ),
             ),
-          ],
-        ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              QInputBarMetrics.horizontalPadding,
+              QInputBarMetrics.verticalPadding,
+              QInputBarMetrics.horizontalPadding,
+              QInputBarMetrics.verticalPadding,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _SwitchIconButton(
+                  asset: isVoiceMode
+                      ? ChatInputAssets.keyboard
+                      : ChatInputAssets.voice,
+                  onTap: onToggleVoiceMode,
+                ),
+                const SizedBox(
+                  width: QInputBarMetrics.textViewHorizontalMargin,
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: isVoiceMode
+                        ? _VoiceHoldButton(
+                            key: const ValueKey('voice_button'),
+                            isRecording: isRecording,
+                            willCancelRecording: willCancelRecording,
+                            onLongPressStart: onVoiceLongPressStart,
+                            onLongPressMoveUpdate: onVoiceLongPressMoveUpdate,
+                            onLongPressEnd: onVoiceLongPressEnd,
+                          )
+                        : _TextInputField(
+                            key: const ValueKey('text_input'),
+                            controller: controller,
+                            focusNode: focusNode,
+                            readOnly: readOnly,
+                            onSendText: onSendText,
+                            onInputPointerUp: onInputPointerUp,
+                          ),
+                  ),
+                ),
+                const SizedBox(
+                  width: QInputBarMetrics.textViewHorizontalMargin,
+                ),
+                _SwitchIconButton(
+                  asset: isEmojiPanel ? ChatInputAssets.keyboard : null,
+                  icon: isEmojiPanel
+                      ? null
+                      : Icons.sentiment_satisfied_alt_outlined,
+                  onTap: onToggleEmoji,
+                  usePointerDown: true,
+                ),
+                const SizedBox(
+                  width: QInputBarMetrics.textViewHorizontalMargin,
+                ),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (context, value, _) {
+                    final hasText = value.text.trim().isNotEmpty;
+                    // 对齐 QInputBarView：有文字显示发送，空内容显示「+」。
+                    if (hasText && !isVoiceMode) {
+                      return _SendTextButton(onTap: onSendText);
+                    }
+                    return _SwitchIconButton(
+                      asset: ChatInputAssets.extend,
+                      onTap: onTogglePanel,
+                      usePointerDown: true,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -202,15 +221,17 @@ class ChatFuncPanel extends StatelessWidget {
   }
 }
 
-/// 40×40 切换按钮（语音 / 键盘 / +），对齐 UISwitchButtonWidth。
+/// 40×40 切换按钮（语音 / 键盘 / 表情 / +），对齐 UISwitchButtonWidth。
 class _SwitchIconButton extends StatelessWidget {
   const _SwitchIconButton({
-    required this.asset,
+    this.asset,
+    this.icon,
     required this.onTap,
     this.usePointerDown = false,
-  });
+  }) : assert(asset != null || icon != null);
 
-  final String asset;
+  final String? asset;
+  final IconData? icon;
   final VoidCallback onTap;
   final bool usePointerDown;
 
@@ -219,7 +240,9 @@ class _SwitchIconButton extends StatelessWidget {
     final child = SizedBox(
       width: QInputBarMetrics.switchButtonSize,
       height: QInputBarMetrics.switchButtonSize,
-      child: Image.asset(asset, fit: BoxFit.contain),
+      child: asset != null
+          ? Image.asset(asset!, fit: BoxFit.contain)
+          : Icon(icon, size: 28, color: QInputBarColors.text),
     );
 
     if (usePointerDown) {
@@ -345,12 +368,16 @@ class _TextInputField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.focusNode,
+    required this.readOnly,
     required this.onSendText,
+    required this.onInputPointerUp,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
+  final bool readOnly;
   final VoidCallback onSendText;
+  final VoidCallback onInputPointerUp;
 
   @override
   Widget build(BuildContext context) {
@@ -359,41 +386,46 @@ class _TextInputField extends StatelessWidget {
         minHeight: QInputBarMetrics.textMinHeight,
         maxHeight: QInputBarMetrics.textMaxHeight,
       ),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        minLines: 1,
-        maxLines: null,
-        keyboardType: TextInputType.multiline,
-        textInputAction: TextInputAction.send,
-        onSubmitted: (_) => onSendText(),
-        onTapOutside: (_) {},
-        style: const TextStyle(
-          fontSize: 17.5,
-          color: QInputBarColors.text,
-          height: 1.25,
-        ),
-        decoration: InputDecoration(
-          hintText: '发消息',
-          hintStyle: const TextStyle(
-            color: Color(0x59000000),
+      child: Listener(
+        onPointerUp: (_) => onInputPointerUp(),
+        child: TextField(
+          controller: controller,
+          focusNode: focusNode,
+          readOnly: readOnly,
+          showCursor: true,
+          minLines: 1,
+          maxLines: null,
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.send,
+          onSubmitted: (_) => onSendText(),
+          onTapOutside: (_) {},
+          style: const TextStyle(
             fontSize: 17.5,
+            color: QInputBarColors.text,
+            height: 1.25,
           ),
-          filled: true,
-          fillColor: QInputBarColors.textViewBackground,
-          isDense: true,
-          contentPadding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide.none,
+          decoration: InputDecoration(
+            hintText: '发消息',
+            hintStyle: const TextStyle(
+              color: Color(0x59000000),
+              fontSize: 17.5,
+            ),
+            filled: true,
+            fillColor: QInputBarColors.textViewBackground,
+            isDense: true,
+            contentPadding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
       ),

@@ -6,18 +6,19 @@ import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_image_preview_helper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_scroll_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_send_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_record_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/mappers/chat_item_mapper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bottom_panel_host.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_list_view.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_recording_overlay.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// 单聊页；未登录时拦截并跳转登录，不加载会话消息。
@@ -42,8 +43,7 @@ class ConversationChatPage extends ConsumerStatefulWidget {
       _ConversationChatPageState();
 }
 
-class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
-    with WidgetsBindingObserver {
+class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   final _scrollController = ScrollController();
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
@@ -51,6 +51,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
   final _imagePreviewHelper = const ChatImagePreviewHelper();
   late final ChatScrollHelper _scrollHelper;
   late final ChatVoiceRecordHelper _voiceRecordHelper;
+  late final ChatPanelHelper _panelHelper;
 
   /// 在 dispose 里不能依赖 ref，提前拿到 controller 以便可靠清除 active 会话。
   ConversationController? _conversationController;
@@ -63,26 +64,27 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
 
   String get _peerAvatar => widget.initialPeerAvatar?.trim() ?? '';
 
-  final bool _isVoiceMode = false;
-  bool _isPanelVisible = false;
+  bool _isVoiceMode = false;
   bool _isRecording = false;
   bool _willCancelRecording = false;
   bool _isSubmitting = false;
   int _recordDurationSeconds = 0;
   double _currentAmplitude = -45;
-
-  /// 已记录的软键盘高度；面板打开期间锁定，不随收键盘动画缩小。
-  static const double _defaultKeyboardHeight = 280;
-  double _recordedKeyboardHeight = _defaultKeyboardHeight;
-  double _bottomInset = 0;
   int _lastTextLength = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _scrollHelper = ChatScrollHelper(_scrollController);
     _voiceRecordHelper = ChatVoiceRecordHelper();
+    _panelHelper = ChatPanelHelper(
+      inputFocusNode: _focusNode,
+      onUpdate: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+    );
     _conversationController = ref.read(conversationControllerProvider);
     _focusNode.addListener(_handleFocusChange);
     _textController.addListener(_handleTextChanged);
@@ -98,7 +100,6 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     unawaited(_voiceRecordHelper.dispose());
     _conversationController?.closeConversation(widget.chatId);
     _focusNode
@@ -111,44 +112,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
     super.dispose();
   }
 
-  @override
-  void didChangeMetrics() {
-    super.didChangeMetrics();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-      final keyboardJustOpened = bottomInset > 0 && _bottomInset <= 0;
-      final insetChanged = (bottomInset - _bottomInset).abs() > 0.5;
-
-      if (!insetChanged) {
-        return;
-      }
-
-      setState(() {
-        _bottomInset = bottomInset;
-        // 仅在「未开面板」时更新记录高度。面板显示中若跟着 inset 缩小，
-        // 扩展栏会在收键盘动画里被压没（视频里的 bug）。
-        if (bottomInset > 0 && !_isPanelVisible) {
-          _recordedKeyboardHeight = bottomInset;
-        }
-      });
-
-      if (keyboardJustOpened || (bottomInset > 0 && !_isPanelVisible)) {
-        _scrollHelper.scrollToBottom();
-      }
-    });
-  }
-
   void _handleFocusChange() {
     if (_focusNode.hasFocus) {
-      // 点输入框：收起“+”面板，让出软键盘占位。
-      if (_isPanelVisible) {
-        setState(() {
-          _isPanelVisible = false;
-        });
-      }
       _scrollHelper.scrollToBottom();
     }
   }
@@ -164,17 +129,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
     }
   }
 
-  /// 收起键盘与“+”面板。
+  /// 收起键盘与自定义面板。
   void _resetInputState() {
-    if (!_focusNode.hasFocus && !_isPanelVisible) {
-      return;
-    }
-    _focusNode.unfocus();
-    if (_isPanelVisible) {
-      setState(() {
-        _isPanelVisible = false;
-      });
-    }
+    _panelHelper.hidePanel();
   }
 
   void _toggleVoiceMode() {
@@ -182,42 +139,49 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
       return;
     }
 
-    _showSnackBar('已按 iTopicX 链路补齐文本和图片，语音消息旧工程未提供服务端协议。');
+    final nextVoiceMode = !_isVoiceMode;
+    setState(() {
+      _isVoiceMode = nextVoiceMode;
+    });
+    if (nextVoiceMode) {
+      _panelHelper.hidePanel();
+    } else {
+      _panelHelper.updatePanelType(ChatPanelType.keyboard);
+    }
+    _scrollHelper.scrollToBottom();
+  }
+
+  void _toggleEmoji() {
+    if (_isRecording || _isSubmitting) {
+      return;
+    }
+    if (_isVoiceMode) {
+      setState(() {
+        _isVoiceMode = false;
+      });
+    }
+    _panelHelper.handleEmojiBtnClick();
+    _scrollHelper.scrollToBottom();
   }
 
   void _togglePanel() {
     if (_isRecording || _isSubmitting) {
       return;
     }
-
-    if (_isPanelVisible) {
-      setState(() {
-        _isPanelVisible = false;
-      });
-      return;
+    if (_panelHelper.currentPanelType == ChatPanelType.tool) {
+      if (_isVoiceMode) {
+        _panelHelper.hidePanel();
+      } else {
+        _panelHelper.updatePanelType(ChatPanelType.keyboard);
+      }
+    } else {
+      _panelHelper.updatePanelType(ChatPanelType.tool);
     }
+    _scrollHelper.scrollToBottom();
+  }
 
-    // 打开面板：锁定当前键盘高度作占位，再收键盘。
-    final inset = MediaQuery.viewInsetsOf(context).bottom;
-    setState(() {
-      if (inset > 0) {
-        _recordedKeyboardHeight = inset;
-        _bottomInset = inset;
-      } else if (_recordedKeyboardHeight < 200) {
-        _recordedKeyboardHeight = _defaultKeyboardHeight;
-      }
-      _isPanelVisible = true;
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      _focusNode.unfocus();
-      FocusManager.instance.primaryFocus?.unfocus();
-      SystemChannels.textInput.invokeMethod('TextInput.hide');
-      _scrollHelper.scrollToBottom();
-    });
+  void _insertEmoji(String emoji) {
+    _panelHelper.insertText(textController: _textController, text: emoji);
   }
 
   Future<void> _sendText() async {
@@ -272,9 +236,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
 
     setState(() {
       _isSubmitting = true;
-      _isPanelVisible = false;
     });
-    _focusNode.unfocus();
+    _panelHelper.hidePanel();
 
     try {
       await _sendHelper.sendImage(
@@ -337,9 +300,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
       _willCancelRecording = false;
       _recordDurationSeconds = 0;
       _currentAmplitude = -45;
-      _isPanelVisible = false;
     });
-    _focusNode.unfocus();
+    _panelHelper.hidePanel();
   }
 
   void _handleVoiceLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
@@ -424,11 +386,6 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
           _scrollHelper.scrollIfNewMessages(items.length);
         }
 
-        // 不用 resizeToAvoidBottomInset：底部 Func 区在「键盘 inset / 面板高度」间切换，
-        final funcAreaHeight = _isPanelVisible
-            ? _recordedKeyboardHeight
-            : _bottomInset;
-
         return Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: CommonAppBar(
@@ -459,6 +416,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
                         },
                         onUserDragScroll: _resetInputState,
                         onImageTap: (image) {
+                          _panelHelper.hidePanel();
                           _imagePreviewHelper.open(
                             context: context,
                             tappedItem: image,
@@ -466,6 +424,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
                           );
                         },
                         onAvatarTap: (message) {
+                          _panelHelper.hidePanel();
                           // 右侧为自己，左侧为对方；不在此处拦登录，由个人主页内操作再校验。
                           if (message.direction == MessageDirection.right) {
                             final account = ref.read(accountProvider);
@@ -489,14 +448,18 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
                   ),
                   ChatInputBar(
                     isVoiceMode: _isVoiceMode,
+                    isEmojiPanel:
+                        _panelHelper.currentPanelType == ChatPanelType.emoji,
                     isRecording: _isRecording,
                     willCancelRecording: _willCancelRecording,
                     recordingDurationText: _recordDurationLabel,
                     controller: _textController,
                     focusNode: _focusNode,
-                    applyBottomSafeArea: funcAreaHeight <= 0,
+                    readOnly: _panelHelper.readOnly,
                     onToggleVoiceMode: _toggleVoiceMode,
+                    onToggleEmoji: _toggleEmoji,
                     onTogglePanel: _togglePanel,
+                    onInputPointerUp: _panelHelper.handleInputViewOnPointerUp,
                     onSendText: () {
                       unawaited(_sendText());
                     },
@@ -508,16 +471,17 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage>
                       unawaited(_handleVoiceLongPressEnd(details));
                     },
                   ),
-                  // Func 占位：键盘弹出时为空（键盘盖住）；点「+」后填入扩展面板，高度不变。
-                  SizedBox(
-                    height: funcAreaHeight,
-                    child: _isPanelVisible
-                        ? ChatFuncPanel(
-                            onSendImage: () {
-                              unawaited(_sendImage());
-                            },
-                          )
-                        : null,
+                  ChatBottomPanelHost(
+                    controller: _panelHelper.controller,
+                    inputFocusNode: _focusNode,
+                    onPanelTypeChange: (panelType, data) {
+                      _panelHelper.onPanelTypeChange(panelType, data);
+                      _scrollHelper.scrollToBottom();
+                    },
+                    onSendImage: () {
+                      unawaited(_sendImage());
+                    },
+                    onEmojiTap: _insertEmoji,
                   ),
                 ],
               ),
