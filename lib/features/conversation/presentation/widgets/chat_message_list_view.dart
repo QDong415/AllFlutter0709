@@ -18,7 +18,6 @@ class ChatMessageListView extends StatelessWidget {
     required this.onRetry,
     required this.onImageTap,
     this.onAvatarTap,
-    this.onUserDragScroll,
   });
 
   final AsyncValue<List<ConversationMessage>> state;
@@ -28,9 +27,6 @@ class ChatMessageListView extends StatelessWidget {
   final VoidCallback onRetry;
   final ValueChanged<ImageMessage> onImageTap;
   final ValueChanged<MessageItem>? onAvatarTap;
-
-  /// 用户手指拖动列表时回调（用于收起键盘 / 面板）。
-  final VoidCallback? onUserDragScroll;
 
   @override
   Widget build(BuildContext context) {
@@ -64,33 +60,24 @@ class ChatMessageListView extends StatelessWidget {
           );
         }
 
-        return NotificationListener<ScrollNotification>(
-          onNotification: (notification) {
-            if (notification is ScrollUpdateNotification &&
-                notification.dragDetails != null) {
-              onUserDragScroll?.call();
-            }
-            return false;
-          },
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ListView.builder(
-              controller: scrollController,
-              reverse: true,
-              shrinkWrap: true,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(5, 8, 5, 0),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                // reverse 下列表 index 0 在底部，对应时间正序的最后一条。
-                final item = items[items.length - 1 - index];
-                return ChatListItemWidget(
-                  item: item,
-                  onImageTap: onImageTap,
-                  onAvatarTap: onAvatarTap,
-                );
-              },
-            ),
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ListView.builder(
+            controller: scrollController,
+            reverse: true,
+            shrinkWrap: true,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(5, 8, 5, 0),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              // reverse 下列表 index 0 在底部，对应时间正序的最后一条。
+              final item = items[items.length - 1 - index];
+              return ChatListItemWidget(
+                item: item,
+                onImageTap: onImageTap,
+                onAvatarTap: onAvatarTap,
+              );
+            },
           ),
         );
       },

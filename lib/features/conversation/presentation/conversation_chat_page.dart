@@ -418,9 +418,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                 Column(
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: _resetInputState,
+                      child: Listener(
                         behavior: HitTestBehavior.translucent,
+                        onPointerDown: (_) => _resetInputState(),
                         child: ChatMessageListView(
                           state: state,
                           items: items,
@@ -435,7 +435,6 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                                   .syncMessagesFromServer(),
                             );
                           },
-                          onUserDragScroll: _resetInputState,
                           onImageTap: (image) {
                             _panelHelper.hidePanel();
                             _imagePreviewHelper.open(

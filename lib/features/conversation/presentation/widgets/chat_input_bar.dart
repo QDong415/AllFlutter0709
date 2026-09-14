@@ -43,6 +43,9 @@ abstract final class QInputBarMetrics {
   static const switchButtonSize = 40.0;
   static const textViewHorizontalMargin = 8.0;
 
+  /// 右侧动作位宽度：发送按钮宽，「+」靠右后左侧自然留出原 8 间距。
+  static const rightActionWidth = switchButtonSize + 8;
+
   static double get verticalPadding =>
       (barMinHeight - switchButtonSize) / 2; // 9
 }
@@ -169,21 +172,27 @@ class ChatInputBar extends StatelessWidget {
                   onTap: onToggleEmoji,
                   usePointerDown: true,
                 ),
-                const SizedBox(
-                  width: QInputBarMetrics.textViewHorizontalMargin,
-                ),
                 ValueListenableBuilder<TextEditingValue>(
                   valueListenable: controller,
                   builder: (context, value, _) {
                     final hasText = value.text.trim().isNotEmpty;
-                    // 对齐 QInputBarView：有文字显示发送，空内容显示「+」。
+                    final Widget action;
                     if (hasText && !isVoiceMode) {
-                      return _SendTextButton(onTap: onSendText);
+                      action = _SendTextButton(onTap: onSendText);
+                    } else {
+                      action = _SwitchIconButton(
+                        asset: ChatInputAssets.extend,
+                        onTap: onTogglePanel,
+                        usePointerDown: true,
+                      );
                     }
-                    return _SwitchIconButton(
-                      asset: ChatInputAssets.extend,
-                      onTap: onTogglePanel,
-                      usePointerDown: true,
+                    return SizedBox(
+                      width: QInputBarMetrics.rightActionWidth,
+                      height: QInputBarMetrics.switchButtonSize,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: action,
+                      ),
                     );
                   },
                 ),
@@ -270,7 +279,7 @@ class _SendTextButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: QInputBarMetrics.switchButtonSize + 8,
+      width: QInputBarMetrics.rightActionWidth,
       height: QInputBarMetrics.switchButtonSize,
       child: Align(
         alignment: Alignment.center,
