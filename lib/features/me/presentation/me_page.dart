@@ -102,7 +102,10 @@ class MePage extends ConsumerWidget {
           const SizedBox(height: 12),
           ListenableBuilder(
             listenable: push,
-            builder: (context, _) => _GetuiDebugPanel(push: push),
+            builder: (context, _) => _GetuiDebugPanel(
+              push: push,
+              accountCid: currentAccount?.cid ?? '',
+            ),
           ),
         ],
       ),
@@ -110,10 +113,15 @@ class MePage extends ConsumerWidget {
   }
 }
 
+/// 「我的」页个推联调面板。
 class _GetuiDebugPanel extends StatelessWidget {
-  const _GetuiDebugPanel({required this.push});
+  const _GetuiDebugPanel({
+    required this.push,
+    required this.accountCid,
+  });
 
   final GetuiPushService push;
+  final String accountCid;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +145,11 @@ class _GetuiDebugPanel extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            SelectableText('ClientId: $clientId'),
+            SelectableText('个推 ClientId: $clientId'),
+            const SizedBox(height: 4),
+            SelectableText(
+              '账号 cid: ${accountCid.trim().isEmpty ? '无' : accountCid}',
+            ),
             const SizedBox(height: 4),
             Text('最近事件: ${push.latestEventSummary}'),
             const SizedBox(height: 4),

@@ -270,19 +270,19 @@ class ConversationRepository {
   }
 
   /// 将当前登录账号绑定到个推 CID（`POST /api/user/modifyarray`）。
-  ///
-  /// 绑定成功后会再请求 [notifyDoRegAction]，与原生一致。
   Future<void> updatePushClientId({
     required String clientId,
     required AccountModel account,
   }) async {
-    if (clientId.trim().isEmpty || clientId == account.cid) {
+    final trimmed = clientId.trim();
+    if (trimmed.isEmpty) {
       return;
     }
 
+    ChatPushLog.d('上报 CID modifyarray cid=$trimmed');
     final response = await HttpClient.instance.post(
       _modifyUserApi,
-      data: {'cid': clientId},
+      data: {'cid': trimmed},
     );
     final json = response.data;
     if (json == null) {
@@ -294,8 +294,13 @@ class ConversationRepository {
       throw Exception(result.message.isEmpty ? 'CID 同步失败' : result.message);
     }
 
-    // CID 绑定成功后通知 PHP：可推送小秘书默认消息等注册后续动作
-    await notifyDoRegAction();
+    final data = json['data'];
+    final serverCid = data is Map ? data['cid']?.toString() ?? '' : '';
+    if (serverCid != trimmed) {
+      throw Exception(
+        'CID 写入未生效，服务器仍为 ${serverCid.isEmpty ? '空' : serverCid}',
+      );
+    }
   }
 
   /// 通知服务端执行注册后续动作（`POST /api/user/doregaction`）。

@@ -283,19 +283,6 @@ class ConversationController extends ChangeNotifier {
     }
   }
 
-  /// 已登录且本地 CID 与账号不一致时，上报 `modifyarray` 并调用 `doregaction`。
-  Future<void> syncPushClientId(String clientId) async {
-    final account = _ref.read(accountProvider);
-    if (account == null || clientId.trim().isEmpty || account.cid == clientId) {
-      return;
-    }
-
-    final repository = _ref.read(conversationRepositoryProvider);
-    await repository.updatePushClientId(clientId: clientId, account: account);
-    final nextAccount = account.copyWith(cid: clientId);
-    await _ref.read(accountProvider.notifier).setAccount(nextAccount);
-  }
-
   /// 【入口 A】运行期登录 / 退出后调用（见 GetuiPushService 的 ref.listen）。
   Future<void> onLoginStateChanged(AccountModel? account) async {
     await _refreshList(account);

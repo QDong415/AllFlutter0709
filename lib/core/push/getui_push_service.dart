@@ -9,6 +9,7 @@ import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/push/getui_push_config.dart';
+import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -161,7 +162,7 @@ class GetuiPushService extends ChangeNotifier {
     _latestEventSummary = '收到个推 ClientId';
     notifyListeners();
     await preferences.setString(_clientIdStorageKey, clientId);
-    await _ref.read(conversationControllerProvider).syncPushClientId(clientId);
+    await _bindClientId(clientId);
   }
 
   /// 通知送达（未点击）：只处理业务（如 needpull 拉消息），不跳转
@@ -372,7 +373,7 @@ class GetuiPushService extends ChangeNotifier {
     }
     _currentClientId = clientId;
     notifyListeners();
-    await _ref.read(conversationControllerProvider).syncPushClientId(clientId);
+    await _bindClientId(clientId);
   }
 
   /// 主动向 SDK 要一次 CID（联调面板「刷新 CID」也会走这里）
@@ -388,10 +389,45 @@ class GetuiPushService extends ChangeNotifier {
       notifyListeners();
       final preferences = _ref.read(sharedPreferencesProvider);
       await preferences.setString(_clientIdStorageKey, clientId);
-      await _ref.read(conversationControllerProvider).syncPushClientId(clientId);
+      await _bindClientId(clientId);
       _appendLog('主动读取 ClientId: $clientId');
     } catch (error) {
       _appendLog('主动读取 ClientId 失败: $error');
+    }
+  }
+
+  Future<void> _bindClientId(String clientId) async {
+    final trimmed = clientId.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      _appendLog('CID 尚未上报：未登录');
+      return;
+    }
+
+    try {
+      // 本地 cid 即使已经相同也要再写服务器：本地可能是上次误标成功，库里仍是旧值。
+      final cidChanged = account.cid != trimmed;
+      final repository = _ref.read(conversationRepositoryProvider);
+      await repository.updatePushClientId(clientId: trimmed, account: account);
+      if (cidChanged) {
+        await repository.notifyDoRegAction();
+      }
+      final current = _ref.read(accountProvider);
+      if (current?.userId != account.userId) {
+        _appendLog('CID 同步完成时账号已退出，不写回本地');
+        return;
+      }
+      if (cidChanged) {
+        await _ref.read(accountProvider.notifier).setAccount(
+          account.copyWith(cid: trimmed),
+        );
+      }
+      _appendLog('CID 已同步: $trimmed');
+    } catch (error) {
+      _appendLog('CID 上报失败: $error');
     }
   }
 
