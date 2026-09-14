@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 abstract final class ChatInputAssets {
   static const voice = 'assets/icons/chat/qinput/q_chat_voice.png';
   static const keyboard = 'assets/icons/chat/qinput/q_chat_keyboard.png';
+  static const emoji = 'assets/icons/chat/qinput/q_chat_emoji.png';
   static const extend = 'assets/icons/chat/qinput/q_chat_extend.png';
   static const morePic = 'assets/icons/chat/qinput/message_more_pic.png';
   static const recordNormal = 'assets/icons/chat/qinput/q_white_input_btn.png';
@@ -162,10 +163,9 @@ class ChatInputBar extends StatelessWidget {
                   width: QInputBarMetrics.textViewHorizontalMargin,
                 ),
                 _SwitchIconButton(
-                  asset: isEmojiPanel ? ChatInputAssets.keyboard : null,
-                  icon: isEmojiPanel
-                      ? null
-                      : Icons.sentiment_satisfied_alt_outlined,
+                  asset: isEmojiPanel
+                      ? ChatInputAssets.keyboard
+                      : ChatInputAssets.emoji,
                   onTap: onToggleEmoji,
                   usePointerDown: true,
                 ),

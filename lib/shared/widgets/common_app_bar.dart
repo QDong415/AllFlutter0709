@@ -7,13 +7,17 @@ import 'package:flutter/material.dart';
 /// 通用导航栏，标题居中。
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CommonAppBar({
-    required this.title,
     super.key,
+    required this.title,
     this.actions,
+    this.onLeadingPressed,
   });
 
   final String title;
   final List<Widget>? actions;
+
+  /// 导航栏返回；为 null 时走系统默认 `maybePop`。
+  final VoidCallback? onLeadingPressed;
 
   @override
   Size get preferredSize => const Size.fromHeight(AppDimens.toolbarHeight);
@@ -33,6 +37,14 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        automaticallyImplyLeading: onLeadingPressed == null,
+        leading: onLeadingPressed == null
+            ? null
+            : IconButton(
+                icon: const BackButtonIcon(),
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                onPressed: onLeadingPressed,
+              ),
         systemOverlayStyle: AppSystemUi.overlayStyle,
         title: Text(
           title,

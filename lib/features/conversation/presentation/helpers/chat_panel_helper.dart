@@ -24,6 +24,12 @@ class ChatPanelHelper {
   /// 表情面板时为 true，避免弹出系统键盘但保留光标。
   bool readOnly = false;
 
+  /// 软键盘或自定义面板是否正在显示。
+  bool get isPanelOrKeyboardVisible {
+    return inputFocusNode.hasFocus ||
+        controller.currentPanelType != ChatBottomPanelType.none;
+  }
+
   /// 收起键盘与自定义面板。
   void hidePanel() {
     if (inputFocusNode.hasFocus) {
