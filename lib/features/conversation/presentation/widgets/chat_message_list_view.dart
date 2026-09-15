@@ -54,7 +54,7 @@ class ChatMessageListView extends StatelessWidget {
             child: ListView(
               controller: scrollController,
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(5, 0, 5, 8),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
               children: const [SizedBox(height: 160)],
             ),
           );
@@ -67,7 +67,7 @@ class ChatMessageListView extends StatelessWidget {
             reverse: true,
             shrinkWrap: true,
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(5, 8, 5, 0),
+            padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
             itemCount: items.length,
             itemBuilder: (context, index) {
               // reverse 下列表 index 0 在底部，对应时间正序的最后一条。

@@ -419,6 +419,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
             _panelHelper.hidePanel();
           },
           child: Scaffold(
+            backgroundColor: const Color(0xFFEDEDED),
             resizeToAvoidBottomInset: false,
             appBar: CommonAppBar(
               title: conversationName,

@@ -5,6 +5,27 @@ import 'package:all_flutter0709/features/conversation/presentation/models/chat_i
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+/// 对齐微信 iOS 会话：头像距屏幕边。
+const _kChatScreenPadding = 12.0;
+
+/// 对齐微信 iOS 会话：头像边长。
+const _kChatAvatarSize = 40.0;
+
+/// 对齐微信 iOS 会话：头像与气泡间距。
+const _kChatAvatarGap = 10.0;
+
+/// 对齐微信 iOS 会话：对侧留白，限制气泡最大宽度。
+const _kChatOppositeReserve = 48.0;
+
+/// 对齐微信 iOS 会话：气泡之间的垂直间距。
+const _kChatMessageSpacing = 8.0;
+
+/// 对齐微信 iOS 会话：气泡正文字号。
+const _kChatBubbleFontSize = 17.0;
+
+/// 对齐微信 iOS 会话：行高倍数（17 × 1.3 ≈ 22）。
+const _kChatBubbleLineHeight = 1.3;
+
 /// 聊天气泡列表单项（时间 tips / 文本 / 语音 / 图片）。
 class ChatListItemWidget extends StatelessWidget {
   const ChatListItemWidget({
@@ -75,17 +96,14 @@ class _TimeItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: const Color(0xFFDCDDDD),
-            borderRadius: BorderRadius.circular(3),
-          ),
-          child: Text(
-            item.label,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+        child: Text(
+          item.label,
+          style: const TextStyle(
+            color: Color(0xFFB2B2B2),
+            fontSize: 12,
+            height: 1,
           ),
         ),
       ),
@@ -118,35 +136,43 @@ class _MessageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 头像 43、气泡与头像间距约 5
-    // 发送中/失败状态在气泡左侧（远离头像），marginRight 10。
-    const avatarGap = 10.0;
     return Padding(
-      padding: const EdgeInsets.only(top: 13),
+      padding: const EdgeInsets.only(top: _kChatMessageSpacing),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_isRight) ...[
-            const Spacer(),
-            if (_showStatus)
-              Padding(
-                padding: const EdgeInsets.only(top: 12, right: 10),
-                child: _MessageStatusIndicator(
-                  status: deliveryStatus,
-                  uploadProgress: uploadProgress,
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_showStatus)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12, right: 10),
+                        child: _MessageStatusIndicator(
+                          status: deliveryStatus,
+                          uploadProgress: uploadProgress,
+                        ),
+                      ),
+                    Flexible(child: bubble),
+                  ],
                 ),
               ),
-            bubble,
-            const SizedBox(width: avatarGap),
+            ),
+            const SizedBox(width: _kChatAvatarGap),
             _ChatAvatar(avatarUrl: avatarUrl, onTap: onAvatarTap),
-            const SizedBox(width: 10),
+            const SizedBox(width: _kChatScreenPadding),
           ] else ...[
-            const SizedBox(width: 10),
+            const SizedBox(width: _kChatScreenPadding),
             _ChatAvatar(avatarUrl: avatarUrl, onTap: onAvatarTap),
-            const SizedBox(width: avatarGap),
+            const SizedBox(width: _kChatAvatarGap),
             Flexible(
               child: Align(alignment: Alignment.centerLeft, child: bubble),
             ),
+            const SizedBox(width: _kChatOppositeReserve),
           ],
         ],
       ),
@@ -165,8 +191,8 @@ class _ChatAvatar extends StatelessWidget {
     final avatar = ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: SizedBox(
-        width: 43,
-        height: 43,
+        width: _kChatAvatarSize,
+        height: _kChatAvatarSize,
         child: avatarUrl.isNotEmpty
             ? CachedNetworkImage(
                 imageUrl: avatarUrl,
@@ -224,9 +250,9 @@ class _TextBubble extends StatelessWidget {
         TextSpan(
           text: segment,
           style: TextStyle(
-            color: isUrl ? const Color(0xFF3399FF) : const Color(0xFF222222),
+            color: isUrl ? const Color(0xFF576B95) : const Color(0xFF191919),
             decoration: isUrl ? TextDecoration.underline : TextDecoration.none,
-            height: 1.25,
+            decorationColor: const Color(0xFF576B95),
           ),
         ),
       );
@@ -235,16 +261,32 @@ class _TextBubble extends StatelessWidget {
       }
     }
 
+    final maxBubbleWidth =
+        MediaQuery.sizeOf(context).width -
+        _kChatScreenPadding -
+        _kChatAvatarSize -
+        _kChatAvatarGap -
+        _kChatOppositeReserve;
+
     return _BubbleFrame(
       isRight: _isRight,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 200, minHeight: 43),
+        constraints: BoxConstraints(maxWidth: maxBubbleWidth, minHeight: 40),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 15),
-              children: spans,
+          child: Text.rich(
+            TextSpan(children: spans),
+            textWidthBasis: TextWidthBasis.longestLine,
+            style: const TextStyle(
+              fontSize: _kChatBubbleFontSize,
+              height: _kChatBubbleLineHeight,
+              color: Color(0xFF191919),
+              leadingDistribution: TextLeadingDistribution.even,
+            ),
+            strutStyle: const StrutStyle(
+              fontSize: _kChatBubbleFontSize,
+              height: _kChatBubbleLineHeight,
+              leadingDistribution: TextLeadingDistribution.even,
             ),
           ),
         ),
@@ -271,7 +313,7 @@ class _VoiceBubble extends StatelessWidget {
       isRight: _isRight,
       child: SizedBox(
         width: width,
-        height: 43,
+        height: _kChatAvatarSize,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Row(
@@ -283,8 +325,9 @@ class _VoiceBubble extends StatelessWidget {
                     Text(
                       '${item.seconds}"',
                       style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF222222),
+                        fontSize: 16,
+                        height: 1.2,
+                        color: Color(0xFF191919),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -296,8 +339,9 @@ class _VoiceBubble extends StatelessWidget {
                     Text(
                       '${item.seconds}"',
                       style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xFF222222),
+                        fontSize: 16,
+                        height: 1.2,
+                        color: Color(0xFF191919),
                       ),
                     ),
                   ],
