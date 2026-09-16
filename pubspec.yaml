@@ -46,6 +46,7 @@ dependencies:
   easy_refresh: ^3.5.1
   get: ^4.7.3
   image_picker: ^1.2.3
+  wechat_assets_picker: ^9.8.0
   flutter_blue_plus: ^2.3.10
   riverpod: ^3.3.2
   flutter_riverpod: ^3.3.2
@@ -99,6 +100,7 @@ flutter:
     - assets/icons/chat/
     - assets/icons/chat/qinput/
     - assets/icons/user/
+    - assets/icons/topic/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

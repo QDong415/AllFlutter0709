@@ -36,4 +36,7 @@ abstract final class AppColors {
 
   /// 纯黑
   static const Color black = Color(0xFF000000);
+
+  /// 链接 / @好友高亮（QKotlin `blue_color`）
+  static const Color link = Color(0xFF3399FF);
 }

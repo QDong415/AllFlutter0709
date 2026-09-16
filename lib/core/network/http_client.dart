@@ -43,6 +43,8 @@ class HttpClient {
             onError: (error, handler) {
               _logger.e(
                 '[HTTP] ${error.message} '
+                'status=${error.response?.statusCode} '
+                'response=${error.response?.data} '
                 'data=${_formatRequestData(error.requestOptions.data)}',
               );
               handler.next(error);
@@ -65,6 +67,25 @@ class HttpClient {
       path,
       queryParameters: queryParameters,
     );
+  }
+
+  /// 把 Dio / 业务异常转成可读文案，避免把整段 HTML 500 页丢到进度条上。
+  String describeError(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map) {
+        final message = data['message']?.toString().trim();
+        if (message != null && message.isNotEmpty) {
+          return message;
+        }
+      }
+      final status = error.response?.statusCode;
+      if (status != null) {
+        return '服务器错误($status)';
+      }
+      return error.message ?? error.toString();
+    }
+    return error.toString().replaceFirst(RegExp(r'^Exception: '), '');
   }
 
   /// POST 请求；默认 `application/x-www-form-urlencoded`（与现有接口一致）。

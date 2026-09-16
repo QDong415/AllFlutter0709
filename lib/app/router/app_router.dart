@@ -12,6 +12,8 @@ import 'package:all_flutter0709/features/me/presentation/me_page.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_detail_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_page.dart';
+import 'package:all_flutter0709/features/topic/presentation/topic_submit_page.dart';
+import 'package:all_flutter0709/features/topic/presentation/topic_user_select_page.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/user_detail_page.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
@@ -48,8 +50,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       // 完善资料页必须带着第一步参数进入。
-      if (location == AppRoutes.signupProfile &&
-          state.extra is! SignupArgs) {
+      if (location == AppRoutes.signupProfile && state.extra is! SignupArgs) {
         return AppRoutes.signup;
       }
 
@@ -109,6 +110,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                           : null;
                       return TopicDetailPage(tid: tid, topicModel: topicModel);
                     },
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: AppRoutes.topicSubmit,
+                    builder: (context, state) => const TopicSubmitPage(),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: AppRoutes.topicUserSelect,
+                    builder: (context, state) => const TopicUserSelectPage(),
                   ),
                 ],
               ),

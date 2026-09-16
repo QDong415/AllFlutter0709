@@ -1,5 +1,7 @@
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
+import 'package:all_flutter0709/core/network/page_data.dart';
+import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 
 /// 用户主页相关网络请求。
@@ -20,8 +22,7 @@ class UserRepository {
 
     final result = ApiResponse<UserProfileModel>.fromJson(
       json,
-      (dataJson) =>
-          UserProfileModel.fromJson(dataJson as Map<String, dynamic>),
+      (dataJson) => UserProfileModel.fromJson(dataJson as Map<String, dynamic>),
     );
     if (!result.success) {
       throw Exception(result.message.isEmpty ? '资料加载失败' : result.message);
@@ -68,4 +69,49 @@ class UserRepository {
 
     return followStatus;
   }
+
+  /// 拉取我关注的好友列表（Android `follow/folowlist`）。
+  Future<UserBasePageResult> getFollowList({
+    required String toUserId,
+    required int page,
+    String keyword = '',
+  }) async {
+    final response = await HttpClient.instance.get(
+      '/api/follow/folowlist',
+      queryParameters: <String, dynamic>{
+        'to_userid': toUserId,
+        'page': page,
+        'keyword': keyword,
+      },
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<PageData<UserBaseModel>>.fromJson(
+      json,
+      (pageJson) => PageData<UserBaseModel>.fromJson(
+        pageJson as Map<String, dynamic>,
+        (itemJson) => UserBaseModel.fromJson(itemJson as Map<String, dynamic>),
+      ),
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '好友列表加载失败' : result.message);
+    }
+
+    final pageData = result.data;
+    final items = pageData?.items ?? const <UserBaseModel>[];
+    final hasMore = (pageData?.totalPage ?? 0) > page;
+    return UserBasePageResult(items: items, hasMore: hasMore);
+  }
+}
+
+/// 关注列表分页结果。
+class UserBasePageResult {
+  const UserBasePageResult({required this.items, required this.hasMore});
+
+  final List<UserBaseModel> items;
+  final bool hasMore;
 }

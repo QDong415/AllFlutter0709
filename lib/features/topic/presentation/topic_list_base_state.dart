@@ -83,7 +83,10 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     final requestPage = isRefresh ? 1 : _nextPage;
 
     try {
-      final TopicPageResult result = await topicRepository.getTopicList(page: requestPage, customParameters: customParameters());
+      final TopicPageResult result = await topicRepository.getTopicList(
+        page: requestPage,
+        customParameters: customParameters(),
+      );
 
       if (!mounted) return;
 
@@ -208,7 +211,8 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     ScrollPhysics? physics,
     EdgeInsetsGeometry? listPadding,
   }) {
-    final effectivePadding = listPadding ??
+    final effectivePadding =
+        listPadding ??
         const EdgeInsets.only(bottom: AppDimens.glassTabBarContentInset);
     final header = buildListHeader();
     if (header == null) {

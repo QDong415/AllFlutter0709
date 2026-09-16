@@ -9,6 +9,7 @@ import file_selector_macos
 import flutter_blue_plus_darwin
 import gal
 import package_info_plus
+import photo_manager
 import record_macos
 import share_plus
 import shared_preferences_foundation
@@ -22,6 +23,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterBluePlusPlugin.register(with: registry.registrar(forPlugin: "FlutterBluePlusPlugin"))
   GalPlugin.register(with: registry.registrar(forPlugin: "GalPlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))
+  PhotoManagerPlugin.register(with: registry.registrar(forPlugin: "PhotoManagerPlugin"))
   RecordMacOsPlugin.register(with: registry.registrar(forPlugin: "RecordMacOsPlugin"))
   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))

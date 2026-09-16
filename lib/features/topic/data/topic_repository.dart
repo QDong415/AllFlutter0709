@@ -2,13 +2,11 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/network/page_data.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
+import 'package:dio/dio.dart';
 
 /// 动态列表分页结果。
 class TopicPageResult {
-  const TopicPageResult({
-    required this.items,
-    required this.hasMore,
-  });
+  const TopicPageResult({required this.items, required this.hasMore});
 
   final List<TopicModel> items;
   final bool hasMore;
@@ -115,5 +113,37 @@ class TopicRepository {
     if (!result.success) {
       throw Exception(result.message.isEmpty ? '点赞失败' : result.message);
     }
+  }
+
+  /// 发布动态；成功返回新动态 id。
+  Future<String> submitTopic({required Map<String, dynamic> params}) async {
+    try {
+      final response = await HttpClient.instance.post(
+        '/api/topic/submit',
+        data: _asFormFields(params),
+      );
+
+      final json = response.data;
+      if (json == null) {
+        throw Exception('服务器返回为空');
+      }
+
+      final result = ApiResponse<String>.fromJson(json, (dataJson) {
+        return dataJson?.toString() ?? '';
+      });
+      if (!result.success) {
+        throw Exception(result.message.isEmpty ? '发布失败' : result.message);
+      }
+      return result.data ?? '';
+    } on DioException catch (error) {
+      throw Exception(HttpClient.instance.describeError(error));
+    }
+  }
+
+  /// Android OkHttp FormBody 全是 String；PHP 8 缺键会 500，空字符串比不传更安全。
+  Map<String, String> _asFormFields(Map<String, dynamic> params) {
+    return <String, String>{
+      for (final entry in params.entries) entry.key: '${entry.value ?? ''}',
+    };
   }
 }
