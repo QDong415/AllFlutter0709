@@ -91,7 +91,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   @override
   Map<String, dynamic>? customParameters() {
-    return {'toUserId': widget.userId};
+    return {'to_userid': widget.userId};
   }
 
   @override
