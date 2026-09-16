@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
@@ -5,9 +7,11 @@ import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_share_sheet.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -31,6 +35,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   int _nextPage = 1;
   bool _hasMore = true;
   PageState _pageState = PageState.loading;
+  StreamSubscription<Tid>? _deletedTidSubscription;
 
   /// 从详情等页面返回后递增，驱动列表内视频重新同步播放。
   int _videoResumeNonce = 0;
@@ -75,7 +80,16 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   @override
   void initState() {
     super.initState();
+    _deletedTidSubscription = TopicDeleteHelper.controller.stream.listen(
+      _removeTopicByTid,
+    );
     requestList(isRefresh: true);
+  }
+
+  @override
+  void dispose() {
+    _deletedTidSubscription?.cancel();
+    super.dispose();
   }
 
   @protected
@@ -136,6 +150,24 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     final index = _topics.indexWhere((item) => item.tid == topic.tid);
     if (index == -1) return;
     _topics[index] = topic;
+  }
+
+  void _removeTopicByTid(Tid tid) {
+    if (!mounted) {
+      return;
+    }
+    for (var i = 0; i < _topics.length; i++) {
+      if (_topics[i].tid != tid) {
+        continue;
+      }
+      setState(() {
+        _topics.removeAt(i);
+        if (_topics.isEmpty) {
+          _pageState = PageState.empty;
+        }
+      });
+      break;
+    }
   }
 
   String _videoInViewId(TopicModel topicModel) => 'video-${topicModel.tid}';
@@ -408,6 +440,31 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     } finally {
       _likingTopicIds.remove(topic.tid);
     }
+  }
+
+  @override
+  Future<void> onDeleteTap(TopicModel topic) async {
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    try {
+      await TopicDeleteHelper.delete(context, topic.tid);
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  @override
+  void onReportTap(TopicModel topic) {
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    openWarningReportPage(context, toUserId: topic.userId);
   }
 
   @override

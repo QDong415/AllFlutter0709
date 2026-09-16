@@ -7,23 +7,24 @@ import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_section.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_more_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class TopicDetailPage extends ConsumerStatefulWidget {
-  const TopicDetailPage({
-    super.key,
-    this.tid,
-    this.topicModel,
-  }) : assert(tid != null || topicModel != null, 'tid 和 topicModel 不能同时为空');
+  const TopicDetailPage({super.key, this.tid, this.topicModel})
+    : assert(tid != null || topicModel != null, 'tid 和 topicModel 不能同时为空');
 
   final String? tid;
   final TopicModel? topicModel;
@@ -39,12 +40,17 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
   bool _isLoading = true;
   bool _isLiking = false;
   String? _errorText;
+  StreamSubscription<Tid>? _deletedTidSubscription;
 
-  String get _resolvedTid => (widget.topicModel?.tid ?? widget.tid ?? '').trim();
+  String get _resolvedTid =>
+      (widget.topicModel?.tid ?? widget.tid ?? '').trim();
 
   @override
   void initState() {
     super.initState();
+    _deletedTidSubscription = TopicDeleteHelper.controller.stream.listen(
+      _onTopicDeleted,
+    );
     _topicModel = widget.topicModel;
     if (_topicModel == null) {
       _isLoading = true;
@@ -53,6 +59,12 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
     } else {
       _isLoading = false;
     }
+  }
+
+  @override
+  void dispose() {
+    _deletedTidSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchDetail({required bool showLoading}) async {
@@ -120,7 +132,9 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
         _topicModel = topicModel;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     } finally {
       if (mounted) {
@@ -129,6 +143,51 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
         });
       }
     }
+  }
+
+  Future<void> _deleteTopic() async {
+    final topicModel = _topicModel;
+    if (topicModel == null) {
+      return;
+    }
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+
+    try {
+      await TopicDeleteHelper.delete(context, topicModel.tid);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+
+  void _onTopicDeleted(Tid tid) {
+    if (!mounted) {
+      return;
+    }
+    final currentTid = (_topicModel?.tid ?? _resolvedTid).trim();
+    if (currentTid.isEmpty || currentTid != tid) {
+      return;
+    }
+    context.pop();
+  }
+
+  void _reportTopic() {
+    final topicModel = _topicModel;
+    if (topicModel == null) {
+      return;
+    }
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    openWarningReportPage(context, toUserId: topicModel.userId);
   }
 
   @override
@@ -191,11 +250,13 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
           topic: topicModel,
           isLoadingDetail: _isLoading,
           onLikeTap: _toggleLike,
+          onDeleteTap: _deleteTopic,
+          onReportTap: _reportTopic,
           onRefreshTap: _errorText == null
               ? null
               : () {
-            unawaited(_fetchDetail(showLoading: false));
-          },
+                  unawaited(_fetchDetail(showLoading: false));
+                },
         ),
       );
     }
@@ -207,12 +268,16 @@ class _TopicDetailHeader extends StatelessWidget {
     required this.topic,
     required this.isLoadingDetail,
     required this.onLikeTap,
+    this.onDeleteTap,
+    this.onReportTap,
     this.onRefreshTap,
   });
 
   final TopicModel topic;
   final bool isLoadingDetail;
   final Future<void> Function() onLikeTap;
+  final VoidCallback? onDeleteTap;
+  final VoidCallback? onReportTap;
   final VoidCallback? onRefreshTap;
 
   @override
@@ -304,6 +369,11 @@ class _TopicDetailHeader extends StatelessWidget {
                   color: const Color(0xFF8B8B90),
                   tooltip: '刷新详情',
                 ),
+              TopicMoreButton(
+                topicModel: topic,
+                onDeleteTap: onDeleteTap,
+                onReportTap: onReportTap,
+              ),
             ],
           ),
           if (content.isNotEmpty) ...[
@@ -341,10 +411,15 @@ class _TopicDetailHeader extends StatelessWidget {
             children: [
               RoundIconLabelChip(
                 icon: Icons.mode_comment_outlined,
-                label: topic.commentCount > 0 ? '评论 ${topic.commentCount}' : '评论',
+                label: topic.commentCount > 0
+                    ? '评论 ${topic.commentCount}'
+                    : '评论',
               ),
               const SizedBox(width: 10),
-              RoundIconLabelChip(icon: Icons.tag_rounded, label: 'tid ${topic.tid}'),
+              RoundIconLabelChip(
+                icon: Icons.tag_rounded,
+                label: 'tid ${topic.tid}',
+              ),
               const Spacer(),
               Opacity(
                 opacity: isLoadingDetail ? 0.7 : 1,

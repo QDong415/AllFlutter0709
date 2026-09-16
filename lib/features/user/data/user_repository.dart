@@ -70,6 +70,27 @@ class UserRepository {
     return followStatus;
   }
 
+  /// 提交意见或举报（Android `version/opinion_send`）。
+  Future<void> submitOpinion({
+    required String content,
+    String toUserId = '',
+  }) async {
+    final response = await HttpClient.instance.post(
+      '/api/version/opinion_send',
+      data: <String, dynamic>{'to_userid': toUserId, 'content': content},
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<void>.fromJson(json);
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '提交失败' : result.message);
+    }
+  }
+
   /// 拉取我关注的好友列表（Android `follow/folowlist`）。
   Future<UserBasePageResult> getFollowList({
     required String toUserId,

@@ -16,6 +16,7 @@ import 'package:all_flutter0709/features/topic/presentation/topic_submit_page.da
 import 'package:all_flutter0709/features/topic/presentation/topic_user_select_page.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/user_detail_page.dart';
+import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:all_flutter0709/features/video/presentation/missing_video_page.dart';
 import 'package:all_flutter0709/features/video/presentation/video_detail_page.dart';
@@ -70,6 +71,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final args = state.extra as SignupArgs;
           return SignupProfilePage(args: args);
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.warningReport,
+        builder: (context, state) {
+          final extra = state.extra;
+          final toUserId = extra is String ? extra : '';
+          return WarningReportPage(toUserId: toUserId);
         },
       ),
       GoRoute(

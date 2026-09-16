@@ -180,6 +180,7 @@ class _MessageRow extends StatelessWidget {
   }
 }
 
+/// 聊天页头像；禁用 CachedNetworkImage 默认淡入，避免进入会话时头像渐变出现。
 class _ChatAvatar extends StatelessWidget {
   const _ChatAvatar({required this.avatarUrl, this.onTap});
 
@@ -197,6 +198,9 @@ class _ChatAvatar extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: avatarUrl,
                 fit: BoxFit.cover,
+                fadeInDuration: Duration.zero,
+                fadeOutDuration: Duration.zero,
+                placeholderFadeInDuration: Duration.zero,
                 placeholder: (_, _) => const ColoredBox(
                   color: Color(0xFFF0F0F0),
                   child: Icon(

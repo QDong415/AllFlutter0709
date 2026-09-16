@@ -51,33 +51,48 @@ class ConversationPage extends ConsumerWidget {
 
                     return RefreshIndicator(
                       onRefresh: controller.syncMessagesFromServer,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(
-                          bottom: AppDimens.glassTabBarContentInset,
-                        ),
-                        itemBuilder: (context, index) {
-                          final item = conversations[index];
-                          return ConversationListItem(
-                            summaryModel: item,
-                            onTap: () {
-                              if (!context.ensureLoggedIn()) return;
-                              context.push(
-                                '${AppRoutes.conversation}/chat/${item.conversationId}',
-                                extra: ConversationChatArgs(
-                                  peerName: item.name,
-                                  peerAvatar: item.avatar,
-                                  peerUserType: item.userType,
-                                ),
-                              );
-                            },
-                          );
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification is ScrollStartNotification &&
+                              notification.dragDetails != null) {
+                            ConversationListItem.closeOpenSwipe();
+                          }
+                          return false;
                         },
-                        separatorBuilder: (_, _) => const Divider(
-                          height: AppDimens.dividerThickness,
-                          thickness: AppDimens.dividerThickness,
-                          color: AppColors.divider,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.only(
+                            bottom: AppDimens.glassTabBarContentInset,
+                          ),
+                          itemBuilder: (context, index) {
+                            final item = conversations[index];
+                            return ConversationListItem(
+                              key: ValueKey(item.conversationId),
+                              summaryModel: item,
+                              onTap: () {
+                                if (!context.ensureLoggedIn()) return;
+                                context.push(
+                                  '${AppRoutes.conversation}/chat/${item.conversationId}',
+                                  extra: ConversationChatArgs(
+                                    peerName: item.name,
+                                    peerAvatar: item.avatar,
+                                    peerUserType: item.userType,
+                                  ),
+                                );
+                              },
+                              onDelete: () {
+                                controller.deleteConversation(
+                                  item.conversationId,
+                                );
+                              },
+                            );
+                          },
+                          separatorBuilder: (_, _) => const Divider(
+                            height: AppDimens.dividerThickness,
+                            thickness: AppDimens.dividerThickness,
+                            color: AppColors.divider,
+                          ),
+                          itemCount: conversations.length,
                         ),
-                        itemCount: conversations.length,
                       ),
                     );
                   },

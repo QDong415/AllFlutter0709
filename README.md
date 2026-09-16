@@ -5,7 +5,9 @@
   &nbsp;&nbsp;
   <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260726154132_37_2125.jpg" width="280" />
   &nbsp;&nbsp;
-  <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260728092057_41_2125.jpg" width="280" />
+  <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260916210720_18_495.jpg" width="280" />
+   &nbsp;&nbsp;
+  <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260916210536_17_495.jpg" width="280" />
 </p>
 
 ### android扫码体验 ：
@@ -13,7 +15,7 @@
   <img src="http://qiniu.itopic.com.cn/httpqiniu.itopic.com.cnapp-flutter-release.apk.png" width="200" />
 </p>
 
-一个偏真实业务的 Flutter 社交客户端示例：动态、视频、聊天、登录注册都有，但**重点不是业务本身，而是怎么把 Flutter 工程搭清楚**。
+一个偏真实业务的 Flutter 社交客户端示例：动态、视频、聊天、对接AI机器人 ，但**重点不是业务本身，而是怎么把 Flutter 工程搭清楚**。
 
 ---
 
@@ -33,12 +35,10 @@
 |------|------|------|
 | 状态 | `riverpod` | 登录态、路由、推送、会话等全局能力 |
 | 路由 | `go_router` | 路径常量 + Shell Tab + redirect |
-| 网络 | `dio` | 单例 `HttpClient` + 解析json封装 |
-| 本地存储 | `shared_preferences` / `sqflite` | 账号缓存 / 聊天本地库 |
-| 列表刷新 | `easy_refresh` | 下拉刷新、上拉加载 |
 | 视频 | `video_player` + `chewie` | 详情播放 |
+| IM消息存储 | `sqflite` | 自己做的聊天本地库 |
 | IM聊天 | `getuiflut` | 底层用个推，自己sql存储message |
-| 上传 | `qiniu_flutter_sdk` | 头像等资源上传 |
+| AI聊天 | `minimax` + `Z-image` | Ai语义对话 + Ai生图 |
 
 ---
 
@@ -86,29 +86,6 @@ Repository                     ← 对上提供业务语义，对下屏蔽接口
    ▼         ▼
 Network    Local DB            ← Dio / SharedPreferences / sqflite
 ```
-
----
-
-## 启动流程
-
-```text
-main()
-  → SharedPreferences
-  → ProviderScope（注入 prefs）
-  → SocialApp
-       ├─ 启动原生事件监听（NativeEvents）
-       ├─ 初始化个推
-       └─ MaterialApp.router
-            └─ 默认进 /topic
-                 └─ AccountNotifier 从本地恢复登录态，同步 HttpClient.userid
-```
-
-关键文件：
-
-- `lib/main.dart`
-- `lib/app/app.dart`
-- `lib/core/account/account_provider.dart`
-- `lib/app/router/app_router.dart`
 
 ---
 

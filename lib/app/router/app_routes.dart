@@ -14,4 +14,5 @@ abstract final class AppRoutes {
   static const me = '/me';
   static const user = '/user';
   static const userDetail = ':userId';
+  static const warningReport = '/report';
 }

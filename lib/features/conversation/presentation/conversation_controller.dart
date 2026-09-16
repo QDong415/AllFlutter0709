@@ -134,6 +134,26 @@ class ConversationController extends ChangeNotifier {
     await refreshConversations();
   }
 
+  /// 删除本地会话及其消息，并刷新列表与未读数。
+  Future<void> deleteConversation(String conversationId) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
+    final id = conversationId.trim();
+    if (id.isEmpty) {
+      return;
+    }
+
+    final repository = _ref.read(conversationRepositoryProvider);
+    await repository.deleteConversation(account.userId, id);
+    _messagesState.remove(id);
+    if (_activeConversationId == id) {
+      _activeConversationId = null;
+    }
+    await refreshConversations();
+  }
+
   Future<void> syncMessagesFromServer() async {
     if (_syncing) {
       ChatPushLog.d('syncMessagesFromServer 跳过：已在同步中');
@@ -194,9 +214,7 @@ class ConversationController extends ChangeNotifier {
     if (unread.isEmpty) {
       return null;
     }
-    unread.sort(
-      (a, b) => b.latestTimeSeconds.compareTo(a.latestTimeSeconds),
-    );
+    unread.sort((a, b) => b.latestTimeSeconds.compareTo(a.latestTimeSeconds));
     return unread.first.conversationId;
   }
 

@@ -224,6 +224,16 @@ class ChatLocalDataSource {
     );
   }
 
+  /// 删除指定会话的全部本地消息（对齐 Android `clearChatWithTargetid`）。
+  Future<void> deleteConversation(String userId, String conversationId) async {
+    final db = await database;
+    await db.delete(
+      _chatTable,
+      where: 'userid = ? AND targetid = ?',
+      whereArgs: [userId, conversationId],
+    );
+  }
+
   Future<ConversationMessage?> findMessageByClientId(
     String userId,
     String clientMessageId,

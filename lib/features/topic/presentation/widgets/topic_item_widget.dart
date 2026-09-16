@@ -5,6 +5,7 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_commen
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_more_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -35,6 +36,12 @@ abstract class TopicItemActionListener {
     String userName,
     String? avatar,
   );
+
+  /// 删除自己发布的动态。
+  Future<void> onDeleteTap(TopicModel topic);
+
+  /// 举报别人发布的动态。
+  void onReportTap(TopicModel topic);
 }
 
 /// 单条动态卡片（头像 / 正文 / 图片或视频 / 评论预览 / 操作栏）。
@@ -127,7 +134,11 @@ class TopicItemWidget extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade400),
+                  TopicMoreButton(
+                    topicModel: topicModel,
+                    onDeleteTap: () => listener?.onDeleteTap(topicModel),
+                    onReportTap: () => listener?.onReportTap(topicModel),
+                  ),
                 ],
               ),
             ),

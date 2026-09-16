@@ -66,6 +66,11 @@ class ConversationRepository {
     return _localDataSource.markConversationRead(userId, conversationId);
   }
 
+  /// 删除指定会话的全部本地消息。
+  Future<void> deleteConversation(String userId, String conversationId) {
+    return _localDataSource.deleteConversation(userId, conversationId);
+  }
+
   Future<int> syncPulledMessages(String userId) async {
     ChatPushLog.d('message/pull 请求 userId=$userId');
     final response = await HttpClient.instance.get(_messagePullApi);
@@ -297,9 +302,7 @@ class ConversationRepository {
     final data = json['data'];
     final serverCid = data is Map ? data['cid']?.toString() ?? '' : '';
     if (serverCid != trimmed) {
-      throw Exception(
-        'CID 写入未生效，服务器仍为 ${serverCid.isEmpty ? '空' : serverCid}',
-      );
+      throw Exception('CID 写入未生效，服务器仍为 ${serverCid.isEmpty ? '空' : serverCid}');
     }
   }
 
@@ -310,8 +313,7 @@ class ConversationRepository {
         _doRegActionApi,
         data: <String, dynamic>{},
       );
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> _sendChatMessage({

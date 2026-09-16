@@ -86,6 +86,24 @@ class TopicRepository {
     return TopicPageResult(items: items, hasMore: hasMore);
   }
 
+  /// 删除自己发布的动态。
+  Future<void> deleteTopic({required String tid}) async {
+    final response = await HttpClient.instance.post(
+      '/api/topic/delete',
+      data: <String, dynamic>{'tid': tid},
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<void>.fromJson(json);
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '删除失败' : result.message);
+    }
+  }
+
   /// 点赞 / 取消点赞动态。
   Future<void> likeTopic({
     required String tid,
