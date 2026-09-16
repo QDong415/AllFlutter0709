@@ -6,6 +6,7 @@ import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_ai_typing_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_image_preview_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_scroll_helper.dart';
@@ -56,6 +57,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   final _focusNode = FocusNode();
   final _sendHelper = ChatSendHelper();
   final _imagePreviewHelper = const ChatImagePreviewHelper();
+  final _aiTypingHelper = ChatAiTypingHelper();
   late final ChatScrollHelper _scrollHelper;
   late final ChatVoiceRecordHelper _voiceRecordHelper;
   late final ChatPanelHelper _panelHelper;
@@ -231,6 +233,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
       _textController.clear();
       // reverse 列表下新消息已在底部；仅 jump 校正，不做动画。
       _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+      _startAiTypingIfNeeded();
     } catch (error) {
       _showSnackBar(error.toString());
     } finally {
@@ -273,6 +276,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         peerUserType: _peerUserType,
       );
       _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+      _startAiTypingIfNeeded();
     } catch (error, stackTrace) {
       ChatSendLog.d('页面发图失败: $error');
       ChatSendLog.d('$stackTrace');
@@ -387,6 +391,23 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     return buildChatItems(messages).length;
   }
 
+  int _incomingMessageCount() {
+    final state = ref
+        .read(conversationControllerProvider)
+        .messagesStateOf(widget.chatId);
+    final messages = state is AsyncData<List<ConversationMessage>>
+        ? state.value
+        : const <ConversationMessage>[];
+    return messages.where((message) => !message.isSender).length;
+  }
+
+  void _startAiTypingIfNeeded() {
+    if (!_peerIsAi) {
+      return;
+    }
+    _aiTypingHelper.startWaiting(_incomingMessageCount());
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = ref.read(conversationControllerProvider);
@@ -400,6 +421,11 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
             : const <ConversationMessage>[];
         final conversationName = _peerName;
         final peerAvatar = _peerAvatar;
+        final incomingCount = messages
+            .where((message) => !message.isSender)
+            .length;
+        final isPeerTyping =
+            _peerIsAi && _aiTypingHelper.isTyping(incomingCount);
         final items = buildChatItems(
           messages,
           myAvatar: myAvatar,
@@ -422,8 +448,10 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
             backgroundColor: const Color(0xFFEDEDED),
             resizeToAvoidBottomInset: false,
             appBar: CommonAppBar(
-              title: conversationName,
-              titleTrailing: _peerIsAi ? const UserAiTag() : null,
+              title: isPeerTyping ? '对方正在输入中...' : conversationName,
+              titleTrailing: _peerIsAi && !isPeerTyping
+                  ? const UserAiTag()
+                  : null,
               actions: const [SizedBox(width: 12)],
               onLeadingPressed: () => Navigator.of(context).pop(),
             ),
