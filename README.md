@@ -1,4 +1,4 @@
-# Social App（Flutter 学习工程）
+# Social App（AI 聊天恋陪）
 
 <p align="center">
   <img src="http://qiniu.itopic.com.cn/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260726153202_35_2125.jpg" width="280" />
