@@ -272,8 +272,8 @@ class _CommentRichText extends StatelessWidget {
     final timeText = _formatCommentTimeText(comment.createTime);
 
     if (!comment.hasReplyTarget) {
-      return RichText(
-        text: TextSpan(
+      return Text.rich(
+        TextSpan(
           style: baseStyle,
           children: [
             TextSpan(text: content),
@@ -286,8 +286,8 @@ class _CommentRichText extends StatelessWidget {
       );
     }
 
-    return RichText(
-      text: TextSpan(
+    return Text.rich(
+      TextSpan(
         style: baseStyle,
         children: [
           const TextSpan(text: '回复 '),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+/// 动态正文：普通文字 + @ / # / 链接高亮。
 class TopicContentText extends StatefulWidget {
   const TopicContentText({
     super.key,
@@ -59,8 +60,8 @@ class _TopicContentTextState extends State<TopicContentText> {
           fontWeight: FontWeight.w500,
         );
 
-    return RichText(
-      text: TextSpan(
+    return Text.rich(
+      TextSpan(
         style: baseStyle.copyWith(color: baseStyle.color ?? Colors.black87),
         children: _buildSpans(activeStyle),
       ),

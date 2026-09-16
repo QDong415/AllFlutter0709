@@ -4,6 +4,7 @@ import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+/// 动态卡片下方的评论预览列表。
 class TopicCommentPreviewList extends StatelessWidget {
   const TopicCommentPreviewList({
     super.key,
@@ -124,8 +125,8 @@ class _CommentPreviewTextState extends State<_CommentPreviewText> {
 
   @override
   Widget build(BuildContext context) {
-    return RichText(
-      text: TextSpan(
+    return Text.rich(
+      TextSpan(
         style: const TextStyle(
           color: Color(0xFF333333),
           fontSize: 14,

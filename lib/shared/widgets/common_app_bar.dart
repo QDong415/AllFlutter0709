@@ -56,7 +56,6 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                 style: const TextStyle(
                   color: AppColors.titleText,
                   fontSize: AppDimens.toolbarTitleSize,
-                  fontWeight: FontWeight.w400,
                 ),
               )
             : Row(
@@ -69,7 +68,6 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                       style: const TextStyle(
                         color: AppColors.titleText,
                         fontSize: AppDimens.toolbarTitleSize,
-                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ),

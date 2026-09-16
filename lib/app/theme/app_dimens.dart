@@ -11,8 +11,8 @@ abstract final class AppDimens {
   /// 主壳 `extendBody` 后，各 Tab 列表需加此底部 padding，避免末项被挡住。
   static const double glassTabBarContentInset = 104;
 
-  /// 导航栏标题字号（QKotlin `ToolTitleStyle` = 17sp）
-  static const double toolbarTitleSize = 17;
+  /// 导航栏标题字号（QKotlin `ToolTitleStyle` = 17sp，Flutter 用 19）
+  static const double toolbarTitleSize = 19;
 
   /// 分割线高度 / 粗细（对齐 Android 0.5dp）
   static const double dividerThickness = 0.5;
