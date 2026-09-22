@@ -7,9 +7,12 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_voice_file_store.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
@@ -71,6 +74,19 @@ class ConversationRepository {
     return _localDataSource.deleteConversation(userId, conversationId);
   }
 
+  /// 删除单条本地消息。
+  Future<void> deleteMessage({
+    required String userId,
+    required String clientMessageId,
+    required int msgId,
+  }) {
+    return _localDataSource.deleteMessage(
+      userId: userId,
+      clientMessageId: clientMessageId,
+      msgId: msgId,
+    );
+  }
+
   Future<int> syncPulledMessages(String userId) async {
     ChatPushLog.d('message/pull 请求 userId=$userId');
     final response = await HttpClient.instance.get(_messagePullApi);
@@ -106,6 +122,7 @@ class ConversationRepository {
     }
     final inserted = await _localDataSource.insertMessages(userId, messages);
     ChatPushLog.d('message/pull 新写入 $inserted 条（含去重跳过）');
+    await ensureLocalVoiceFiles(userId, messages);
     return inserted;
   }
 
@@ -272,6 +289,189 @@ class ConversationRepository {
       );
       rethrow;
     }
+  }
+
+  /// 创建待发送的语音消息，extend 对齐 Android `duration` / `hadplay`。
+  Future<ConversationMessage> createPendingVoiceMessage({
+    required AccountModel account,
+    required String conversationId,
+    required File audioFile,
+    required String filename,
+    required int durationSeconds,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) async {
+    final message = ConversationMessage(
+      msgId: 0,
+      clientMessageId: _uuid.v4(),
+      conversationId: conversationId,
+      otherUserId: conversationId,
+      otherName: peerName,
+      otherPhoto: peerAvatar,
+      content: '[语音消息]',
+      createTimeSeconds: _nowSeconds(),
+      status: ConversationMessageStatus.sending,
+      type: _chatTypeSingle,
+      messageType: ConversationMessageType.voice,
+      filename: filename,
+      extend: ConversationMessage.voiceExtendJson(
+        durationSeconds: durationSeconds,
+        hadPlay: true,
+      ),
+      isSender: true,
+      isRead: true,
+      localFilePath: audioFile.path,
+      otherUserType: peerUserType,
+    );
+    await _localDataSource.insertMessage(account.userId, message);
+    final saved = await _localDataSource.findMessageByClientId(
+      account.userId,
+      message.clientMessageId,
+    );
+    return saved ?? message;
+  }
+
+  /// 上传语音到七牛并调用 `/api/chat/send`。
+  Future<void> sendPendingVoiceMessage({
+    required AccountModel account,
+    required ConversationMessage message,
+  }) async {
+    ChatSendLog.d(
+      '发语音开始 clientId=${message.clientMessageId} '
+      'file=${message.localFilePath} key=${message.filename} '
+      'extend=${message.extend}',
+    );
+    try {
+      final file = File(message.localFilePath);
+      final exists = await file.exists();
+      final length = exists ? await file.length() : -1;
+      ChatSendLog.d('本地语音 exists=$exists bytes=$length');
+
+      ChatSendLog.d('开始上传七牛...');
+      await _uploadImageToQiniu(
+        userId: account.userId,
+        clientMessageId: message.clientMessageId,
+        filePath: message.localFilePath,
+        filename: message.filename,
+      );
+      ChatSendLog.d('七牛上传成功 key=${message.filename}');
+
+      await _localDataSource.updateUploadProgress(
+        account.userId,
+        message.clientMessageId,
+        100,
+      );
+
+      ChatSendLog.d('开始调用 /api/chat/send ...');
+      await _sendChatMessage(
+        targetId: message.conversationId,
+        content: message.content,
+        type: message.type,
+        subtype: message.messageType.subtype,
+        filename: message.filename,
+        extend: message.extend,
+        username: account.name,
+      );
+      ChatSendLog.d('语音 chat/send 成功');
+
+      await _localDataSource.updateMessageStatus(
+        account.userId,
+        message.clientMessageId,
+        ConversationMessageStatus.sent,
+      );
+    } catch (error, stackTrace) {
+      ChatSendLog.d('发语音失败: $error');
+      ChatSendLog.d('$stackTrace');
+      await _localDataSource.updateMessageStatus(
+        account.userId,
+        message.clientMessageId,
+        ConversationMessageStatus.failed,
+      );
+      rethrow;
+    }
+  }
+
+  /// 把语音文件下载到本地 filename，对齐 Android `downLoadFile`。
+  Future<void> ensureLocalVoiceFiles(
+    String userId,
+    List<ConversationMessage> messages,
+  ) async {
+    for (final message in messages) {
+      if (message.messageType != ConversationMessageType.voice) {
+        continue;
+      }
+      final filename = message.filename.trim();
+      if (filename.isEmpty) {
+        continue;
+      }
+
+      final localPath = await ChatVoiceFileStore.pathForFileName(filename);
+      final localFile = File(localPath);
+      if (await localFile.exists()) {
+        if (message.localFilePath != localPath) {
+          await _localDataSource.updateLocalFilePath(
+            userId: userId,
+            localFilePath: localPath,
+            msgId: message.msgId,
+            clientMessageId: message.clientMessageId,
+          );
+        }
+        continue;
+      }
+
+      final url = ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true);
+      if (url == null || url.isEmpty) {
+        continue;
+      }
+
+      try {
+        ChatSendLog.d('下载语音 msgid=${message.msgId} url=$url');
+        final downloader = Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 20),
+            receiveTimeout: const Duration(seconds: 60),
+            followRedirects: true,
+          ),
+        );
+        await downloader.download(url, localPath);
+        await _localDataSource.updateLocalFilePath(
+          userId: userId,
+          localFilePath: localPath,
+          msgId: message.msgId,
+          clientMessageId: message.clientMessageId,
+        );
+        ChatSendLog.d('语音下载完成 msgid=${message.msgId} path=$localPath');
+      } catch (error) {
+        ChatSendLog.d('语音下载失败 msgid=${message.msgId}: $error');
+        if (!message.isSender && message.msgId > 0) {
+          await _localDataSource.updateMessageStatusByMsgId(
+            userId,
+            message.msgId,
+            ConversationMessageStatus.failed,
+          );
+        }
+      }
+    }
+  }
+
+  /// 标记语音已播放，对齐 Android 更新 extend.hadplay。
+  Future<void> markVoicePlayed({
+    required String userId,
+    required int msgId,
+    required int durationSeconds,
+  }) async {
+    if (msgId <= 0) {
+      return;
+    }
+    await _localDataSource.updateMessageExtend(
+      userId: userId,
+      msgId: msgId,
+      extend: ConversationMessage.voiceExtendJson(
+        durationSeconds: durationSeconds,
+        hadPlay: true,
+      ),
+    );
   }
 
   /// 将当前登录账号绑定到个推 CID（`POST /api/user/modifyarray`）。

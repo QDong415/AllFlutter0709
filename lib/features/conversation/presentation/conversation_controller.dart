@@ -113,6 +113,16 @@ class ConversationController extends ChangeNotifier {
     _activeConversationId = conversationId;
     ChatPushLog.d('openConversation: $conversationId');
     await ensureMessagesLoaded(conversationId);
+    final account = _ref.read(accountProvider);
+    if (account != null) {
+      final repository = _ref.read(conversationRepositoryProvider);
+      final messages = await repository.getMessages(
+        account.userId,
+        conversationId,
+      );
+      await repository.ensureLocalVoiceFiles(account.userId, messages);
+      await refreshMessages(conversationId);
+    }
     await markConversationRead(conversationId);
   }
 
@@ -150,6 +160,42 @@ class ConversationController extends ChangeNotifier {
     _messagesState.remove(id);
     if (_activeConversationId == id) {
       _activeConversationId = null;
+    }
+    await refreshConversations();
+  }
+
+  /// 删除单条本地消息并刷新当前会话列表。
+  Future<void> deleteMessage({
+    required String conversationId,
+    required String clientMessageId,
+    required int msgId,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
+    final repository = _ref.read(conversationRepositoryProvider);
+    await repository.deleteMessage(
+      userId: account.userId,
+      clientMessageId: clientMessageId,
+      msgId: msgId,
+    );
+
+    final currentState = _messagesState[conversationId];
+    if (currentState is AsyncData<List<ConversationMessage>>) {
+      final clientId = clientMessageId.trim();
+      _messagesState[conversationId] = AsyncValue.data(
+        currentState.value.where((message) {
+          if (clientId.isNotEmpty) {
+            return message.clientMessageId != clientId;
+          }
+          if (msgId != 0) {
+            return message.msgId != msgId;
+          }
+          return true;
+        }).toList(growable: false),
+      );
+      notifyListeners();
     }
     await refreshConversations();
   }
@@ -299,6 +345,95 @@ class ConversationController extends ChangeNotifier {
       await refreshMessages(conversationId);
       await refreshConversations();
     }
+  }
+
+  /// 发送语音：先落本地 pending，再上传七牛并 `/api/chat/send`。
+  Future<void> sendVoiceMessage({
+    required String conversationId,
+    required File audioFile,
+    required String filename,
+    required int durationSeconds,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      throw Exception('请先登录');
+    }
+    ChatSendLog.d(
+      'Controller 发语音 conversationId=$conversationId '
+      'file=${audioFile.path} duration=$durationSeconds filename=$filename',
+    );
+    final repository = _ref.read(conversationRepositoryProvider);
+    final message = await repository.createPendingVoiceMessage(
+      account: account,
+      conversationId: conversationId,
+      audioFile: audioFile,
+      filename: filename,
+      durationSeconds: durationSeconds,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+    ChatSendLog.d(
+      '本地 pending 语音已创建 clientId=${message.clientMessageId} '
+      'filename=${message.filename} extend=${message.extend}',
+    );
+    await _appendAndNotify(conversationId, message);
+    await refreshConversations();
+
+    try {
+      await repository.sendPendingVoiceMessage(
+        account: account,
+        message: message,
+      );
+      ChatSendLog.d('Controller 发语音完成');
+    } catch (error, stackTrace) {
+      ChatSendLog.d('Controller 发语音失败: $error');
+      ChatSendLog.d('$stackTrace');
+      rethrow;
+    } finally {
+      await refreshMessages(conversationId);
+      await refreshConversations();
+    }
+  }
+
+  /// 标记语音已播放并刷新当前会话。
+  Future<void> markVoicePlayed({
+    required String conversationId,
+    required int msgId,
+    required int durationSeconds,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null || msgId <= 0) {
+      return;
+    }
+    final repository = _ref.read(conversationRepositoryProvider);
+    await repository.markVoicePlayed(
+      userId: account.userId,
+      msgId: msgId,
+      durationSeconds: durationSeconds,
+    );
+
+    final currentState = _messagesState[conversationId];
+    if (currentState is! AsyncData<List<ConversationMessage>>) {
+      return;
+    }
+    final extend = ConversationMessage.voiceExtendJson(
+      durationSeconds: durationSeconds,
+      hadPlay: true,
+    );
+    _messagesState[conversationId] = AsyncValue.data(
+      currentState.value
+          .map(
+            (message) => message.msgId == msgId
+                ? message.copyWith(extend: extend)
+                : message,
+          )
+          .toList(growable: false),
+    );
+    notifyListeners();
   }
 
   /// 【入口 A】运行期登录 / 退出后调用（见 GetuiPushService 的 ref.listen）。

@@ -60,7 +60,6 @@ class ChatInputBar extends StatelessWidget {
     required this.isEmojiPanel,
     required this.isRecording,
     required this.willCancelRecording,
-    required this.recordingDurationText,
     required this.controller,
     required this.focusNode,
     required this.readOnly,
@@ -69,16 +68,16 @@ class ChatInputBar extends StatelessWidget {
     required this.onTogglePanel,
     required this.onInputPointerUp,
     required this.onSendText,
-    required this.onVoiceLongPressStart,
-    required this.onVoiceLongPressMoveUpdate,
-    required this.onVoiceLongPressEnd,
+    required this.onVoicePointerDown,
+    required this.onVoicePointerMove,
+    required this.onVoicePointerUp,
+    required this.onVoicePointerCancel,
   });
 
   final bool isVoiceMode;
   final bool isEmojiPanel;
   final bool isRecording;
   final bool willCancelRecording;
-  final String recordingDurationText;
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool readOnly;
@@ -87,9 +86,10 @@ class ChatInputBar extends StatelessWidget {
   final VoidCallback onTogglePanel;
   final VoidCallback onInputPointerUp;
   final VoidCallback onSendText;
-  final GestureLongPressStartCallback onVoiceLongPressStart;
-  final GestureLongPressMoveUpdateCallback onVoiceLongPressMoveUpdate;
-  final GestureLongPressEndCallback onVoiceLongPressEnd;
+  final ValueChanged<Offset> onVoicePointerDown;
+  final ValueChanged<Offset> onVoicePointerMove;
+  final VoidCallback onVoicePointerUp;
+  final VoidCallback onVoicePointerCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -102,104 +102,77 @@ class ChatInputBar extends StatelessWidget {
           top: BorderSide(color: QInputBarColors.barBorder, width: hairline),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isRecording)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: Text(
-                willCancelRecording
-                    ? '松开手指，取消发送'
-                    : '手指上滑，取消发送  $recordingDurationText',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: willCancelRecording
-                      ? const Color(0xFFD93025)
-                      : const Color(0xFF8A8A8A),
-                  fontSize: 12,
-                ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          QInputBarMetrics.horizontalPadding,
+          QInputBarMetrics.verticalPadding,
+          QInputBarMetrics.horizontalPadding,
+          QInputBarMetrics.verticalPadding,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _SwitchIconButton(
+              asset: isVoiceMode
+                  ? ChatInputAssets.keyboard
+                  : ChatInputAssets.voice,
+              onTap: onToggleVoiceMode,
+            ),
+            const SizedBox(width: QInputBarMetrics.textViewHorizontalMargin),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: isVoiceMode
+                    ? _VoiceHoldButton(
+                        key: const ValueKey('voice_button'),
+                        isRecording: isRecording,
+                        willCancelRecording: willCancelRecording,
+                        onPointerDown: onVoicePointerDown,
+                        onPointerMove: onVoicePointerMove,
+                        onPointerUp: onVoicePointerUp,
+                        onPointerCancel: onVoicePointerCancel,
+                      )
+                    : _TextInputField(
+                        key: const ValueKey('text_input'),
+                        controller: controller,
+                        focusNode: focusNode,
+                        readOnly: readOnly,
+                        onSendText: onSendText,
+                        onInputPointerUp: onInputPointerUp,
+                      ),
               ),
             ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              QInputBarMetrics.horizontalPadding,
-              QInputBarMetrics.verticalPadding,
-              QInputBarMetrics.horizontalPadding,
-              QInputBarMetrics.verticalPadding,
+            const SizedBox(width: QInputBarMetrics.textViewHorizontalMargin),
+            _SwitchIconButton(
+              asset: isEmojiPanel
+                  ? ChatInputAssets.keyboard
+                  : ChatInputAssets.emoji,
+              onTap: onToggleEmoji,
+              usePointerDown: true,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _SwitchIconButton(
-                  asset: isVoiceMode
-                      ? ChatInputAssets.keyboard
-                      : ChatInputAssets.voice,
-                  onTap: onToggleVoiceMode,
-                ),
-                const SizedBox(
-                  width: QInputBarMetrics.textViewHorizontalMargin,
-                ),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: isVoiceMode
-                        ? _VoiceHoldButton(
-                            key: const ValueKey('voice_button'),
-                            isRecording: isRecording,
-                            willCancelRecording: willCancelRecording,
-                            onLongPressStart: onVoiceLongPressStart,
-                            onLongPressMoveUpdate: onVoiceLongPressMoveUpdate,
-                            onLongPressEnd: onVoiceLongPressEnd,
-                          )
-                        : _TextInputField(
-                            key: const ValueKey('text_input'),
-                            controller: controller,
-                            focusNode: focusNode,
-                            readOnly: readOnly,
-                            onSendText: onSendText,
-                            onInputPointerUp: onInputPointerUp,
-                          ),
-                  ),
-                ),
-                const SizedBox(
-                  width: QInputBarMetrics.textViewHorizontalMargin,
-                ),
-                _SwitchIconButton(
-                  asset: isEmojiPanel
-                      ? ChatInputAssets.keyboard
-                      : ChatInputAssets.emoji,
-                  onTap: onToggleEmoji,
-                  usePointerDown: true,
-                ),
-                ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: controller,
-                  builder: (context, value, _) {
-                    final hasText = value.text.trim().isNotEmpty;
-                    final Widget action;
-                    if (hasText && !isVoiceMode) {
-                      action = _SendTextButton(onTap: onSendText);
-                    } else {
-                      action = _SwitchIconButton(
-                        asset: ChatInputAssets.extend,
-                        onTap: onTogglePanel,
-                        usePointerDown: true,
-                      );
-                    }
-                    return SizedBox(
-                      width: QInputBarMetrics.rightActionWidth,
-                      height: QInputBarMetrics.switchButtonSize,
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: action,
-                      ),
-                    );
-                  },
-                ),
-              ],
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (context, value, _) {
+                final hasText = value.text.trim().isNotEmpty;
+                final Widget action;
+                if (hasText && !isVoiceMode) {
+                  action = _SendTextButton(onTap: onSendText);
+                } else {
+                  action = _SwitchIconButton(
+                    asset: ChatInputAssets.extend,
+                    onTap: onTogglePanel,
+                    usePointerDown: true,
+                  );
+                }
+                return SizedBox(
+                  width: QInputBarMetrics.rightActionWidth,
+                  height: QInputBarMetrics.switchButtonSize,
+                  child: Align(alignment: Alignment.centerRight, child: action),
+                );
+              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -310,47 +283,80 @@ class _SendTextButton extends StatelessWidget {
   }
 }
 
-/// 「按住说话」条，尺寸对齐输入框 minHeight。
-class _VoiceHoldButton extends StatelessWidget {
+/// 「按住说话」条，按下即录、松手结束，对齐 Android ACTION_DOWN / UP。
+class _VoiceHoldButton extends StatefulWidget {
   const _VoiceHoldButton({
     super.key,
     required this.isRecording,
     required this.willCancelRecording,
-    required this.onLongPressStart,
-    required this.onLongPressMoveUpdate,
-    required this.onLongPressEnd,
+    required this.onPointerDown,
+    required this.onPointerMove,
+    required this.onPointerUp,
+    required this.onPointerCancel,
   });
 
   final bool isRecording;
   final bool willCancelRecording;
-  final GestureLongPressStartCallback onLongPressStart;
-  final GestureLongPressMoveUpdateCallback onLongPressMoveUpdate;
-  final GestureLongPressEndCallback onLongPressEnd;
+  final ValueChanged<Offset> onPointerDown;
+  final ValueChanged<Offset> onPointerMove;
+  final VoidCallback onPointerUp;
+  final VoidCallback onPointerCancel;
+
+  @override
+  State<_VoiceHoldButton> createState() => _VoiceHoldButtonState();
+}
+
+class _VoiceHoldButtonState extends State<_VoiceHoldButton> {
+  int? _pointer;
 
   @override
   Widget build(BuildContext context) {
-    final title = willCancelRecording
+    final title = widget.willCancelRecording
         ? '松开手指，取消发送'
-        : (isRecording ? '松开 结束' : '按住说话');
-    final titleColor = willCancelRecording
+        : (widget.isRecording ? '松开 结束' : '按住说话');
+    final titleColor = widget.willCancelRecording
         ? const Color(0xFFD93025)
         : QInputBarColors.recordTitle;
 
-    return GestureDetector(
+    return Listener(
       behavior: HitTestBehavior.opaque,
-      onLongPressStart: onLongPressStart,
-      onLongPressMoveUpdate: onLongPressMoveUpdate,
-      onLongPressEnd: onLongPressEnd,
+      onPointerDown: (event) {
+        if (_pointer != null) {
+          return;
+        }
+        _pointer = event.pointer;
+        widget.onPointerDown(event.position);
+      },
+      onPointerMove: (event) {
+        if (event.pointer != _pointer) {
+          return;
+        }
+        widget.onPointerMove(event.position);
+      },
+      onPointerUp: (event) {
+        if (event.pointer != _pointer) {
+          return;
+        }
+        _pointer = null;
+        widget.onPointerUp();
+      },
+      onPointerCancel: (event) {
+        if (event.pointer != _pointer) {
+          return;
+        }
+        _pointer = null;
+        widget.onPointerCancel();
+      },
       child: SizedBox(
         height: QInputBarMetrics.textMinHeight,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: willCancelRecording
+            color: widget.willCancelRecording
                 ? const Color(0xFFFCE8E6)
                 : QInputBarColors.textViewBackground,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: willCancelRecording
+              color: widget.willCancelRecording
                   ? const Color(0xFFD93025)
                   : QInputBarColors.barBorder,
             ),

@@ -158,7 +158,7 @@ class TopicRepository {
     }
   }
 
-  /// Android OkHttp FormBody 全是 String；PHP 8 缺键会 500，空字符串比不传更安全。
+  /// Android OkHttp FormBody 全是 String，这里同样转成 String 再提交。
   Map<String, String> _asFormFields(Map<String, dynamic> params) {
     return <String, String>{
       for (final entry in params.entries) entry.key: '${entry.value ?? ''}',

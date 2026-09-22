@@ -87,6 +87,21 @@ class ConversationMessage {
   /// 对方是否为 AI 账号。
   bool get isAi => UserType.isAi(otherUserType);
 
+  /// 展示层稳定 id：优先客户端 id，其次服务端 msgid，再次本地 dbid。
+  String get itemId {
+    final clientId = clientMessageId.trim();
+    if (clientId.isNotEmpty) {
+      return clientId;
+    }
+    if (msgId != 0) {
+      return 'msg_$msgId';
+    }
+    if (localId != null) {
+      return 'local_$localId';
+    }
+    return 'tmp_${createTimeSeconds}_${messageType.subtype}_${content.hashCode}';
+  }
+
   DateTime get createTime =>
       DateTime.fromMillisecondsSinceEpoch(createTimeSeconds * 1000);
 
@@ -98,6 +113,99 @@ class ConversationMessage {
   String? get imageUrl => isImage
       ? ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true)
       : null;
+
+  /// 语音远端地址；filename 为空时为 null。下载/播放必须用原文件，不要加 imageView。
+  String? get voiceUrl {
+    if (messageType != ConversationMessageType.voice) {
+      return null;
+    }
+    return ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true);
+  }
+
+  /// 语音时长（秒）；对齐 Android extend.duration。
+  int get voiceSeconds {
+    if (messageType != ConversationMessageType.voice) {
+      return 1;
+    }
+    final fromExtend = _readExtendInt('duration');
+    if (fromExtend != null && fromExtend > 0) {
+      return fromExtend;
+    }
+    final fromContent = int.tryParse(content.trim());
+    if (fromContent != null && fromContent > 0) {
+      return fromContent;
+    }
+    return 1;
+  }
+
+  /// 是否已播放；对齐 Android：extend 含 `hadplay` 即为已读。
+  bool get voiceHadPlay {
+    if (messageType != ConversationMessageType.voice) {
+      return true;
+    }
+    final map = _extendJsonMap();
+    return map != null && map.containsKey('hadplay');
+  }
+
+  /// 生成语音 extend，对齐 Android `{"duration":"3","hadplay":"1"}`。
+  static String voiceExtendJson({
+    required int durationSeconds,
+    required bool hadPlay,
+  }) {
+    final map = <String, String>{'duration': '$durationSeconds'};
+    if (hadPlay) {
+      map['hadplay'] = '1';
+    }
+    return jsonEncode(map);
+  }
+
+  /// 去掉接收语音里发送方带来的 hadplay，接收方应视为未读。
+  static String stripIncomingVoiceHadPlay(String extend) {
+    if (extend.trim().isEmpty) {
+      return extend;
+    }
+    try {
+      final json = jsonDecode(extend);
+      if (json is! Map) {
+        return extend;
+      }
+      final map = Map<String, dynamic>.from(
+        json.map((key, value) => MapEntry(key.toString(), value)),
+      );
+      if (!map.containsKey('hadplay')) {
+        return extend;
+      }
+      map.remove('hadplay');
+      return jsonEncode(map);
+    } catch (_) {
+      return extend;
+    }
+  }
+
+  Map<String, dynamic>? _extendJsonMap() {
+    if (extend.trim().isEmpty) {
+      return null;
+    }
+    try {
+      final json = jsonDecode(extend);
+      if (json is Map<String, dynamic>) {
+        return json;
+      }
+      if (json is Map) {
+        return json.map((key, value) => MapEntry(key.toString(), value));
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  int? _readExtendInt(String key) {
+    final map = _extendJsonMap();
+    if (map == null) {
+      return null;
+    }
+    final value = _readInt(map[key], fallback: -1);
+    return value > 0 ? value : null;
+  }
 
   Map<String, int> get imageSize {
     if (!isImage || extend.trim().isEmpty) {
@@ -233,6 +341,10 @@ class ConversationMessage {
     final subtype = _readInt(json['subtype'], fallback: 1);
     final otherUserId = _readString(json['other_userid']);
     final targetId = _readString(json['targetid']);
+    final rawExtend = _readString(json['extend']);
+    final extend = subtype == ConversationMessageType.voice.subtype
+        ? stripIncomingVoiceHadPlay(rawExtend)
+        : rawExtend;
     return ConversationMessage(
       msgId: _readInt(json['msgid']),
       clientMessageId: _readString(json['client_messageid']),
@@ -248,7 +360,7 @@ class ConversationMessage {
       type: type,
       messageType: ConversationMessageType.fromSubtype(subtype),
       filename: _readString(json['filename']),
-      extend: _readString(json['extend']),
+      extend: extend,
       isSender: false,
       isRead: false,
       otherUserType: UserType.parse(json['other_user_type']),

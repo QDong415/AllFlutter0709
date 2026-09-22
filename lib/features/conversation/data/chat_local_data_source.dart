@@ -8,7 +8,7 @@ class ChatLocalDataSource {
   ChatLocalDataSource();
 
   static const _databaseName = 'conversation.db';
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
   static const _chatTable = 'chat';
 
   Database? _database;
@@ -65,10 +65,36 @@ class ChatLocalDataSource {
             'ALTER TABLE $_chatTable ADD COLUMN other_user_type INTEGER DEFAULT 0',
           );
         }
+        if (oldVersion < 3) {
+          await _stripIncomingVoiceHadPlay(db);
+        }
       },
     );
     _database = db;
     return db;
+  }
+
+  /// 对方发来的语音 extend 里可能带着发送方的 hadplay，入库后应视为未读。
+  static Future<void> _stripIncomingVoiceHadPlay(Database db) async {
+    final rows = await db.query(
+      _chatTable,
+      columns: const ['dbid', 'extend'],
+      where: 'issender = 0 AND subtype = ?',
+      whereArgs: [ConversationMessageType.voice.subtype],
+    );
+    for (final row in rows) {
+      final extend = row['extend']?.toString() ?? '';
+      final cleaned = ConversationMessage.stripIncomingVoiceHadPlay(extend);
+      if (cleaned == extend) {
+        continue;
+      }
+      await db.update(
+        _chatTable,
+        {'extend': cleaned},
+        where: 'dbid = ?',
+        whereArgs: [row['dbid']],
+      );
+    }
   }
 
   Future<void> close() async {
@@ -197,6 +223,24 @@ class ChatLocalDataSource {
     );
   }
 
+  /// 按服务端 msgid 更新发送/下载状态。
+  Future<void> updateMessageStatusByMsgId(
+    String userId,
+    int msgId,
+    ConversationMessageStatus status,
+  ) async {
+    if (msgId <= 0) {
+      return;
+    }
+    final db = await database;
+    await db.update(
+      _chatTable,
+      {'state': status.code},
+      where: 'userid = ? AND msgid = ?',
+      whereArgs: [userId, msgId],
+    );
+  }
+
   Future<void> updateUploadProgress(
     String userId,
     String clientMessageId,
@@ -208,6 +252,52 @@ class ChatLocalDataSource {
       {'upload_progress': progress.clamp(0, 100)},
       where: 'userid = ? AND client_messageid = ?',
       whereArgs: [userId, clientMessageId],
+    );
+  }
+
+  /// 写入语音本地路径，优先 msgid，其次 client_messageid。
+  Future<void> updateLocalFilePath({
+    required String userId,
+    required String localFilePath,
+    int msgId = 0,
+    String clientMessageId = '',
+  }) async {
+    final db = await database;
+    if (msgId > 0) {
+      await db.update(
+        _chatTable,
+        {'local_file_path': localFilePath},
+        where: 'userid = ? AND msgid = ?',
+        whereArgs: [userId, msgId],
+      );
+      return;
+    }
+    if (clientMessageId.trim().isEmpty) {
+      return;
+    }
+    await db.update(
+      _chatTable,
+      {'local_file_path': localFilePath},
+      where: 'userid = ? AND client_messageid = ?',
+      whereArgs: [userId, clientMessageId],
+    );
+  }
+
+  /// 更新消息 extend（语音 hadplay 等）。
+  Future<void> updateMessageExtend({
+    required String userId,
+    required int msgId,
+    required String extend,
+  }) async {
+    if (msgId <= 0) {
+      return;
+    }
+    final db = await database;
+    await db.update(
+      _chatTable,
+      {'extend': extend},
+      where: 'userid = ? AND msgid = ?',
+      whereArgs: [userId, msgId],
     );
   }
 
@@ -231,6 +321,32 @@ class ChatLocalDataSource {
       _chatTable,
       where: 'userid = ? AND targetid = ?',
       whereArgs: [userId, conversationId],
+    );
+  }
+
+  /// 删除单条本地消息，优先 [clientMessageId]，否则 [msgId]。
+  Future<void> deleteMessage({
+    required String userId,
+    required String clientMessageId,
+    required int msgId,
+  }) async {
+    final db = await database;
+    final clientId = clientMessageId.trim();
+    if (clientId.isNotEmpty) {
+      await db.delete(
+        _chatTable,
+        where: 'userid = ? AND client_messageid = ?',
+        whereArgs: [userId, clientId],
+      );
+      return;
+    }
+    if (msgId <= 0) {
+      return;
+    }
+    await db.delete(
+      _chatTable,
+      where: 'userid = ? AND msgid = ?',
+      whereArgs: [userId, msgId],
     );
   }
 

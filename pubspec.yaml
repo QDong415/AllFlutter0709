@@ -69,6 +69,7 @@ dependencies:
   image_cropper: ^12.2.1
   inview_notifier_list: ^4.1.0
   liquid_glass_widgets: ^0.29.2
+  just_audio: ^0.10.6
 
 dev_dependencies:
   flutter_test:

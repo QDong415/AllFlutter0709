@@ -7,17 +7,19 @@ import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_ai_typing_helper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_bubble_menu_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_image_preview_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_scroll_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_send_helper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_play_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_record_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/mappers/chat_item_mapper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
+import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bottom_panel_host.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_list_view.dart';
-import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_recording_overlay.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
@@ -60,7 +62,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   final _aiTypingHelper = ChatAiTypingHelper();
   late final ChatScrollHelper _scrollHelper;
   late final ChatVoiceRecordHelper _voiceRecordHelper;
+  late final ChatVoicePlayHelper _voicePlayHelper;
   late final ChatPanelHelper _panelHelper;
+  late final ChatBubbleMenuHelper _bubbleMenuHelper;
 
   /// 在 dispose 里不能依赖 ref，提前拿到 controller 以便可靠清除 active 会话。
   ConversationController? _conversationController;
@@ -78,23 +82,66 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   bool get _peerIsAi => UserType.isAi(_peerUserType);
 
   bool _isVoiceMode = false;
-  bool _isRecording = false;
-  bool _willCancelRecording = false;
   bool _isSubmitting = false;
-  int _recordDurationSeconds = 0;
-  double _currentAmplitude = -45;
-  int _lastTextLength = 0;
 
   @override
   void initState() {
     super.initState();
     _scrollHelper = ChatScrollHelper(_scrollController);
-    _voiceRecordHelper = ChatVoiceRecordHelper();
     _panelHelper = ChatPanelHelper(
       inputFocusNode: _focusNode,
       onUpdate: () {
         if (mounted) {
           setState(() {});
+        }
+      },
+    );
+    _voicePlayHelper = ChatVoicePlayHelper(
+      onUpdate: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+    );
+    _voiceRecordHelper = ChatVoiceRecordHelper(
+      onUpdate: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+      onSend: _sendVoice,
+      onTip: (text) {
+        if (mounted) {
+          _showSnackBar(text);
+        }
+      },
+      onHidePanel: _panelHelper.hidePanel,
+      isBusy: () => _isSubmitting,
+    );
+    _bubbleMenuHelper = ChatBubbleMenuHelper(
+      onUpdate: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+      deleteMessage: (message) {
+        return ref
+            .read(conversationControllerProvider)
+            .deleteMessage(
+              conversationId: widget.chatId,
+              clientMessageId: message.clientMessageId,
+              msgId: message.msgId,
+            );
+      },
+      stopIfPlaying: (messageId) async {
+        if (_voicePlayHelper.playingMessageId != messageId) {
+          return;
+        }
+        await _voicePlayHelper.stop();
+      },
+      onTip: (text) {
+        if (mounted) {
+          _showSnackBar(text);
         }
       },
     );
@@ -113,6 +160,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
 
   @override
   void dispose() {
+    unawaited(_voicePlayHelper.dispose());
     unawaited(_voiceRecordHelper.dispose());
     _conversationController?.closeConversation(widget.chatId);
     _focusNode
@@ -132,19 +180,33 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   }
 
   void _handleTextChanged() {
-    final length = _textController.text.length;
-    // 输入增高（换行）时跟底。
-    if (length != _lastTextLength) {
-      _lastTextLength = length;
-      if (_focusNode.hasFocus) {
-        _scrollHelper.scrollToBottom();
-      }
-    }
+    _scrollHelper.onTextChanged(
+      length: _textController.text.length,
+      hasFocus: _focusNode.hasFocus,
+    );
   }
 
-  /// 收起键盘与自定义面板。
+  /// 收起键盘与自定义面板，并取消气泡长按选中。
   void _resetInputState() {
     _panelHelper.hidePanel();
+    _bubbleMenuHelper.hide();
+  }
+
+  /// 气泡点按：图片预览；语音播放下一步挂在 [VoiceMessage] 分支。
+  void _handleMessageTap(MessageItem message, List<ChatItem> itemList) {
+    _panelHelper.hidePanel();
+    switch (message) {
+      case ImageMessage():
+        _imagePreviewHelper.open(
+          context: context,
+          tappedItem: message,
+          items: itemList,
+        );
+      case VoiceMessage():
+        unawaited(_playVoice(message));
+      case TextMessage():
+        break;
+    }
   }
 
   /// Android 系统返回：键盘或面板打开时先收起。
@@ -152,14 +214,14 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return false;
     }
-    if (_isRecording) {
+    if (_voiceRecordHelper.isRecording || _bubbleMenuHelper.isVisible) {
       return true;
     }
     return _panelHelper.isPanelOrKeyboardVisible;
   }
 
   void _toggleVoiceMode() {
-    if (_isRecording || _isSubmitting) {
+    if (_voiceRecordHelper.isRecording || _isSubmitting) {
       return;
     }
 
@@ -176,7 +238,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   }
 
   void _toggleEmoji() {
-    if (_isRecording || _isSubmitting) {
+    if (_voiceRecordHelper.isRecording || _isSubmitting) {
       return;
     }
     if (_isVoiceMode) {
@@ -189,7 +251,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   }
 
   void _togglePanel() {
-    if (_isRecording || _isSubmitting) {
+    if (_voiceRecordHelper.isRecording || _isSubmitting) {
       return;
     }
     if (_panelHelper.currentPanelType == ChatPanelType.tool) {
@@ -290,95 +352,71 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     }
   }
 
-  Future<void> _handleVoiceLongPressStart(LongPressStartDetails details) async {
-    if (_isRecording || _isSubmitting) {
+  Future<void> _sendVoice(ChatVoiceStopResult result) async {
+    if (!context.ensureLoggedIn()) {
       return;
     }
-
-    final result = await _voiceRecordHelper.start(
-      onAmplitude: (amplitude) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _currentAmplitude = amplitude;
-        });
-      },
-      onTick: () {
-        if (!mounted || !_isRecording) {
-          return;
-        }
-        setState(() {
-          _recordDurationSeconds++;
-        });
-      },
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (!result.isSuccess) {
-      _showSnackBar(result.errorMessage!);
+    final audioFile = result.file;
+    if (audioFile == null) {
       return;
     }
 
     setState(() {
-      _isRecording = true;
-      _willCancelRecording = false;
-      _recordDurationSeconds = 0;
-      _currentAmplitude = -45;
+      _isSubmitting = true;
     });
-    _panelHelper.hidePanel();
+    try {
+      await _sendHelper.sendVoice(
+        controller: ref.read(conversationControllerProvider),
+        conversationId: widget.chatId,
+        audioFile: audioFile,
+        filename: result.filename,
+        durationSeconds: result.durationSeconds,
+        peerName: _peerName,
+        peerAvatar: _peerAvatar,
+        peerUserType: _peerUserType,
+      );
+      _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+    } catch (error, stackTrace) {
+      ChatSendLog.d('页面发语音失败: $error');
+      ChatSendLog.d('$stackTrace');
+      _showSnackBar(error.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
-  void _handleVoiceLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
-    if (!_isRecording) {
-      return;
+  Future<void> _playVoice(VoiceMessage message) async {
+    final tappingSame = _voicePlayHelper.playingMessageId == message.id;
+    if (!tappingSame && !message.isRight && !message.hadPlay) {
+      unawaited(
+        ref
+            .read(conversationControllerProvider)
+            .markVoicePlayed(
+              conversationId: widget.chatId,
+              msgId: message.msgId,
+              durationSeconds: message.seconds,
+            ),
+      );
     }
-
-    final shouldCancel = _voiceRecordHelper.shouldCancelFromMove(details);
-    if (shouldCancel == _willCancelRecording) {
-      return;
+    try {
+      await _voicePlayHelper.toggle(
+        messageId: message.id,
+        filePath: message.audioPath,
+        audioUrl: message.audioUrl,
+      );
+    } catch (error) {
+      _showSnackBar('语音播放失败');
     }
-
-    setState(() {
-      _willCancelRecording = shouldCancel;
-    });
-  }
-
-  Future<void> _handleVoiceLongPressEnd(LongPressEndDetails details) async {
-    if (!_isRecording) {
-      return;
-    }
-
-    final shouldCancel = _willCancelRecording;
-    await _voiceRecordHelper.stop(cancel: shouldCancel);
-
-    setState(() {
-      _isRecording = false;
-      _willCancelRecording = false;
-      _currentAmplitude = -45;
-      _recordDurationSeconds = 0;
-    });
-
-    if (shouldCancel || !mounted) {
-      return;
-    }
-
-    _showSnackBar('当前先接通文本、图片和推送同步，语音发送稍后补。');
   }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  String get _recordDurationLabel {
-    final minutes = (_recordDurationSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_recordDurationSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
   }
 
   int _currentItemCountHint() {
@@ -436,10 +474,15 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
           _scrollHelper.scrollIfNewMessages(items.length);
         }
 
+        // Android 系统返回：键盘/面板/录音/气泡菜单开着时先收起，不直接退出会话。
         return PopScope(
           canPop: !_blockAndroidBack,
           onPopInvokedWithResult: (didPop, result) {
             if (didPop) {
+              return;
+            }
+            if (_bubbleMenuHelper.isVisible) {
+              _bubbleMenuHelper.hide();
               return;
             }
             _panelHelper.hidePanel();
@@ -456,17 +499,21 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
               onLeadingPressed: () => Navigator.of(context).pop(),
             ),
             body: Stack(
+              key: _bubbleMenuHelper.overlayStackKey,
               children: [
                 Column(
                   children: [
                     Expanded(
                       child: Listener(
                         behavior: HitTestBehavior.translucent,
+                        // 点列表收键盘并取消选中。长按菜单 Overlay 放到外层 Stack，避免点菜单被当成点空白。
                         onPointerDown: (_) => _resetInputState(),
                         child: ChatMessageListView(
                           state: state,
                           items: items,
                           scrollController: _scrollController,
+                          playingMessageId: _voicePlayHelper.playingMessageId,
+                          selectedMessageId: _bubbleMenuHelper.selectedMessageId,
                           onRefresh: () => ref
                               .read(conversationControllerProvider)
                               .syncMessagesFromServer(),
@@ -477,36 +524,37 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                                   .syncMessagesFromServer(),
                             );
                           },
-                          onImageTap: (image) {
-                            _panelHelper.hidePanel();
-                            _imagePreviewHelper.open(
-                              context: context,
-                              tappedItem: image,
-                              items: items,
-                            );
-                          },
-                          onAvatarTap: (message) {
-                            _panelHelper.hidePanel();
-                            // 右侧为自己，左侧为对方；不在此处拦登录，由个人主页内操作再校验。
-                            if (message.direction == MessageDirection.right) {
-                              final account = ref.read(accountProvider);
+                          actions: ChatMessageActions(
+                            onMessageTap: (message) {
+                              _handleMessageTap(message, items);
+                            },
+                            onMessageLongPress: (details) {
+                              _panelHelper.hidePanel();
+                              _bubbleMenuHelper.show(details);
+                            },
+                            onAvatarTap: (message) {
+                              _panelHelper.hidePanel();
+                              // 右侧为自己，左侧为对方；不在此处拦登录，由个人主页内操作再校验。
+                              if (message.direction == MessageDirection.right) {
+                                final account = ref.read(accountProvider);
+                                openUserDetailPage(
+                                  context,
+                                  userId: account?.userId ?? widget.chatId,
+                                  name: account?.name,
+                                  avatar: account?.avatar,
+                                  userType: account?.userType,
+                                );
+                                return;
+                              }
                               openUserDetailPage(
                                 context,
-                                userId: account?.userId ?? widget.chatId,
-                                name: account?.name,
-                                avatar: account?.avatar,
-                                userType: account?.userType,
+                                userId: widget.chatId,
+                                name: conversationName,
+                                avatar: peerAvatar,
+                                userType: _peerUserType,
                               );
-                              return;
-                            }
-                            openUserDetailPage(
-                              context,
-                              userId: widget.chatId,
-                              name: conversationName,
-                              avatar: peerAvatar,
-                              userType: _peerUserType,
-                            );
-                          },
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -514,9 +562,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                       isVoiceMode: _isVoiceMode,
                       isEmojiPanel:
                           _panelHelper.currentPanelType == ChatPanelType.emoji,
-                      isRecording: _isRecording,
-                      willCancelRecording: _willCancelRecording,
-                      recordingDurationText: _recordDurationLabel,
+                      isRecording: _voiceRecordHelper.isRecording,
+                      willCancelRecording: _voiceRecordHelper.willCancel,
                       controller: _textController,
                       focusNode: _focusNode,
                       readOnly: _panelHelper.readOnly,
@@ -527,14 +574,13 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                       onSendText: () {
                         unawaited(_sendText());
                       },
-                      onVoiceLongPressStart: (details) {
-                        unawaited(_handleVoiceLongPressStart(details));
+                      onVoicePointerDown: (position) {
+                        unawaited(_voiceRecordHelper.handlePointerDown(position));
                       },
-                      onVoiceLongPressMoveUpdate:
-                          _handleVoiceLongPressMoveUpdate,
-                      onVoiceLongPressEnd: (details) {
-                        unawaited(_handleVoiceLongPressEnd(details));
-                      },
+                      onVoicePointerMove: _voiceRecordHelper.handlePointerMove,
+                      onVoicePointerUp: _voiceRecordHelper.handlePointerUp,
+                      onVoicePointerCancel:
+                          _voiceRecordHelper.handlePointerCancel,
                     ),
                     ChatBottomPanelHost(
                       controller: _panelHelper.controller,
@@ -550,18 +596,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                     ),
                   ],
                 ),
-                if (_isRecording)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: ChatRecordingOverlay(
-                        isCancelling: _willCancelRecording,
-                        seconds: _recordDurationSeconds <= 0
-                            ? 1
-                            : _recordDurationSeconds,
-                        amplitude: _currentAmplitude,
-                      ),
-                    ),
-                  ),
+                ?_voiceRecordHelper.buildOverlay(),
+                ?_bubbleMenuHelper.buildOverlay(),
               ],
             ),
           ),

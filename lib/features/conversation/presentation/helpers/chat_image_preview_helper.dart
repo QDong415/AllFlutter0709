@@ -13,7 +13,9 @@ class ChatImagePreviewHelper {
     required List<ChatItem> items,
   }) {
     final imageItems = items.whereType<ImageMessage>().toList(growable: false);
-    final initialIndex = imageItems.indexOf(tappedItem);
+    final initialIndex = imageItems.indexWhere(
+      (item) => item.id == tappedItem.id,
+    );
     if (initialIndex < 0) {
       return;
     }

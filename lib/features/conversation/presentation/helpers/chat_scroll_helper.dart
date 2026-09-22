@@ -7,6 +7,7 @@ class ChatScrollHelper {
   final ScrollController scrollController;
 
   int _lastItemCount = 0;
+  int _lastTextLength = 0;
 
   /// 是否贴在底部附近（允许少量偏差）。
   bool get isNearBottom {
@@ -47,5 +48,16 @@ class ChatScrollHelper {
   void forceScrollToBottom({required int itemCount}) {
     _lastItemCount = itemCount;
     scrollToBottom();
+  }
+
+  /// 输入框字数变化；换行增高时跟底。
+  void onTextChanged({required int length, required bool hasFocus}) {
+    if (length == _lastTextLength) {
+      return;
+    }
+    _lastTextLength = length;
+    if (hasFocus) {
+      scrollToBottom();
+    }
   }
 }

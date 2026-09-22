@@ -232,7 +232,7 @@ class TopicPublishController extends ChangeNotifier {
     paramsMap['videourl'] = result.key;
     paramsMap['width'] = isRotate ? rawHeight : rawWidth;
     paramsMap['height'] = isRotate ? rawWidth : rawHeight;
-    paramsMap['photoarray'] = '';
+    paramsMap.remove('photoarray');
     debugPrint(
       '[TopicPublish] 视频上传完成 key=${result.key} '
       'w=${paramsMap['width']} h=${paramsMap['height']}',
@@ -274,7 +274,7 @@ class TopicPublishController extends ChangeNotifier {
         photoJsonList.add(result.toTopicPhotoJson(fallbackSize: fallbackSize));
       }
       paramsMap['photoarray'] = jsonEncode(photoJsonList);
-      paramsMap['videourl'] = '';
+      paramsMap.remove('videourl');
       debugPrint(
         '[TopicPublish] 图片上传完成 count=${photoJsonList.length} '
         'photoarray=${paramsMap['photoarray']}',
@@ -335,9 +335,6 @@ class TopicPublishController extends ChangeNotifier {
     return <String, dynamic>{
       'content': content,
       'callback': 'videotopiccompress',
-      // PHP submit() 会直接读这两个键；缺键在 PHP 8 + ThinkPHP 会 500。
-      'videourl': '',
-      'photoarray': '',
       if (atUserIds.isNotEmpty) 'atuserids': atUserIds,
     };
   }

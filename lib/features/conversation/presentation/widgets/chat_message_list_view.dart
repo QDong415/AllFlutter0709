@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
+import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_list_item_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,8 +17,9 @@ class ChatMessageListView extends StatelessWidget {
     required this.scrollController,
     required this.onRefresh,
     required this.onRetry,
-    required this.onImageTap,
-    this.onAvatarTap,
+    this.actions = ChatMessageActions.empty,
+    this.playingMessageId,
+    this.selectedMessageId,
   });
 
   final AsyncValue<List<ConversationMessage>> state;
@@ -25,8 +27,9 @@ class ChatMessageListView extends StatelessWidget {
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
-  final ValueChanged<ImageMessage> onImageTap;
-  final ValueChanged<MessageItem>? onAvatarTap;
+  final ChatMessageActions actions;
+  final String? playingMessageId;
+  final String? selectedMessageId;
 
   @override
   Widget build(BuildContext context) {
@@ -73,9 +76,14 @@ class ChatMessageListView extends StatelessWidget {
               // reverse 下列表 index 0 在底部，对应时间正序的最后一条。
               final item = items[items.length - 1 - index];
               return ChatListItemWidget(
+                key: switch (item) {
+                  TimeItem() => ValueKey('time_$index'),
+                  MessageItem(:final id) => ValueKey('msg_$id'),
+                },
                 item: item,
-                onImageTap: onImageTap,
-                onAvatarTap: onAvatarTap,
+                actions: actions,
+                playingMessageId: playingMessageId,
+                selectedMessageId: selectedMessageId,
               );
             },
           ),

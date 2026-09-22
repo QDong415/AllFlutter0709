@@ -4,7 +4,7 @@ import 'package:all_flutter0709/features/conversation/presentation/conversation_
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-/// 聊天发送：选图、读尺寸、提交文本/图片。不改 UI 状态。
+/// 聊天发送：选图、读尺寸、提交文本/图片/语音。不改 UI 状态。
 class ChatSendHelper {
   ChatSendHelper({ImagePicker? imagePicker})
     : _imagePicker = imagePicker ?? ImagePicker();
@@ -68,6 +68,28 @@ class ChatSendHelper {
       conversationId: conversationId,
       imageFile: imageFile,
       imageSize: imageSize,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+  }
+
+  /// 发送语音消息（对齐 Android filename + extend.duration/hadplay）。
+  Future<void> sendVoice({
+    required ConversationController controller,
+    required String conversationId,
+    required File audioFile,
+    required String filename,
+    required int durationSeconds,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) {
+    return controller.sendVoiceMessage(
+      conversationId: conversationId,
+      audioFile: audioFile,
+      filename: filename,
+      durationSeconds: durationSeconds,
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,

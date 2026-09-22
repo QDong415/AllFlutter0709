@@ -19,13 +19,7 @@ List<ChatItem> buildChatItems(
         TimeItem(label: DateFormat('HH:mm').format(message.createTime)),
       );
     }
-    items.add(
-      _mapMessage(
-        message,
-        myAvatar: myAvatar,
-        peerAvatar: peerAvatar,
-      ),
-    );
+    items.add(_mapMessage(message, myAvatar: myAvatar, peerAvatar: peerAvatar));
     previous = message;
   }
 
@@ -56,6 +50,9 @@ ChatItem _mapMessage(
     case ConversationMessageType.image:
       final imageSize = message.imageSize;
       return ImageMessage(
+        id: message.itemId,
+        msgId: message.msgId,
+        clientMessageId: message.clientMessageId,
         direction: direction,
         avatarUrl: avatarUrl,
         deliveryStatus: deliveryStatus,
@@ -67,32 +64,58 @@ ChatItem _mapMessage(
       );
     case ConversationMessageType.voice:
       return VoiceMessage(
+        id: message.itemId,
+        msgId: message.msgId,
+        clientMessageId: message.clientMessageId,
         direction: direction,
         avatarUrl: avatarUrl,
         deliveryStatus: deliveryStatus,
-        seconds: 1,
+        seconds: message.voiceSeconds,
         audioPath: message.localFilePath.isEmpty ? null : message.localFilePath,
+        audioUrl: message.localFilePath.isEmpty ? message.voiceUrl : null,
+        hadPlay: message.isSender || message.voiceHadPlay,
       );
     case ConversationMessageType.callAudio:
-      return TextMessage(
+      return _textMessage(
+        message: message,
         direction: direction,
         avatarUrl: avatarUrl,
         deliveryStatus: deliveryStatus,
         text: '[语音通话] ${message.content}',
       );
     case ConversationMessageType.callVideo:
-      return TextMessage(
+      return _textMessage(
+        message: message,
         direction: direction,
         avatarUrl: avatarUrl,
         deliveryStatus: deliveryStatus,
         text: '[视频通话] ${message.content}',
       );
     case ConversationMessageType.text:
-      return TextMessage(
+      return _textMessage(
+        message: message,
         direction: direction,
         avatarUrl: avatarUrl,
         deliveryStatus: deliveryStatus,
         text: message.content,
       );
   }
+}
+
+TextMessage _textMessage({
+  required ConversationMessage message,
+  required MessageDirection direction,
+  required String avatarUrl,
+  required MessageDeliveryStatus deliveryStatus,
+  required String text,
+}) {
+  return TextMessage(
+    id: message.itemId,
+    msgId: message.msgId,
+    clientMessageId: message.clientMessageId,
+    direction: direction,
+    avatarUrl: avatarUrl,
+    deliveryStatus: deliveryStatus,
+    text: text,
+  );
 }
