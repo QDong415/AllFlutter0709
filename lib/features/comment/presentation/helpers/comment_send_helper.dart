@@ -66,8 +66,9 @@ class CommentSendHelper {
     required String targetId,
     required CommentTargetType type,
     required CommentModel localComment,
-  }) {
-    return repository.submitComment(
+    String atUserIds = '',
+  }) async {
+    final result = await repository.submitComment(
       targetId: targetId,
       type: type,
       content: localComment.content,
@@ -75,6 +76,18 @@ class CommentSendHelper {
       parentCid: localComment.isRoot ? null : localComment.parentCid,
       toUserId: localComment.toUserId,
       toUserName: localComment.toUserName,
+      atUserIds: atUserIds,
     );
+    if (atUserIds.isNotEmpty && result.cid.isNotEmpty) {
+      try {
+        await repository.notifyMentionedUsers(
+          targetId: targetId,
+          type: type,
+          cid: result.cid,
+          atUserIds: atUserIds,
+        );
+      } catch (_) {}
+    }
+    return result;
   }
 }

@@ -18,6 +18,18 @@ class TopicMentionEditingController extends TextEditingController {
     _onAtTyped = callback;
   }
 
+  /// 清空正文和 mention，避免清空时被当成退格整段删除。
+  void clearContent() {
+    _isApplying = true;
+    try {
+      mentionList.clear();
+      value = const TextEditingValue(text: '');
+      _previousText = '';
+    } finally {
+      _isApplying = false;
+    }
+  }
+
   /// 提交给服务端的 `atuserids`（逗号分隔、去重）。
   String findAtUserIds() {
     return mentionList.map((rangeModel) => rangeModel.userId).toSet().join(',');
@@ -111,8 +123,17 @@ class TopicMentionEditingController extends TextEditingController {
     }
 
     if (delta < 0) {
-      final deletedCount = -delta;
-      _whenDelText(start, start + deletedCount, delta);
+      final deletedEnd = start - delta;
+      final hit = _mentionHitByBackspace(deletedEnd);
+      if (hit != null) {
+        _deleteWholeMention(
+          hit: hit,
+          newBreakIndex: start,
+          oldDeletedEnd: deletedEnd,
+        );
+        return;
+      }
+      _whenDelText(start, deletedEnd, delta);
     } else if (delta > 0) {
       _shiftMentionsAfter(start, delta);
       if (delta == 1 && start < nextText.length && nextText[start] == '@') {
@@ -136,6 +157,46 @@ class TopicMentionEditingController extends TextEditingController {
         );
         return;
       }
+    }
+  }
+
+  /// 光标在 mention 内部或末尾时退格，对齐 Android `contains2`。
+  TopicMentionRangeModel? _mentionHitByBackspace(int cursorBeforeDelete) {
+    for (final rangeModel in mentionList) {
+      if (rangeModel.from < cursorBeforeDelete &&
+          rangeModel.to >= cursorBeforeDelete &&
+          cursorBeforeDelete != rangeModel.from) {
+        return rangeModel;
+      }
+    }
+    return null;
+  }
+
+  /// 退格已经删掉一个字符后，把这段 mention 的剩余文字一并删掉。
+  void _deleteWholeMention({
+    required TopicMentionRangeModel hit,
+    required int newBreakIndex,
+    required int oldDeletedEnd,
+  }) {
+    final tailLength = hit.to - oldDeletedEnd;
+    final removeFrom = hit.from.clamp(0, text.length);
+    final removeTo = (newBreakIndex + tailLength).clamp(removeFrom, text.length);
+    _isApplying = true;
+    try {
+      mentionList.remove(hit);
+      final removedLength = hit.to - hit.from;
+      for (final rangeModel in mentionList) {
+        if (rangeModel.from >= hit.to) {
+          rangeModel.shift(-removedLength);
+        }
+      }
+      value = TextEditingValue(
+        text: text.replaceRange(removeFrom, removeTo, ''),
+        selection: TextSelection.collapsed(offset: removeFrom),
+      );
+      _previousText = text;
+    } finally {
+      _isApplying = false;
     }
   }
 

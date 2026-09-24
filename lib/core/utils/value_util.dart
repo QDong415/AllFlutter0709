@@ -14,6 +14,23 @@ class ValueUtil {
     return _stripImageProcessQuery(original);
   }
 
+  /// 相对时间，对齐 Android `getTimeStringFromNow`：一天内显示 HH:mm，否则 yyyy-MM-dd。
+  static String getTimeStringFromNow(int timestamp) {
+    if (timestamp <= 0) {
+      return '';
+    }
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    final gapSeconds = DateTime.now().difference(date).inSeconds;
+    if (gapSeconds > 24 * 60 * 60) {
+      final month = date.month.toString().padLeft(2, '0');
+      final day = date.day.toString().padLeft(2, '0');
+      return '${date.year}-$month-$day';
+    }
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
   static String? getQiniuUrlByFileName(
     String? filename, {
     int limitPx = 240,

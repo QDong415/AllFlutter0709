@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_display_model.dart';
@@ -10,10 +11,13 @@ import 'package:all_flutter0709/features/comment/presentation/widgets/comment_bo
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item_single_tips.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_mention_helper.dart';
+import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class CommentSection extends ConsumerStatefulWidget {
   const CommentSection({
@@ -47,7 +51,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
   final CommentListLocalHelper _listLocalHelper = const CommentListLocalHelper();
   final List<CommentDisplayModel> _items = <CommentDisplayModel>[];
   final Set<String> _likingCommentIds = <String>{};
-  final TextEditingController _inputController = TextEditingController();
+  final TopicMentionEditingController _inputController =
+      TopicMentionEditingController();
   final FocusNode _inputFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
 
@@ -63,6 +68,9 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
   void initState() {
     super.initState();
     _commentCount = widget.initialCommentCount;
+    _inputController
+      ..setOnAtTyped(() => _openUserSelect(byInput: true))
+      ..addListener(_onInputChanged);
     unawaited(_refreshComments());
   }
 
@@ -89,7 +97,9 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   @override
   void dispose() {
-    _inputController.dispose();
+    _inputController
+      ..removeListener(_onInputChanged)
+      ..dispose();
     _inputFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -229,6 +239,22 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     }
   }
 
+  void _onInputChanged() {
+    _inputController.handleTextChanged();
+    _inputController.snapSelection();
+  }
+
+  Future<void> _openUserSelect({required bool byInput}) async {
+    if (!context.ensureLoggedIn()) return;
+    _inputFocusNode.unfocus();
+    final userModel = await context.push<UserBaseModel>(
+      '${AppRoutes.topic}/${AppRoutes.topicUserSelect}',
+    );
+    if (!mounted || userModel == null) return;
+    _inputController.insertUser(userModel: userModel, byInput: byInput);
+    _inputFocusNode.requestFocus();
+  }
+
   Future<void> _sendComment() async {
     final account = context.currentAccount;
     if (account == null) {
@@ -241,6 +267,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       _showSnack('请输入评论内容');
       return;
     }
+    final atUserIds = _inputController.findAtUserIds();
 
     final localComment = _sendHelper.buildLocalComment(
       account: account,
@@ -253,7 +280,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     setState(() {
       _listLocalHelper.insertOptimisticComment(_items, localComment);
       _replyTarget = null;
-      _inputController.clear();
+      _inputController.clearContent();
       _syncCommentCount(_commentCount + 1);
     });
     if (!localComment.isRoot) {
@@ -286,6 +313,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
         targetId: widget.targetId,
         type: widget.targetType,
         localComment: localComment,
+        atUserIds: atUserIds,
       );
       if (!mounted) return;
 
@@ -512,6 +540,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
             });
           },
           onSend: _sendComment,
+          onAtTap: () => _openUserSelect(byInput: false),
         ),
       ],
     );

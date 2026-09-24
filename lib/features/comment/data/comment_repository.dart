@@ -95,6 +95,7 @@ class CommentRepository {
     String? parentCid,
     String? toUserId,
     String? toUserName,
+    String atUserIds = '',
   }) async {
     final payload = <String, dynamic>{
       'tid': targetId,
@@ -104,6 +105,7 @@ class CommentRepository {
       if (parentCid != null && parentCid.isNotEmpty) 'pcid': parentCid,
       if (toUserId != null && toUserId.isNotEmpty) 'to_userid': toUserId,
       if (toUserName != null && toUserName.isNotEmpty) 'to_name': toUserName,
+      if (atUserIds.isNotEmpty) 'atuserids': atUserIds,
     };
 
     final response = await HttpClient.instance.post(
@@ -125,6 +127,25 @@ class CommentRepository {
     }
 
     return result.data ?? CommentSubmitResult(cid: '', tempId: tempId);
+  }
+
+  /// 评论成功后通知被 @ 的人，对齐 Android 另发的 `comment/at`。
+  Future<void> notifyMentionedUsers({
+    required String targetId,
+    required CommentTargetType type,
+    required String cid,
+    required String atUserIds,
+  }) async {
+    await HttpClient.instance.post(
+      '/api/comment/at',
+      data: <String, dynamic>{
+        'tid': targetId,
+        'type': type.apiValue,
+        'feedtype': type.apiValue,
+        'cid': cid,
+        'atuserids': atUserIds,
+      },
+    );
   }
 
   /// 点赞 / 取消点赞评论。

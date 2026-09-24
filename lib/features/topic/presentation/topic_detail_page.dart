@@ -391,6 +391,8 @@ class _TopicDetailHeader extends StatelessWidget {
                 color: Color(0xFF2F7CF6),
                 fontWeight: FontWeight.w500,
               ),
+              onMentionTap: (mention) =>
+                  openUserDetailByName(context, name: mention),
             ),
           ],
           if (videoUrl.isNotEmpty) ...[

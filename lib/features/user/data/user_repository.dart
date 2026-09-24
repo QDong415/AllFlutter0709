@@ -8,11 +8,22 @@ import 'package:all_flutter0709/features/user/data/models/user_profile_model.dar
 class UserRepository {
   const UserRepository();
 
-  /// 拉取用户资料。
-  Future<UserProfileModel> getUserProfile({required String toUserId}) async {
+  /// 拉取用户资料；有 [toUserId] 时按 id，否则按 [toName]（动态 @提及）。
+  Future<UserProfileModel> getUserProfile({
+    String toUserId = '',
+    String toName = '',
+  }) async {
+    final trimmedId = toUserId.trim();
+    final queryParameters = <String, dynamic>{};
+    if (trimmedId.isNotEmpty && trimmedId != '0') {
+      queryParameters['to_userid'] = trimmedId;
+    } else {
+      queryParameters['to_name'] = toName.trim();
+    }
+
     final response = await HttpClient.instance.get(
       '/api/user/profile',
-      queryParameters: {'to_userid': toUserId},
+      queryParameters: queryParameters,
     );
 
     final json = response.data;
@@ -120,6 +131,80 @@ class UserRepository {
     );
     if (!result.success) {
       throw Exception(result.message.isEmpty ? '好友列表加载失败' : result.message);
+    }
+
+    final pageData = result.data;
+    final items = pageData?.items ?? const <UserBaseModel>[];
+    final hasMore = (pageData?.totalPage ?? 0) > page;
+    return UserBasePageResult(items: items, hasMore: hasMore);
+  }
+
+  /// 拉取我的粉丝列表（Android `follow/fanslist`）。
+  Future<UserBasePageResult> getFansList({
+    required String toUserId,
+    required int page,
+  }) async {
+    final response = await HttpClient.instance.get(
+      '/api/follow/fanslist',
+      queryParameters: <String, dynamic>{
+        'to_userid': toUserId,
+        'page': page,
+      },
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<PageData<UserBaseModel>>.fromJson(
+      json,
+      (pageJson) => PageData<UserBaseModel>.fromJson(
+        pageJson as Map<String, dynamic>,
+        (itemJson) => UserBaseModel.fromJson(itemJson as Map<String, dynamic>),
+      ),
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '粉丝列表加载失败' : result.message);
+    }
+
+    final pageData = result.data;
+    final items = pageData?.items ?? const <UserBaseModel>[];
+    final hasMore = (pageData?.totalPage ?? 0) > page;
+    return UserBasePageResult(items: items, hasMore: hasMore);
+  }
+
+  /// 拉取用户列表（Android `user/getlist`，匹配 Tab 传 vip=1）。
+  Future<UserBasePageResult> getUserList({
+    required int page,
+    int gender = 0,
+    int vip = 0,
+  }) async {
+    final queryParameters = <String, dynamic>{
+      'page': page,
+      if (gender != 0) 'gender': gender,
+      if (vip != 0) 'vip': vip,
+    };
+
+    final response = await HttpClient.instance.get(
+      '/api/user/getlist',
+      queryParameters: queryParameters,
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<PageData<UserBaseModel>>.fromJson(
+      json,
+      (pageJson) => PageData<UserBaseModel>.fromJson(
+        pageJson as Map<String, dynamic>,
+        (itemJson) => UserBaseModel.fromJson(itemJson as Map<String, dynamic>),
+      ),
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '用户列表加载失败' : result.message);
     }
 
     final pageData = result.data;

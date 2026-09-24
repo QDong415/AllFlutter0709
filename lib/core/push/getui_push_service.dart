@@ -10,6 +10,7 @@ import 'package:all_flutter0709/core/account/account_repository.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/push/getui_push_config.dart';
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
+import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -300,6 +301,24 @@ class GetuiPushService extends ChangeNotifier {
         '触发 message/pull (needPull=$needPull type=$type)',
       );
       await _ref.read(conversationControllerProvider).syncMessagesFromServer();
+      return;
+    }
+    final remindKind = switch (type) {
+      4 => RemindKind.comment,
+      5 => RemindKind.praise,
+      6 => RemindKind.fans,
+      8 => RemindKind.at,
+      _ => null,
+    };
+    if (remindKind != null) {
+      final userId = _ref.read(accountProvider)?.userId ?? '';
+      final dataId = payload['dataid']?.toString() ?? '';
+      _ref.read(remindUnreadStoreProvider).insert(
+            userId: userId,
+            kind: remindKind,
+            dataId: dataId,
+          );
+      _appendLog('记录动态提醒未读 type=$type dataid=$dataId');
       return;
     }
     _appendLog(

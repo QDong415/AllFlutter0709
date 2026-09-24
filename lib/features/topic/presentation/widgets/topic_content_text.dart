@@ -13,6 +13,7 @@ class TopicContentText extends StatefulWidget {
     this.onMentionTap,
     this.onHashtagTap,
     this.onLinkTap,
+    this.maxLines,
   });
 
   final String text;
@@ -21,6 +22,7 @@ class TopicContentText extends StatefulWidget {
   final FutureOr<void> Function(String mention)? onMentionTap;
   final FutureOr<void> Function(String hashtag)? onHashtagTap;
   final FutureOr<void> Function(String url)? onLinkTap;
+  final int? maxLines;
 
   @override
   State<TopicContentText> createState() => _TopicContentTextState();
@@ -65,6 +67,10 @@ class _TopicContentTextState extends State<TopicContentText> {
         style: baseStyle.copyWith(color: baseStyle.color ?? Colors.black87),
         children: _buildSpans(activeStyle),
       ),
+      maxLines: widget.maxLines,
+      overflow: widget.maxLines == null
+          ? TextOverflow.clip
+          : TextOverflow.ellipsis,
     );
   }
 

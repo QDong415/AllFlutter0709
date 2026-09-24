@@ -274,6 +274,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   Widget buildTopicListBody() {
     return EasyRefresh(
       header: const ClassicHeader(showMessage: false, showText: false),
+      triggerAxis: Axis.vertical,
       onRefresh: onRefreshList,
       onLoad: _hasMore ? onLoadMoreList : null,
       child: PageStateView(
@@ -373,10 +374,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
   @override
   void onMentionTap(TopicModel topic, String mention) {
-    if (!context.ensureLoggedIn()) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('点击了 @$mention')));
+    unawaited(openUserDetailByName(context, name: mention));
   }
 
   @override

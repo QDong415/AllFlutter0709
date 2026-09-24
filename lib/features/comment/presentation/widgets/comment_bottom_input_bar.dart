@@ -12,6 +12,7 @@ class CommentBottomInputBar extends StatelessWidget {
     required this.focusNode,
     required this.onCancelReply,
     required this.onSend,
+    this.onAtTap,
     super.key,
     this.replyHintText,
   });
@@ -21,6 +22,7 @@ class CommentBottomInputBar extends StatelessWidget {
   final String? replyHintText;
   final VoidCallback onCancelReply;
   final Future<void> Function() onSend;
+  final VoidCallback? onAtTap;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +118,14 @@ class CommentBottomInputBar extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  if (onAtTap != null)
+                    IconButton(
+                      onPressed: enabled
+                          ? onAtTap
+                          : () => context.ensureLoggedIn(),
+                      icon: const Icon(Icons.alternate_email_rounded),
+                      color: const Color(0xFF7B7B80),
+                    ),
                   FilledButton(
                     onPressed: () {
                       if (!enabled) {

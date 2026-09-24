@@ -6,7 +6,9 @@ import 'package:all_flutter0709/features/auth/presentation/signup_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/signup_profile_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_chat_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_page.dart';
+import 'package:all_flutter0709/features/conversation/presentation/fans_list_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
+import 'package:all_flutter0709/features/conversation/presentation/remind_list_page.dart';
 import 'package:all_flutter0709/features/home/presentation/main_tab_scaffold.dart';
 import 'package:all_flutter0709/features/me/presentation/me_page.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
@@ -179,6 +181,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                         initialPeerUserType: args?.peerUserType,
                       );
                     },
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: AppRoutes.conversationRemind,
+                    builder: (context, state) {
+                      final remindType = int.tryParse(
+                            state.pathParameters['remindType'] ?? '',
+                          ) ??
+                          1;
+                      return RemindListPage(remindType: remindType);
+                    },
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: AppRoutes.conversationFans,
+                    builder: (context, state) => const FansListPage(),
                   ),
                 ],
               ),

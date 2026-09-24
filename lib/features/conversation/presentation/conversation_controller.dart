@@ -5,6 +5,7 @@ import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
+import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,9 @@ final conversationControllerProvider = Provider<ConversationController>((ref) {
 });
 
 class ConversationController extends ChangeNotifier {
-  ConversationController(this._ref);
+  ConversationController(this._ref) {
+    _ref.read(remindUnreadStoreProvider).addListener(_onRemindStoreChanged);
+  }
 
   final Ref _ref;
 
@@ -29,9 +32,19 @@ class ConversationController extends ChangeNotifier {
   bool _initialized = false;
   bool _syncing = false;
   int _totalUnreadCount = 0;
+  int _remindUnreadCount = 0;
   String? _activeConversationId;
 
-  int get totalUnreadCount => _totalUnreadCount;
+  /// 聊天未读 + 赞/评论/粉丝/@我 未读。
+  int get totalUnreadCount => _totalUnreadCount + _remindUnreadCount;
+
+  /// 某一类动态提醒的未读数。
+  int remindUnreadCount(RemindKind kind) {
+    final userId = _ref.read(accountProvider)?.userId ?? '';
+    return _ref
+        .read(remindUnreadStoreProvider)
+        .countOf(userId: userId, kind: kind);
+  }
 
   AsyncValue<List<ConversationMessage>> messagesStateOf(String conversationId) {
     return _messagesState[conversationId] ?? const AsyncValue.loading();
@@ -50,6 +63,7 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       conversationsState = const AsyncValue.data(<ConversationSummary>[]);
       _totalUnreadCount = 0;
+      _remindUnreadCount = 0;
       notifyListeners();
       return;
     }
@@ -67,11 +81,36 @@ class ConversationController extends ChangeNotifier {
       final unreadCount = await repository.getTotalUnreadCount(account.userId);
       conversationsState = AsyncValue.data(conversations);
       _totalUnreadCount = unreadCount;
+      _syncRemindUnread(notify: false);
       notifyListeners();
     } catch (error, stackTrace) {
       conversationsState = AsyncValue.error(error, stackTrace);
       notifyListeners();
     }
+  }
+
+  void _onRemindStoreChanged() {
+    _syncRemindUnread();
+  }
+
+  void _syncRemindUnread({bool notify = true}) {
+    final userId = _ref.read(accountProvider)?.userId ?? '';
+    final count = userId.isEmpty
+        ? 0
+        : _ref.read(remindUnreadStoreProvider).totalOf(userId);
+    if (_remindUnreadCount == count) {
+      return;
+    }
+    _remindUnreadCount = count;
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ref.read(remindUnreadStoreProvider).removeListener(_onRemindStoreChanged);
+    super.dispose();
   }
 
   Future<void> ensureMessagesLoaded(String conversationId) async {

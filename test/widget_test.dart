@@ -21,7 +21,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('动态 Topic'), findsOneWidget);
+    expect(find.text('最新'), findsOneWidget);
+    expect(find.text('关注'), findsOneWidget);
+    expect(find.text('匹配'), findsOneWidget);
     expect(find.text('Login'), findsNothing);
   });
 }
