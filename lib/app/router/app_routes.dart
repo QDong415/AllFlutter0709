@@ -14,6 +14,17 @@ abstract final class AppRoutes {
   static const conversationRemind = 'remind/:remindType';
   static const conversationFans = 'fans';
   static const me = '/me';
+  static const meProfileEdit = '/me/profile-edit';
+  static const meTextEdit = '/me/text-edit';
+  static const meFriendship = '/me/friendship';
+  static const meTopics = '/me/topics';
+  static const meNearby = '/me/nearby';
+  static const meSearch = '/me/search';
+  static const meSearchResult = '/me/search-result';
+  static const meSettings = '/me/settings';
+  static const mePassword = '/me/password';
+  static const meAbout = '/me/about';
+  static const meBlacklist = '/me/blacklist';
   static const user = '/user';
   static const userDetail = ':userId';
   static const warningReport = '/report';

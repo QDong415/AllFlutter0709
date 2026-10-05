@@ -21,6 +21,7 @@ class AccountModel {
     required this.topicCount,
     required this.videoCount,
     required this.follow,
+    this.slience = 0,
     this.userType = UserType.human,
   });
 
@@ -42,6 +43,9 @@ class AccountModel {
   final int topicCount;
   final int videoCount;
   final int follow;
+
+  /// 消息提醒：0 响铃 / 1 静音。
+  final int slience;
 
   /// 账号类型：0 真人 / 1 AI。
   final int userType;
@@ -70,6 +74,7 @@ class AccountModel {
     int? topicCount,
     int? videoCount,
     int? follow,
+    int? slience,
     int? userType,
   }) {
     return AccountModel(
@@ -91,6 +96,7 @@ class AccountModel {
       topicCount: topicCount ?? this.topicCount,
       videoCount: videoCount ?? this.videoCount,
       follow: follow ?? this.follow,
+      slience: slience ?? this.slience,
       userType: userType ?? this.userType,
     );
   }
@@ -115,6 +121,7 @@ class AccountModel {
       'topiccount': topicCount,
       'videocount': videoCount,
       'follow': follow,
+      'slience': slience,
       'user_type': userType,
     };
   }
@@ -139,6 +146,7 @@ class AccountModel {
       topicCount: _readInt(json['topiccount']),
       videoCount: _readInt(json['videocount']),
       follow: _readInt(json['follow']),
+      slience: _readInt(json['slience']),
       userType: UserType.parse(json['user_type']),
     );
   }

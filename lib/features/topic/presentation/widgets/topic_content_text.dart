@@ -3,6 +3,82 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+final RegExp topicContentTokenPattern = RegExp(
+  r'(https?:\/\/[^\s]+)|(@[A-Za-z0-9_\-\u4e00-\u9fa5]+)|(#[^#\s]+#?)',
+);
+
+/// 把正文拆成普通字和可点击的 @ / # / 链接。
+List<InlineSpan> buildTopicContentSpans({
+  required String text,
+  required TextStyle highlightStyle,
+  required List<TapGestureRecognizer> recognizers,
+  FutureOr<void> Function(String mention)? onMentionTap,
+  FutureOr<void> Function(String hashtag)? onHashtagTap,
+  FutureOr<void> Function(String url)? onLinkTap,
+}) {
+  final spans = <InlineSpan>[];
+  var start = 0;
+  for (final match in topicContentTokenPattern.allMatches(text)) {
+    if (match.start > start) {
+      spans.add(TextSpan(text: text.substring(start, match.start)));
+    }
+    final token = match.group(0)!;
+    spans.add(
+      TextSpan(
+        text: token,
+        style: highlightStyle,
+        recognizer: _contentRecognizer(
+          token: token,
+          recognizers: recognizers,
+          onMentionTap: onMentionTap,
+          onHashtagTap: onHashtagTap,
+          onLinkTap: onLinkTap,
+        ),
+      ),
+    );
+    start = match.end;
+  }
+  if (start < text.length) {
+    spans.add(TextSpan(text: text.substring(start)));
+  }
+  return spans;
+}
+
+TapGestureRecognizer? _contentRecognizer({
+  required String token,
+  required List<TapGestureRecognizer> recognizers,
+  FutureOr<void> Function(String mention)? onMentionTap,
+  FutureOr<void> Function(String hashtag)? onHashtagTap,
+  FutureOr<void> Function(String url)? onLinkTap,
+}) {
+  FutureOr<void> Function()? onTap;
+  if (token.startsWith('http://') || token.startsWith('https://')) {
+    if (onLinkTap != null) {
+      onTap = () => onLinkTap(token);
+    }
+  } else if (token.startsWith('@')) {
+    if (onMentionTap != null) {
+      onTap = () => onMentionTap(token.substring(1));
+    }
+  } else if (token.startsWith('#')) {
+    if (onHashtagTap != null) {
+      onTap = () => onHashtagTap(token);
+    }
+  }
+  if (onTap == null) {
+    return null;
+  }
+  final recognizer = TapGestureRecognizer()
+    ..onTap = () {
+      final result = onTap?.call();
+      if (result is Future<void>) {
+        unawaited(result);
+      }
+    };
+  recognizers.add(recognizer);
+  return recognizer;
+}
+
 /// 动态正文：普通文字 + @ / # / 链接高亮。
 class TopicContentText extends StatefulWidget {
   const TopicContentText({
@@ -29,10 +105,6 @@ class TopicContentText extends StatefulWidget {
 }
 
 class _TopicContentTextState extends State<TopicContentText> {
-  static final RegExp _tokenPattern = RegExp(
-    r'(https?:\/\/[^\s]+)|(@[A-Za-z0-9_\-\u4e00-\u9fa5]+)|(#[^#\s]+#?)',
-  );
-
   final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
 
   @override
@@ -75,61 +147,13 @@ class _TopicContentTextState extends State<TopicContentText> {
   }
 
   List<InlineSpan> _buildSpans(TextStyle activeStyle) {
-    final List<InlineSpan> spans = <InlineSpan>[];
-    var start = 0;
-
-    for (final match in _tokenPattern.allMatches(widget.text)) {
-      if (match.start > start) {
-        spans.add(TextSpan(text: widget.text.substring(start, match.start)));
-      }
-
-      final token = match.group(0)!;
-      spans.add(
-        TextSpan(
-          text: token,
-          style: activeStyle,
-          recognizer: _createRecognizer(token),
-        ),
-      );
-      start = match.end;
-    }
-
-    if (start < widget.text.length) {
-      spans.add(TextSpan(text: widget.text.substring(start)));
-    }
-
-    return spans;
-  }
-
-  TapGestureRecognizer? _createRecognizer(String token) {
-    FutureOr<void> Function()? onTap;
-    if (token.startsWith('http://') || token.startsWith('https://')) {
-      final handler = widget.onLinkTap;
-      if (handler != null) {
-        onTap = () => handler(token);
-      }
-    } else if (token.startsWith('@')) {
-      final handler = widget.onMentionTap;
-      if (handler != null) {
-        onTap = () => handler(token.substring(1));
-      }
-    } else if (token.startsWith('#')) {
-      final handler = widget.onHashtagTap;
-      if (handler != null) {
-        onTap = () => handler(token);
-      }
-    }
-
-    if (onTap == null) return null;
-
-    final recognizer = TapGestureRecognizer()
-      ..onTap = () {
-        final result = onTap?.call();
-        if (result is Future<void>) {
-          unawaited(result);
-        }
-      };
-    _recognizers.add(recognizer);
-    return recognizer;
+    return buildTopicContentSpans(
+      text: widget.text,
+      highlightStyle: activeStyle,
+      recognizers: _recognizers,
+      onMentionTap: widget.onMentionTap,
+      onHashtagTap: widget.onHashtagTap,
+      onLinkTap: widget.onLinkTap,
+    );
   }
 }

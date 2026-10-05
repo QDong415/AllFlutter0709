@@ -232,43 +232,12 @@ class _ConversationListTile extends StatelessWidget {
               SizedBox(
                 width: 60,
                 height: ConversationListItem._itemHeight,
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: 10,
-                      top:
-                          (ConversationListItem._itemHeight -
-                              ConversationListItem._avatarSize) /
-                          2,
-                      child: _ConversationAvatar(avatarUrl: avatarUrl),
-                    ),
-                    if (summaryModel.unreadCount > 0)
-                      Positioned(
-                        top: 4,
-                        right: 0,
-                        child: Container(
-                          constraints: const BoxConstraints(minWidth: 18),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: ConversationListItem._unreadColor,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Text(
-                            unreadText,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              height: 1.2,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: _ConversationAvatar(avatarUrl: avatarUrl),
+                  ),
                 ),
               ),
               Expanded(
@@ -317,16 +286,26 @@ class _ConversationListTile extends StatelessWidget {
                       ),
                       const Spacer(),
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 4, right: 0),
-                        child: Text(
-                          summaryModel.latestMessage,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: ConversationListItem._secondaryColor,
-                            fontSize: 14,
-                            height: 1.2,
-                          ),
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                summaryModel.latestMessage,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: ConversationListItem._secondaryColor,
+                                  fontSize: 14,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                            if (summaryModel.unreadCount > 0) ...[
+                              const SizedBox(width: 8),
+                              _ConversationUnreadBadge(text: unreadText),
+                            ],
+                          ],
                         ),
                       ),
                       const SizedBox(height: 7),
@@ -336,6 +315,35 @@ class _ConversationListTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 会话列表未读数，贴在摘要行右侧。
+class _ConversationUnreadBadge extends StatelessWidget {
+  const _ConversationUnreadBadge({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: ConversationListItem._unreadColor,
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          height: 1.2,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

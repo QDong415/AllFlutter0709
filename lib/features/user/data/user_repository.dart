@@ -146,10 +146,7 @@ class UserRepository {
   }) async {
     final response = await HttpClient.instance.get(
       '/api/follow/fanslist',
-      queryParameters: <String, dynamic>{
-        'to_userid': toUserId,
-        'page': page,
-      },
+      queryParameters: <String, dynamic>{'to_userid': toUserId, 'page': page},
     );
 
     final json = response.data;
@@ -174,16 +171,72 @@ class UserRepository {
     return UserBasePageResult(items: items, hasMore: hasMore);
   }
 
+  /// 修改当前用户资料（Android `user/modifyarray`），返回合并前的服务端用户字段。
+  Future<Map<String, dynamic>> modifyProfile(Map<String, String> fields) async {
+    final response = await HttpClient.instance.post(
+      '/api/user/modifyarray',
+      data: fields,
+    );
+    return _requireSuccessMap(response.data, '资料修改失败');
+  }
+
+  /// 修改登录密码（Android `user/changepw`）。
+  Future<void> changePassword({
+    required String oldPassword,
+    required String password,
+  }) async {
+    final response = await HttpClient.instance.post(
+      '/api/user/changepw',
+      data: <String, dynamic>{'oldpassword': oldPassword, 'password': password},
+    );
+    _requireSuccess(response.data, '修改密码失败');
+  }
+
+  /// 移出黑名单（Android `user/unblock`）。
+  Future<void> unblockUser({required String toUserId}) async {
+    final response = await HttpClient.instance.post(
+      '/api/user/unblock',
+      data: <String, dynamic>{'to_userid': toUserId},
+    );
+    _requireSuccess(response.data, '移除失败');
+  }
+
+  /// 城市三级列表（Android `city/totallist`）。
+  Future<List<CityNodeModel>> getCityList() async {
+    final response = await HttpClient.instance.get('/api/city/totallist');
+    final data = _requireSuccessMap(response.data, '城市加载失败');
+    final items = data['items'];
+    if (items is! List) {
+      return const <CityNodeModel>[];
+    }
+    return items
+        .whereType<Map>()
+        .map((item) => CityNodeModel.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
+  /// 最新版本（Android `version/getlastversion`）。
+  Future<AppVersionModel> getLastVersion() async {
+    final response = await HttpClient.instance.get(
+      '/api/version/getlastversion',
+      queryParameters: <String, dynamic>{'platform': 'android'},
+    );
+    final data = _requireSuccessMap(response.data, '检查更新失败');
+    return AppVersionModel.fromJson(data);
+  }
+
   /// 拉取用户列表（Android `user/getlist`，匹配 Tab 传 vip=1）。
   Future<UserBasePageResult> getUserList({
     required int page,
     int gender = 0,
     int vip = 0,
+    Map<String, dynamic>? extra,
   }) async {
     final queryParameters = <String, dynamic>{
       'page': page,
       if (gender != 0) 'gender': gender,
       if (vip != 0) 'vip': vip,
+      ...?extra,
     };
 
     final response = await HttpClient.instance.get(
@@ -211,6 +264,85 @@ class UserRepository {
     final items = pageData?.items ?? const <UserBaseModel>[];
     final hasMore = (pageData?.totalPage ?? 0) > page;
     return UserBasePageResult(items: items, hasMore: hasMore);
+  }
+
+  Map<String, dynamic> _requireSuccessMap(Object? json, String fallback) {
+    if (json is! Map) {
+      throw Exception('服务器返回为空');
+    }
+    final map = Map<String, dynamic>.from(json);
+    final result = ApiResponse<Map<String, dynamic>>.fromJson(
+      map,
+      (dataJson) => dataJson is Map
+          ? Map<String, dynamic>.from(dataJson)
+          : <String, dynamic>{},
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? fallback : result.message);
+    }
+    return result.data ?? <String, dynamic>{};
+  }
+
+  void _requireSuccess(Object? json, String fallback) {
+    if (json is! Map) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<void>.fromJson(Map<String, dynamic>.from(json));
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? fallback : result.message);
+    }
+  }
+}
+
+/// 省市区节点。
+class CityNodeModel {
+  const CityNodeModel({
+    required this.name,
+    required this.code,
+    required this.children,
+  });
+
+  final String name;
+  final String code;
+  final List<CityNodeModel> children;
+
+  factory CityNodeModel.fromJson(Map<String, dynamic> json) {
+    final rawChildren = json['items'];
+    final children = rawChildren is List
+        ? rawChildren
+              .whereType<Map>()
+              .map(
+                (item) =>
+                    CityNodeModel.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList()
+        : const <CityNodeModel>[];
+    return CityNodeModel(
+      name: json['name']?.toString() ?? '',
+      code: json['code']?.toString() ?? '',
+      children: children,
+    );
+  }
+}
+
+/// 服务端最新版本。
+class AppVersionModel {
+  const AppVersionModel({
+    required this.name,
+    required this.changelog,
+    required this.packageUrl,
+  });
+
+  final String name;
+  final String changelog;
+  final String packageUrl;
+
+  factory AppVersionModel.fromJson(Map<String, dynamic> json) {
+    return AppVersionModel(
+      name: json['name']?.toString() ?? '',
+      changelog: json['changelog']?.toString() ?? '',
+      packageUrl: json['packageUrl']?.toString() ?? '',
+    );
   }
 }
 

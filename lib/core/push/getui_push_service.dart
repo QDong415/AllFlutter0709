@@ -23,7 +23,8 @@ import 'package:permission_handler/permission_handler.dart';
 /// 职责概览：
 /// 1. 启动原生个推 SDK，收 ClientId / 通知 / 透传
 /// 2. 把业务 payload（如 needpull）转成「拉消息」
-/// 3. 处理通知点击跳转（含冷启动、未登录先记 pending）
+/// 3. 处理用户点击通知后的跳转（未登录先记 pending）。
+///    冷启动只同步消息，不改当前 Tab。
 ///
 /// 关于会话刷新为什么有两个调用入口（方法不同、实现相同）：
 /// - [ConversationController.onLoginStateChanged]：运行期登录/退出（listen）
@@ -140,7 +141,7 @@ class GetuiPushService extends ChangeNotifier {
           .read(conversationControllerProvider)
           .checkedLoginStateAfterInitedApp(_ref.read(accountProvider)),
     );
-    // 杀进程后点通知拉起：从原生侧读启动参数并尝试跳转
+    // 冷启动可能读到静默推送或上次通知，只同步消息，不切 Tab。
     unawaited(_readLaunchNotification());
     // CID：本地缓存先用上，再向 SDK 主动问一次
     unawaited(syncCachedClientId());
@@ -233,22 +234,24 @@ class GetuiPushService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 冷启动：进程被通知拉起时，从原生读启动参数再导航（需稍等 router）
+  /// 冷启动：从原生读启动参数，只拉消息，不切换 Tab。
+  ///
+  /// 个推会把静默推送、或上次点过的通知留在 `getLaunchNotification` 里。
+  /// 若按点击去跳转，普通启动会从动态切到聊天。
+  /// 用户真正点通知仍走点击回调。
   Future<void> _readLaunchNotification() async {
     try {
       final launchData = await _plugin.getLaunchNotification;
       if (launchData.isEmpty) {
         _appendLog('冷启动通知为空');
-        return;
+      } else {
+        final map = launchData.cast<String, dynamic>();
+        _captureRawEvent('getLaunchNotification', map);
+        _latestEventSummary = '冷启动读取到通知，仅同步消息';
+        notifyListeners();
+        await _handlePayloadCandidate(map, fromClick: false);
+        _appendLog('冷启动通知不跳转，保持当前 Tab');
       }
-      final map = launchData.cast<String, dynamic>();
-      _captureRawEvent('getLaunchNotification', map);
-      _latestEventSummary = '冷启动读取到通知';
-      notifyListeners();
-      await _handlePayloadCandidate(map, fromClick: true);
-      // 冷启动时 router 可能尚未 ready，稍后再跳。
-      await Future<void>.delayed(const Duration(milliseconds: 450));
-      await _navigateFromPushData(map, fromClick: true);
     } catch (error) {
       _appendLog('冷启动通知读取失败: $error');
     }
@@ -258,9 +261,8 @@ class GetuiPushService extends ChangeNotifier {
       if (localLaunch.isNotEmpty) {
         final map = localLaunch.cast<String, dynamic>();
         _captureRawEvent('getLaunchLocalNotification', map);
-        await _handlePayloadCandidate(map, fromClick: true);
-        await Future<void>.delayed(const Duration(milliseconds: 450));
-        await _navigateFromPushData(map, fromClick: true);
+        await _handlePayloadCandidate(map, fromClick: false);
+        _appendLog('冷启动本地通知不跳转，保持当前 Tab');
       }
     } catch (_) {
       // 本地通知启动参数不是必需能力

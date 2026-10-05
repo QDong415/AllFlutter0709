@@ -1,9 +1,12 @@
 import 'package:all_flutter0709/features/comment/data/models/comment_display_model.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_model.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class CommentItem extends StatelessWidget {
@@ -248,52 +251,73 @@ class _CommentAvatar extends StatelessWidget {
   }
 }
 
-class _CommentRichText extends StatelessWidget {
+class _CommentRichText extends StatefulWidget {
   const _CommentRichText({required this.comment});
 
   final CommentModel comment;
 
   @override
+  State<_CommentRichText> createState() => _CommentRichTextState();
+}
+
+class _CommentRichTextState extends State<_CommentRichText> {
+  final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
+
+  @override
+  void dispose() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CommentRichText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final baseStyle = const TextStyle(
+    final comment = widget.comment;
+    const baseStyle = TextStyle(
       fontSize: 15,
       height: 1.45,
       color: Color(0xFF333333),
     );
-    final activeStyle = baseStyle.copyWith(
+    final mentionStyle = baseStyle.copyWith(
+      color: const Color(0xFF3399FF),
+    );
+    final replyNameStyle = baseStyle.copyWith(
       color: const Color(0xFF133465),
     );
-    final timeStyle = const TextStyle(
+    const timeStyle = TextStyle(
       fontSize: 12,
       height: 1.45,
       color: Color(0xFF919191),
     );
     final content = comment.displayContent;
     final timeText = _formatCommentTimeText(comment.createTime);
-
-    if (!comment.hasReplyTarget) {
-      return Text.rich(
-        TextSpan(
-          style: baseStyle,
-          children: [
-            TextSpan(text: content),
-            if (timeText.isNotEmpty) ...[
-              const TextSpan(text: ' '),
-              TextSpan(text: timeText, style: timeStyle),
-            ],
-          ],
-        ),
-      );
-    }
+    final contentSpans = buildTopicContentSpans(
+      text: content,
+      highlightStyle: mentionStyle,
+      recognizers: _recognizers,
+      onMentionTap: (name) => openUserDetailByName(context, name: name),
+    );
 
     return Text.rich(
       TextSpan(
         style: baseStyle,
         children: [
-          const TextSpan(text: '回复 '),
-          TextSpan(text: comment.toUserName, style: activeStyle),
-          const TextSpan(text: '：'),
-          TextSpan(text: content),
+          if (comment.hasReplyTarget) ...[
+            const TextSpan(text: '回复 '),
+            TextSpan(text: comment.toUserName, style: replyNameStyle),
+            const TextSpan(text: '：'),
+          ],
+          ...contentSpans,
           if (timeText.isNotEmpty) ...[
             const TextSpan(text: ' '),
             TextSpan(text: timeText, style: timeStyle),

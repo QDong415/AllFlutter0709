@@ -1,110 +1,216 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
-import 'package:all_flutter0709/core/push/getui_push_service.dart';
-import 'package:all_flutter0709/core/utils/value_util.dart';
-import 'package:all_flutter0709/features/me/presentation/widgets/bridge_debug_panel.dart';
+import 'package:all_flutter0709/features/me/presentation/widgets/me_header.dart';
+import 'package:all_flutter0709/features/me/presentation/widgets/me_menu_section.dart';
+import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
-import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// 「我的」页；收藏 / 设置等需登录操作走 AccountGuardX。
-class MePage extends ConsumerWidget {
+/// 「我的」页，对齐 Android `MineFragment`。
+class MePage extends ConsumerStatefulWidget {
   const MePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentAccount = ref.watch(accountProvider);
-    final push = ref.watch(getuiPushServiceProvider);
+  ConsumerState<MePage> createState() => _MePageState();
+}
+
+class _MePageState extends ConsumerState<MePage> {
+  final UserRepository _userRepository = const UserRepository();
+  double _titleOpacity = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshCounts());
+  }
+
+  Future<void> _refreshCounts() async {
+    final account = ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
+    try {
+      final profile = await _userRepository.getUserProfile(
+        toUserId: account.userId,
+      );
+      if (!mounted) {
+        return;
+      }
+      final current = ref.read(accountProvider);
+      if (current == null) {
+        return;
+      }
+      await ref
+          .read(accountProvider.notifier)
+          .setAccount(
+            current.copyWith(
+              name: profile.name,
+              avatar: profile.avatar,
+              intro: profile.intro,
+              gender: profile.gender,
+              age: profile.age,
+              cityName: profile.cityName,
+              fansCount: profile.fansCount,
+              followCount: profile.followCount,
+              topicCount: profile.topicCount,
+            ),
+          );
+    } catch (_) {}
+  }
+
+  bool _requireLogin() => context.ensureLoggedIn();
+
+  void _open(String path, {Object? extra}) {
+    if (!_requireLogin()) {
+      return;
+    }
+    context.push(path, extra: extra);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final account = ref.watch(accountProvider);
+    final loggedIn = account != null;
 
     return Scaffold(
-      appBar: const CommonAppBar(title: '我的 Me'),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          AppDimens.glassTabBarContentInset,
-        ),
+      backgroundColor: const Color(0xFFF3F3F3),
+      body: Stack(
         children: [
-          Card(
-            child: ListTile(
-              leading: _UserAvatar(avatar: currentAccount?.avatar),
-              title: Text(
-                currentAccount?.name.isNotEmpty == true
-                    ? currentAccount!.name
-                    : '未登录用户',
-              ),
-              subtitle: Text(
-                currentAccount?.mobile.isNotEmpty == true
-                    ? currentAccount!.mobile
-                    : '请先登录以查看完整资料',
-              ),
-              onTap: () {
-                final account = currentAccount;
-                if (account == null) {
-                  context.ensureLoggedIn();
-                  return;
-                }
-                openUserDetailPage(
-                  context,
-                  userId: account.userId,
-                  name: account.name,
-                  avatar: account.avatar,
-                  userType: account.userType,
-                );
-              },
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Image(
+              image: AssetImage('assets/icons/me/mine_header_bg.png'),
+              fit: BoxFit.fitWidth,
             ),
           ),
-          const SizedBox(height: 12),
-          Card(
-            child: Column(
+          NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              final opacity = (notification.metrics.pixels / 80).clamp(
+                0.0,
+                1.0,
+              );
+              if ((opacity - _titleOpacity).abs() > 0.02) {
+                setState(() => _titleOpacity = opacity);
+              }
+              return false;
+            },
+            child: ListView(
+              padding: const EdgeInsets.only(
+                bottom: AppDimens.glassTabBarContentInset,
+              ),
               children: [
-                ListTile(
-                  leading: const Icon(Icons.bookmark_outline),
-                  title: const Text('我的收藏'),
-                  onTap: () {
-                    if (!context.ensureLoggedIn()) return;
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.settings_outlined),
-                  title: const Text('账号设置'),
-                  onTap: () {
-                    if (!context.ensureLoggedIn()) return;
-                  },
-                ),
-                ListTile(
-                  leading: Icon(
-                    currentAccount == null ? Icons.login : Icons.logout,
+                MeHeader(
+                  name: loggedIn
+                      ? (account.name.isEmpty ? '未填写' : account.name)
+                      : '未登录',
+                  avatar: account?.avatar ?? '',
+                  fansCount: account?.fansCount ?? 0,
+                  followCount: account?.followCount ?? 0,
+                  onProfileTap: () => _open(AppRoutes.meProfileEdit),
+                  onFansTap: () => _open(
+                    AppRoutes.meFriendship,
+                    extra: const FriendshipArgs(isFansList: true),
                   ),
-                  title: Text(currentAccount == null ? '去登录' : '退出登录'),
-                  onTap: () async {
-                    if (currentAccount == null) {
-                      context.ensureLoggedIn();
-                      return;
-                    }
-
-                    await ref.read(accountProvider.notifier).logout();
-                    if (context.mounted) {
-                      context.go(AppRoutes.login);
-                    }
-                  },
+                  onFollowTap: () => _open(
+                    AppRoutes.meFriendship,
+                    extra: const FriendshipArgs(isFansList: false),
+                  ),
                 ),
+                MeMenuSection(
+                  itemList: [
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_submit.png',
+                      title: '我发的动态',
+                      onTap: () {
+                        if (!_requireLogin()) return;
+                        openUserDetailPage(
+                          context,
+                          userId: account!.userId,
+                          name: account.name,
+                          avatar: account.avatar,
+                          userType: account.userType,
+                        );
+                      },
+                    ),
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_like.png',
+                      title: '我赞的动态',
+                      onTap: () => _open(
+                        AppRoutes.meTopics,
+                        extra: const MineTopicArgs(onlyLike: true),
+                      ),
+                    ),
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_comment.png',
+                      title: '我评论的动态',
+                      onTap: () => _open(
+                        AppRoutes.meTopics,
+                        extra: const MineTopicArgs(onlyComment: true),
+                      ),
+                    ),
+                  ],
+                ),
+                MeMenuSection(
+                  itemList: [
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_search.png',
+                      title: '找用户动态',
+                      onTap: () => context.push(AppRoutes.meSearch),
+                    ),
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_near.png',
+                      title: '附近的人',
+                      onTap: () => context.push(AppRoutes.meNearby),
+                    ),
+                  ],
+                ),
+                MeMenuSection(
+                  itemList: [
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_setting.png',
+                      title: '设置',
+                      onTap: () => context.push(AppRoutes.meSettings),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          const BridgeDebugPanel(),
-          const SizedBox(height: 12),
-          ListenableBuilder(
-            listenable: push,
-            builder: (context, _) => _GetuiDebugPanel(
-              push: push,
-              accountCid: currentAccount?.cid ?? '',
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: _titleOpacity,
+                child: Container(
+                  color: AppColors.toolbar,
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.paddingOf(context).top,
+                  ),
+                  child: const SizedBox(
+                    height: AppDimens.toolbarHeight,
+                    child: Center(
+                      child: Text(
+                        '我的',
+                        style: TextStyle(
+                          fontSize: AppDimens.toolbarTitleSize,
+                          color: AppColors.titleText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -113,159 +219,17 @@ class MePage extends ConsumerWidget {
   }
 }
 
-/// 「我的」页个推联调面板。
-class _GetuiDebugPanel extends StatelessWidget {
-  const _GetuiDebugPanel({
-    required this.push,
-    required this.accountCid,
-  });
+/// 粉丝或关注列表参数。
+class FriendshipArgs {
+  const FriendshipArgs({required this.isFansList});
 
-  final GetuiPushService push;
-  final String accountCid;
-
-  @override
-  Widget build(BuildContext context) {
-    final clientId = push.currentClientId.trim().isEmpty
-        ? '尚未获取'
-        : push.currentClientId;
-    final pending = push.pendingConversationId.trim().isEmpty
-        ? '无'
-        : push.pendingConversationId;
-    final payload = push.lastBusinessPayload;
-    final logs = push.eventLogs;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '个推联调',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            SelectableText('个推 ClientId: $clientId'),
-            const SizedBox(height: 4),
-            SelectableText(
-              '账号 cid: ${accountCid.trim().isEmpty ? '无' : accountCid}',
-            ),
-            const SizedBox(height: 4),
-            Text('最近事件: ${push.latestEventSummary}'),
-            const SizedBox(height: 4),
-            Text('待跳转会话: $pending'),
-            if (payload != null) ...[
-              const SizedBox(height: 4),
-              SelectableText('最近 payload: $payload'),
-            ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.tonal(
-                  onPressed: () async {
-                    await push.refreshClientIdFromSdk();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            push.currentClientId.isEmpty
-                                ? 'ClientId 仍为空，请确认 SDK 已初始化'
-                                : '已刷新 ClientId',
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text('刷新 CID'),
-                ),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    await push.copyClientIdToClipboard();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('ClientId 已复制')),
-                      );
-                    }
-                  },
-                  child: const Text('复制 CID'),
-                ),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    await push.manualSyncMessages();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已触发 message/pull')),
-                      );
-                    }
-                  },
-                  child: const Text('手动同步'),
-                ),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    await push.simulateNotificationClick();
-                  },
-                  child: const Text('模拟点击(无target)'),
-                ),
-                FilledButton.tonal(
-                  onPressed: () async {
-                    final target =
-                        push.pendingConversationId.trim().isNotEmpty
-                        ? push.pendingConversationId
-                        : push.lastBusinessPayload?['targetid']?.toString();
-                    await push.simulateNotificationClick(
-                      targetId: target?.trim().isNotEmpty == true
-                          ? target
-                          : 'debug-target',
-                    );
-                  },
-                  child: const Text('模拟点击(带target)'),
-                ),
-              ],
-            ),
-            if (logs.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Text(
-                '事件日志',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 6),
-              Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(maxHeight: 220),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SingleChildScrollView(
-                  child: SelectableText(
-                    logs.join('\n'),
-                    style: const TextStyle(fontSize: 12, height: 1.35),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+  final bool isFansList;
 }
 
-class _UserAvatar extends StatelessWidget {
-  const _UserAvatar({required this.avatar});
+/// 我赞过 / 我评论的动态参数。
+class MineTopicArgs {
+  const MineTopicArgs({this.onlyLike = false, this.onlyComment = false});
 
-  final String? avatar;
-
-  @override
-  Widget build(BuildContext context) {
-    final imageUrl = ValueUtil.getQiniuUrlByFileName(avatar) ?? '';
-    if (imageUrl.isEmpty) {
-      return const CircleAvatar(child: Icon(Icons.person));
-    }
-
-    return CircleAvatar(backgroundImage: NetworkImage(imageUrl));
-  }
+  final bool onlyLike;
+  final bool onlyComment;
 }

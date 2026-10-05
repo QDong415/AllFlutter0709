@@ -76,9 +76,7 @@ class _BridgeDebugPanelState extends State<BridgeDebugPanel> {
                   child: const Text('请求原生推事件'),
                 ),
                 FilledButton.tonal(
-                  onPressed: _logs.isEmpty
-                      ? null
-                      : () => setState(_logs.clear),
+                  onPressed: _logs.isEmpty ? null : () => setState(_logs.clear),
                   child: const Text('清空日志'),
                 ),
               ],
@@ -177,8 +175,8 @@ class _BridgeDebugPanelState extends State<BridgeDebugPanel> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

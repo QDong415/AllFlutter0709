@@ -11,6 +11,8 @@ class UserBaseModel {
     this.age = 0,
     this.cityName = '',
     this.openTime = 0,
+    this.latitude = 0,
+    this.longitude = 0,
     this.userType = UserType.human,
   });
 
@@ -22,6 +24,8 @@ class UserBaseModel {
   final int age;
   final String cityName;
   final int openTime;
+  final double latitude;
+  final double longitude;
 
   /// 账号类型：0 真人 / 1 AI。
   final int userType;
@@ -51,6 +55,8 @@ class UserBaseModel {
       age: _readInt(json['age']),
       cityName: json['cityname']?.toString() ?? '',
       openTime: _readInt(json['open_time']),
+      latitude: _readDouble(json['latitude']),
+      longitude: _readDouble(json['longitude']),
       userType: UserType.parse(json['user_type']),
     );
   }
@@ -59,5 +65,11 @@ class UserBaseModel {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double _readDouble(Object? value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
   }
 }
