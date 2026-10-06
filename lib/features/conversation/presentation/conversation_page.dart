@@ -32,14 +32,14 @@ class _RemindEntry {
 
 const _remindEntries = <_RemindEntry>[
   _RemindEntry(
-    title: '赞',
+    title: '赞我的',
     icon: Icons.favorite_rounded,
     iconColor: Color(0xFFFF6B6B),
     kind: RemindKind.praise,
     location: '${AppRoutes.conversation}/remind/2',
   ),
   _RemindEntry(
-    title: '评论',
+    title: '评论我的',
     icon: Icons.chat_bubble_rounded,
     iconColor: Color(0xFF4C9AFF),
     kind: RemindKind.comment,

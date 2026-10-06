@@ -65,6 +65,10 @@ class GetuiPushService extends ChangeNotifier {
   final Getuiflut _plugin = Getuiflut();
 
   bool _initialized = false;
+
+  /// 进程刚起来的一段时间里，个推会把上次通知再回调成点击。
+  /// 这段时间只同步消息，不切 Tab；之后用户真正点通知才跳转。
+  bool _acceptClickNavigation = false;
   String _currentClientId = '';
 
   /// 通知点击时若尚未登录，先记下目标会话，登录后再跳。
@@ -143,6 +147,7 @@ class GetuiPushService extends ChangeNotifier {
     );
     // 冷启动可能读到静默推送或上次通知，只同步消息，不切 Tab。
     unawaited(_readLaunchNotification());
+    unawaited(_enableClickNavigationLater());
     // CID：本地缓存先用上，再向 SDK 主动问一次
     unawaited(syncCachedClientId());
     unawaited(refreshClientIdFromSdk());
@@ -175,12 +180,16 @@ class GetuiPushService extends ChangeNotifier {
     await _handlePayloadCandidate(message, fromClick: false);
   }
 
-  /// 用户点击通知（多为 Android）：拉消息 + 尝试跳转
+  /// 用户点击通知（多为 Android）：拉消息；启动回放阶段不跳转
   Future<dynamic> _onNotificationMessageClicked(
     Map<String, dynamic> message,
   ) async {
     _captureRawEvent('onNotificationMessageClicked', message);
     await _handlePayloadCandidate(message, fromClick: true);
+    if (!_acceptClickNavigation) {
+      _appendLog('启动阶段通知点击回调，不切换 Tab');
+      return;
+    }
     await _navigateFromPushData(message, fromClick: true);
   }
 
@@ -191,12 +200,16 @@ class GetuiPushService extends ChangeNotifier {
     _sendFeedbackIfPossible(message);
   }
 
-  /// iOS 用户点了通知栏：等同点击跳转
+  /// iOS 通知响应。冷启动时个推也会把上次通知从这里再送一次。
   Future<dynamic> _onReceiveNotificationResponse(
     Map<String, dynamic> message,
   ) async {
     _captureRawEvent('onReceiveNotificationResponse', message);
     await _handlePayloadCandidate(message, fromClick: true);
+    if (!_acceptClickNavigation) {
+      _appendLog('启动阶段通知响应，不切换 Tab');
+      return;
+    }
     await _navigateFromPushData(message, fromClick: true);
   }
 
@@ -232,6 +245,13 @@ class GetuiPushService extends ChangeNotifier {
     _appendLog('onGrantAuthorization: $granted');
     _latestEventSummary = '通知权限: $granted';
     notifyListeners();
+  }
+
+  /// SDK 启动后会立刻回放上次通知，等这段过去再接受点击跳转。
+  Future<void> _enableClickNavigationLater() async {
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    _acceptClickNavigation = true;
+    _appendLog('启动回放结束，之后的通知点击才会跳转');
   }
 
   /// 冷启动：从原生读启动参数，只拉消息，不切换 Tab。

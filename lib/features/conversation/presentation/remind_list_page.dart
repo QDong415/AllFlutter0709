@@ -47,9 +47,9 @@ class _RemindListPageState extends ConsumerState<RemindListPage> {
   String get _title {
     switch (widget.remindType) {
       case 1:
-        return '评论';
+        return '评论我的';
       case 2:
-        return '赞';
+        return '赞我的';
       case 3:
         return '@我';
       default:
@@ -77,6 +77,17 @@ class _RemindListPageState extends ConsumerState<RemindListPage> {
       return;
     }
     ref.read(remindUnreadStoreProvider).readAll(userId: userId, kind: kind);
+  }
+
+  /// 下拉刷新。
+  Future<void> _onRefreshList() async {
+    await _requestList(isRefresh: true);
+  }
+
+  /// 上拉加载更多。
+  Future<void> _onLoadMoreList() async {
+    if (!_hasMore) return;
+    await _requestList(isRefresh: false);
   }
 
   Future<void> _requestList({required bool isRefresh}) async {
@@ -119,8 +130,10 @@ class _RemindListPageState extends ConsumerState<RemindListPage> {
       backgroundColor: AppColors.bodyBackground,
       appBar: CommonAppBar(title: _title),
       body: EasyRefresh(
-        onRefresh: () => _requestList(isRefresh: true),
-        onLoad: _hasMore ? () => _requestList(isRefresh: false) : null,
+        header: const ClassicHeader(showMessage: false, showText: false),
+        triggerAxis: Axis.vertical,
+        onRefresh: _onRefreshList,
+        onLoad: _hasMore ? _onLoadMoreList : null,
         child: PageStateView(
           state: _pageState,
           emptyText: '暂无提醒',

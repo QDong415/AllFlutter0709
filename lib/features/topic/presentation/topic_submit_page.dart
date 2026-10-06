@@ -106,6 +106,17 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
     _panelHelper.handleEmojiBtnClick();
   }
 
+  /// 手指拖动整页列表时收起软键盘或表情面板。
+  bool _hidePanelOnPageDrag(ScrollNotification notification) {
+    if (notification.depth != 0 ||
+        notification is! ScrollStartNotification ||
+        notification.dragDetails == null) {
+      return false;
+    }
+    _panelHelper.hidePanel();
+    return false;
+  }
+
   void _insertEmoji(String emoji) {
     _textController.insertPlainText(emoji);
     setState(() {});
@@ -215,101 +226,111 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              children: [
-                ColoredBox(
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _shakeController,
-                        builder: (context, child) {
-                          final dx =
-                              math.sin(_shakeController.value * math.pi * 8) *
-                              8 *
-                              (1 - _shakeController.value);
-                          return Transform.translate(
-                            offset: Offset(dx, 0),
-                            child: child,
-                          );
-                        },
-                        child: Listener(
-                          onPointerUp: (_) =>
-                              _panelHelper.handleInputViewOnPointerUp(),
-                          child: TextField(
-                            controller: _textController,
-                            focusNode: _focusNode,
-                            readOnly: _panelHelper.readOnly,
-                            showCursor: true,
-                            maxLines: null,
-                            minLines: 6,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF5B5B5B),
-                            ),
-                            decoration: const InputDecoration(
-                              hintText: '输入动态内容',
-                              hintStyle: TextStyle(color: Color(0xFFB0B0B0)),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.fromLTRB(8, 14, 8, 14),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _hidePanelOnPageDrag,
+              child: ListView(
+                children: [
+                  ColoredBox(
+                    color: Colors.white,
+                    child: Column(
+                      children: [
+                        AnimatedBuilder(
+                          animation: _shakeController,
+                          builder: (context, child) {
+                            final dx =
+                                math.sin(_shakeController.value * math.pi * 8) *
+                                8 *
+                                (1 - _shakeController.value);
+                            return Transform.translate(
+                              offset: Offset(dx, 0),
+                              child: child,
+                            );
+                          },
+                          child: Listener(
+                            onPointerUp: (_) =>
+                                _panelHelper.handleInputViewOnPointerUp(),
+                            child: TextField(
+                              controller: _textController,
+                              focusNode: _focusNode,
+                              readOnly: _panelHelper.readOnly,
+                              showCursor: true,
+                              scrollPhysics:
+                                  const NeverScrollableScrollPhysics(),
+                              maxLines: null,
+                              minLines: 6,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Color(0xFF5B5B5B),
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: '输入动态内容',
+                                hintStyle: TextStyle(color: Color(0xFFB0B0B0)),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.fromLTRB(
+                                  8,
+                                  14,
+                                  8,
+                                  14,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      TopicSubmitToolbar(
-                        onAtTap: () =>
-                            unawaited(_openUserSelect(byInput: false)),
-                        onEmojiTap: _toggleEmoji,
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 0.5),
-                const SizedBox(height: 12),
-                const Divider(height: 0.5),
-                ColoredBox(
-                  color: Colors.white,
-                  child: TopicSubmitMediaGrid(
-                    mediaList: _mediaList,
-                    canAddMore: _mediaPickHelper.canAddMore(_mediaList),
-                    onAddTap: () => unawaited(_onAddMedia()),
-                    onItemTap: (index) {
-                      final mediaModel = _mediaList[index];
-                      unawaited(
-                        TopicSubmitLocalPreviewPage.open(
-                          context: context,
-                          file: mediaModel.file,
-                          isVideo: mediaModel.isVideo,
+                        TopicSubmitToolbar(
+                          onAtTap: () =>
+                              unawaited(_openUserSelect(byInput: false)),
+                          onEmojiTap: _toggleEmoji,
                         ),
-                      );
-                    },
-                    onDeleteTap: (index) {
-                      setState(() => _mediaList.removeAt(index));
-                    },
-                  ),
-                ),
-                const Divider(height: 0.5),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(40, 30, 40, 24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _onSubmit,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.link,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                        textStyle: const TextStyle(fontSize: 16),
-                      ),
-                      child: const Text('提交'),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  const Divider(height: 0.5),
+                  const SizedBox(height: 12),
+                  const Divider(height: 0.5),
+                  ColoredBox(
+                    color: Colors.white,
+                    child: TopicSubmitMediaGrid(
+                      mediaList: _mediaList,
+                      canAddMore: _mediaPickHelper.canAddMore(_mediaList),
+                      onAddTap: () => unawaited(_onAddMedia()),
+                      onItemTap: (index) {
+                        final mediaModel = _mediaList[index];
+                        unawaited(
+                          TopicSubmitLocalPreviewPage.open(
+                            context: context,
+                            file: mediaModel.file,
+                            isVideo: mediaModel.isVideo,
+                          ),
+                        );
+                      },
+                      onDeleteTap: (index) {
+                        setState(() => _mediaList.removeAt(index));
+                      },
+                    ),
+                  ),
+                  const Divider(height: 0.5),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(40, 30, 40, 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _onSubmit,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.link,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          textStyle: const TextStyle(fontSize: 16),
+                        ),
+                        child: const Text('提交'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           ChatBottomPanelContainer<ChatPanelType>(

@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// 编辑资料，对齐 Android `MyProfileEditActivity`。
+/// 编辑资料，对齐 Android「我的资料」页。
 class ProfileEditPage extends ConsumerStatefulWidget {
   const ProfileEditPage({super.key});
 
@@ -153,29 +153,33 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       2 => '女',
       _ => '未填',
     };
+    final age = account?.age ?? 0;
+    final intro = account?.intro ?? '';
 
     return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: const CommonAppBar(title: '编辑资料'),
+      backgroundColor: AppColors.bodyBackground,
+      appBar: const CommonAppBar(title: '我的资料'),
       body: Stack(
         children: [
           ListView(
             children: [
+              const _SectionLabel('基本资料'),
               _EditRow(
-                label: '头像　',
+                label: '头像',
                 onTap: _changeAvatar,
                 trailing: CircleAvatar(
                   radius: 16,
+                  backgroundColor: const Color(0xFFE6E6E6),
                   backgroundImage: avatarUrl.isEmpty
                       ? null
                       : NetworkImage(avatarUrl),
                   child: avatarUrl.isEmpty
-                      ? const Icon(Icons.person, size: 18)
+                      ? const Icon(Icons.person, size: 18, color: Colors.white)
                       : null,
                 ),
               ),
               _EditRow(
-                label: '姓名　',
+                label: '昵称',
                 value: account?.name ?? '',
                 onTap: () => _editText(
                   title: '昵称',
@@ -185,44 +189,39 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 ),
               ),
               _EditRow(
-                label: '年龄　',
-                value: (account?.age ?? 0) == 0 ? '' : '${account!.age}',
-                onTap: () => _pickAge(account?.age ?? 0),
+                label: '年龄',
+                value: age == 0 ? '' : '$age岁',
+                onTap: () => _pickAge(age),
               ),
-              _EditRow(label: '性别　', value: genderText, showArrow: false),
+              _EditRow(label: '性别', value: genderText),
               _EditRow(
-                label: '城市　',
+                label: '城市',
                 value: account?.cityName ?? '',
                 onTap: _pickCity,
               ),
-              const Divider(height: 0.5, thickness: 0.5),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(15, 14, 15, 14),
-                child: Text(
-                  '个人介绍',
-                  style: TextStyle(fontSize: 15, color: Color(0xFF999999)),
-                ),
-              ),
-              const Divider(height: 0.5, thickness: 0.5),
-              InkWell(
-                onTap: () => _editText(
-                  title: '自我介绍',
-                  field: 'intro',
-                  initial: account?.intro ?? '',
-                  maxLength: 150,
-                  canEmpty: true,
-                  multiline: true,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Text(
-                    (account?.intro ?? '').isEmpty ? '未填写' : account!.intro,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.4,
-                      color: (account?.intro ?? '').isEmpty
-                          ? const Color(0xFFBBBBBB)
-                          : AppColors.titleText,
+              const _SectionLabel('自我介绍'),
+              Material(
+                color: AppColors.white,
+                child: InkWell(
+                  onTap: () => _editText(
+                    title: '自我介绍',
+                    field: 'intro',
+                    initial: intro,
+                    maxLength: 150,
+                    canEmpty: true,
+                    multiline: true,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    child: Text(
+                      intro.isEmpty ? '未填写' : intro,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.5,
+                        color: intro.isEmpty
+                            ? const Color(0xFFBBBBBB)
+                            : AppColors.titleText,
+                      ),
                     ),
                   ),
                 ),
@@ -236,6 +235,25 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 }
 
+/// 灰底分组标题，对齐 Android 资料页的「基本资料 / 自我介绍」。
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+      ),
+    );
+  }
+}
+
+/// 资料行：左侧标题，右侧数值或头像，最右箭头。
 class _EditRow extends StatelessWidget {
   const _EditRow({
     required this.label,
@@ -253,43 +271,57 @@ class _EditRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        padding: const EdgeInsets.only(left: 15),
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: AppColors.divider, width: 0.5),
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 15, color: Color(0xFF666666)),
+    final isPlaceholder = value.isEmpty && trailing == null;
+    return Material(
+      color: AppColors.white,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 50,
+          padding: const EdgeInsets.only(left: 16),
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFE6E6E6), width: 0.5),
             ),
-            const SizedBox(width: 8),
-            ?trailing,
-            Expanded(
-              child: Text(
-                value.isEmpty ? (trailing == null ? '未填写' : '') : value,
-                textAlign: TextAlign.right,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+          ),
+          child: Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
                   fontSize: 15,
-                  color: value.isEmpty
-                      ? const Color(0xFFBBBBBB)
-                      : AppColors.titleText,
+                  color: AppColors.titleText,
                 ),
               ),
-            ),
-            if (showArrow)
-              const Icon(Icons.chevron_right, color: Color(0xFFC8C8C8))
-            else
-              const SizedBox(width: 16),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isPlaceholder ? '未填写' : value,
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isPlaceholder
+                        ? const Color(0xFFBBBBBB)
+                        : const Color(0xFF999999),
+                  ),
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 8),
+                trailing!,
+                const SizedBox(width: 2),
+              ],
+              if (showArrow)
+                const Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Icon(Icons.chevron_right, color: Color(0xFFC8C8C8)),
+                )
+              else
+                const SizedBox(width: 16),
+            ],
+          ),
         ),
       ),
     );
