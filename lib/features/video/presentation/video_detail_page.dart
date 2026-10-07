@@ -45,8 +45,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     if (notification.metrics.axis != Axis.vertical) return false;
 
     final playerHeight = _playerHeight(context);
-    final navHeight =
-        MediaQuery.paddingOf(context).top + kToolbarHeight;
+    final navHeight = MediaQuery.paddingOf(context).top + kToolbarHeight;
     final offsetYByHeader =
         notification.metrics.pixels - playerHeight + navHeight;
 
@@ -122,6 +121,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
     final playerHeight = _playerHeight(context);
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.bodyBackground,
       body: Stack(
         children: [

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_display_model.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_model.dart';
@@ -11,9 +13,13 @@ import 'package:all_flutter0709/features/comment/presentation/widgets/comment_bo
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item_single_tips.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_emoji_panel.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_mention_helper.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:chat_bottom_container/chat_bottom_container.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,13 +54,16 @@ class CommentSection extends ConsumerStatefulWidget {
 class _CommentSectionState extends ConsumerState<CommentSection> {
   final CommentRepository _repository = const CommentRepository();
   final CommentSendHelper _sendHelper = const CommentSendHelper();
-  final CommentListLocalHelper _listLocalHelper = const CommentListLocalHelper();
+  final CommentListLocalHelper _listLocalHelper =
+      const CommentListLocalHelper();
   final List<CommentDisplayModel> _items = <CommentDisplayModel>[];
   final Set<String> _likingCommentIds = <String>{};
   final TopicMentionEditingController _inputController =
       TopicMentionEditingController();
   final FocusNode _inputFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
+  late final ChatPanelHelper _panelHelper;
+  late final QqEmojiSpanBuilder _emojiSpanBuilder;
 
   CommentReplyTarget? _replyTarget;
   int _nextPage = 1;
@@ -68,6 +77,20 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
   void initState() {
     super.initState();
     _commentCount = widget.initialCommentCount;
+    _panelHelper = ChatPanelHelper(
+      inputFocusNode: _inputFocusNode,
+      onUpdate: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+    );
+    _emojiSpanBuilder = QqEmojiSpanBuilder(
+      mentionRanges: () => [
+        for (final rangeModel in _inputController.mentionList)
+          (from: rangeModel.from, to: rangeModel.to),
+      ],
+    );
     _inputController
       ..setOnAtTyped(() => _openUserSelect(byInput: true))
       ..addListener(_onInputChanged);
@@ -246,13 +269,36 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   Future<void> _openUserSelect({required bool byInput}) async {
     if (!context.ensureLoggedIn()) return;
-    _inputFocusNode.unfocus();
+    _panelHelper.hidePanel();
     final userModel = await context.push<UserBaseModel>(
       '${AppRoutes.topic}/${AppRoutes.topicUserSelect}',
     );
     if (!mounted || userModel == null) return;
     _inputController.insertUser(userModel: userModel, byInput: byInput);
-    _inputFocusNode.requestFocus();
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      _panelHelper.updatePanelType(ChatPanelType.keyboard);
+    });
+  }
+
+  void _insertEmoji(String emoji) {
+    _inputController.insertPlainText(emoji);
+  }
+
+  void _deleteEmoji() {
+    _inputController.value = QqEmojiEditing.deleteBackward(
+      _inputController.value,
+    );
+  }
+
+  bool _hidePanelOnListDrag(ScrollNotification notification) {
+    if (notification.depth != 0 ||
+        notification is! ScrollStartNotification ||
+        notification.dragDetails == null) {
+      return false;
+    }
+    _panelHelper.hidePanel();
+    return false;
   }
 
   Future<void> _sendComment() async {
@@ -276,7 +322,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       replyTarget: _replyTarget,
     );
 
-    _inputFocusNode.unfocus();
+    _panelHelper.hidePanel();
     setState(() {
       _listLocalHelper.insertOptimisticComment(_items, localComment);
       _replyTarget = null;
@@ -353,10 +399,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       _listLocalHelper.updateCommentByEffectiveId(
         _items,
         effectiveId,
-        (current) => current.copyWith(
-          isLiked: nextIsLiked,
-          likeCount: nextLikeCount,
-        ),
+        (current) =>
+            current.copyWith(isLiked: nextIsLiked, likeCount: nextLikeCount),
       );
     });
 
@@ -397,7 +441,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       );
     });
 
-    _inputFocusNode.requestFocus();
+    _panelHelper.updatePanelType(ChatPanelType.keyboard);
   }
 
   List<CommentDisplayModel> _flattenPage(List<CommentModel> comments) {
@@ -448,9 +492,9 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message.replaceFirst('Exception: ', ''))));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
+    );
   }
 
   @override
@@ -458,81 +502,88 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     return Column(
       children: [
         Expanded(
-          child: EasyRefresh(
-            header: const ClassicHeader(showMessage: false, showText: false),
-            footer: const ClassicFooter(showMessage: false),
-            onRefresh: widget.enablePullRefresh ? _refreshComments : null,
-            onLoad: _hasMore && !_isLoading ? _loadMoreComments : null,
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: widget.listPadding,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              itemCount: _buildVisibleItemCount(),
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildHeaderAndCommentTitle();
-                }
+          child: NotificationListener<ScrollNotification>(
+            onNotification: _hidePanelOnListDrag,
+            child: EasyRefresh(
+              header: const ClassicHeader(showMessage: false, showText: false),
+              footer: const ClassicFooter(showMessage: false),
+              onRefresh: widget.enablePullRefresh ? _refreshComments : null,
+              onLoad: _hasMore && !_isLoading ? _loadMoreComments : null,
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: widget.listPadding,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                itemCount: _buildVisibleItemCount(),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _buildHeaderAndCommentTitle();
+                  }
 
-                if (_isLoading && _items.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                if (_errorText != null && _items.isEmpty) {
-                  return CommonStatePlaceholder(
-                    icon: Icons.wifi_off_outlined,
-                    text: _errorText!,
-                    actionText: '重试',
-                    onTap: () {
-                      unawaited(_refreshComments());
-                    },
-                  );
-                }
-
-                if (_items.isEmpty) {
-                  return const CommonStatePlaceholder(
-                    icon: Icons.mode_comment_outlined,
-                    text: '还没有评论，来抢沙发吧',
-                  );
-                }
-
-                final item = _items[index - 1];
-                if (item.isAction) {
-                  return CommentItemSingleTips(
-                    item: item,
-                    onTap: () {
-                      unawaited(_loadMoreReplies(item));
-                    },
-                  );
-                }
-                return CommentItem(
-                  key: ValueKey('comment-${item.comment!.effectiveId}'),
-                  comment: item.comment!,
-                  isChild: item.isChild,
-                  authorUserId: widget.authorUserId,
-                  displayType: item.displayType!,
-                  onTap: () => _handleCommentTap(item.comment!),
-                  onLikeTap: () => _toggleCommentLike(item.comment!),
-                  onAvatarTap: () {
-                    final comment = item.comment!;
-                    openUserDetailPage(
-                      context,
-                      userId: comment.userId,
-                      name: comment.userName,
-                      avatar: comment.avatar,
-                      userType: comment.userType,
+                  if (_isLoading && _items.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: Center(child: CircularProgressIndicator()),
                     );
-                  },
-                );
-              },
+                  }
+
+                  if (_errorText != null && _items.isEmpty) {
+                    return CommonStatePlaceholder(
+                      icon: Icons.wifi_off_outlined,
+                      text: _errorText!,
+                      actionText: '重试',
+                      onTap: () {
+                        unawaited(_refreshComments());
+                      },
+                    );
+                  }
+
+                  if (_items.isEmpty) {
+                    return const CommonStatePlaceholder(
+                      icon: Icons.mode_comment_outlined,
+                      text: '还没有评论，来抢沙发吧',
+                    );
+                  }
+
+                  final item = _items[index - 1];
+                  if (item.isAction) {
+                    return CommentItemSingleTips(
+                      item: item,
+                      onTap: () {
+                        unawaited(_loadMoreReplies(item));
+                      },
+                    );
+                  }
+                  return CommentItem(
+                    key: ValueKey('comment-${item.comment!.effectiveId}'),
+                    comment: item.comment!,
+                    isChild: item.isChild,
+                    authorUserId: widget.authorUserId,
+                    displayType: item.displayType!,
+                    onTap: () => _handleCommentTap(item.comment!),
+                    onLikeTap: () => _toggleCommentLike(item.comment!),
+                    onAvatarTap: () {
+                      final comment = item.comment!;
+                      openUserDetailPage(
+                        context,
+                        userId: comment.userId,
+                        name: comment.userName,
+                        avatar: comment.avatar,
+                        userType: comment.userType,
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ),
         CommentBottomInputBar(
           controller: _inputController,
           focusNode: _inputFocusNode,
+          emojiSpanBuilder: _emojiSpanBuilder,
+          readOnly: _panelHelper.readOnly,
+          isEmojiPanel: _panelHelper.currentPanelType == ChatPanelType.emoji,
           replyHintText: _replyTarget?.hintText,
           onCancelReply: () {
             setState(() {
@@ -541,6 +592,28 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           },
           onSend: _sendComment,
           onAtTap: () => _openUserSelect(byInput: false),
+          onToggleEmoji: () {
+            if (!context.ensureLoggedIn()) return;
+            _panelHelper.handleEmojiBtnClick();
+          },
+          onInputPointerUp: _panelHelper.handleInputViewOnPointerUp,
+        ),
+        ChatBottomPanelContainer<ChatPanelType>(
+          controller: _panelHelper.controller,
+          inputFocusNode: _inputFocusNode,
+          panelBgColor: QInputBarColors.extendBackground,
+          onPanelTypeChange: _panelHelper.onPanelTypeChange,
+          otherPanelWidget: (type) {
+            if (type != ChatPanelType.emoji) {
+              return const SizedBox.shrink();
+            }
+            final keyboardHeight = _panelHelper.controller.keyboardHeight;
+            return ChatEmojiPanel(
+              height: keyboardHeight > 0 ? keyboardHeight : 280,
+              onEmojiTap: _insertEmoji,
+              onDelete: _deleteEmoji,
+            );
+          },
         ),
       ],
     );

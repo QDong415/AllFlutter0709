@@ -13,6 +13,7 @@ class ChatBottomPanelHost extends StatelessWidget {
     required this.onPanelTypeChange,
     required this.onSendImage,
     required this.onEmojiTap,
+    required this.onEmojiDelete,
   });
 
   final ChatBottomPanelContainerController<ChatPanelType> controller;
@@ -21,6 +22,7 @@ class ChatBottomPanelHost extends StatelessWidget {
   onPanelTypeChange;
   final VoidCallback onSendImage;
   final ValueChanged<String> onEmojiTap;
+  final VoidCallback onEmojiDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,11 @@ class ChatBottomPanelHost extends StatelessWidget {
             : 280.0;
         switch (type) {
           case ChatPanelType.emoji:
-            return ChatEmojiPanel(height: height, onEmojiTap: onEmojiTap);
+            return ChatEmojiPanel(
+              height: height,
+              onEmojiTap: onEmojiTap,
+              onDelete: onEmojiDelete,
+            );
           case ChatPanelType.tool:
             return SizedBox(
               width: double.infinity,

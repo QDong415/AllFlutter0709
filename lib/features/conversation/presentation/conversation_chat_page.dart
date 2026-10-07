@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
@@ -270,6 +271,12 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     _panelHelper.insertText(textController: _textController, text: emoji);
   }
 
+  void _deleteEmoji() {
+    _textController.value = QqEmojiEditing.deleteBackward(
+      _textController.value,
+    );
+  }
+
   Future<void> _sendText() async {
     final text = _textController.text.trim();
     if (text.isEmpty || _isSubmitting) {
@@ -513,7 +520,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                           items: items,
                           scrollController: _scrollController,
                           playingMessageId: _voicePlayHelper.playingMessageId,
-                          selectedMessageId: _bubbleMenuHelper.selectedMessageId,
+                          selectedMessageId:
+                              _bubbleMenuHelper.selectedMessageId,
                           onRefresh: () => ref
                               .read(conversationControllerProvider)
                               .syncMessagesFromServer(),
@@ -575,7 +583,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                         unawaited(_sendText());
                       },
                       onVoicePointerDown: (position) {
-                        unawaited(_voiceRecordHelper.handlePointerDown(position));
+                        unawaited(
+                          _voiceRecordHelper.handlePointerDown(position),
+                        );
                       },
                       onVoicePointerMove: _voiceRecordHelper.handlePointerMove,
                       onVoicePointerUp: _voiceRecordHelper.handlePointerUp,
@@ -593,6 +603,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                         unawaited(_sendImage());
                       },
                       onEmojiTap: _insertEmoji,
+                      onEmojiDelete: _deleteEmoji,
                     ),
                   ],
                 ),

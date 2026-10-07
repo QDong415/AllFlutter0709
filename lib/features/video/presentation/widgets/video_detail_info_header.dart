@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:flutter/material.dart';
 
@@ -21,12 +22,18 @@ class VideoDetailInfoHeader extends StatelessWidget {
               children: [
                 Text(
                   video.displayDate,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF8B8B90)),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF8B8B90),
+                  ),
                 ),
                 const Spacer(),
                 Text(
                   '${video.readCount}次播放',
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF8B8B90)),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF8B8B90),
+                  ),
                 ),
               ],
             ),
@@ -44,7 +51,7 @@ class VideoDetailInfoHeader extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    TextSpan(
+                    ...buildQqEmojiInlineSpans(
                       text: content,
                       style: const TextStyle(
                         fontSize: 14,

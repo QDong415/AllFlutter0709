@@ -194,6 +194,7 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
   Widget build(BuildContext context) {
     final topicModel = _topicModel;
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: const CommonAppBar(title: '动态详情'),
       backgroundColor: AppColors.bodyBackground,
       body: _buildBody(topicModel),

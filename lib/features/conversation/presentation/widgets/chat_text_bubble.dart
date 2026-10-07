@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bubble_frame.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bubble_metrics.dart';
@@ -16,23 +17,21 @@ class ChatTextBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spans = <TextSpan>[];
+    final spans = <InlineSpan>[];
     final segments = item.text.split('\n');
 
     for (var index = 0; index < segments.length; index++) {
       final segment = segments[index];
       final isUrl =
           segment.startsWith('http://') || segment.startsWith('https://');
-      spans.add(
-        TextSpan(
-          text: segment,
-          style: TextStyle(
-            color: isUrl ? const Color(0xFF576B95) : const Color(0xFF191919),
-            decoration: isUrl ? TextDecoration.underline : TextDecoration.none,
-            decorationColor: const Color(0xFF576B95),
-          ),
-        ),
+      final segmentStyle = TextStyle(
+        fontSize: ChatBubbleMetrics.fontSize,
+        height: ChatBubbleMetrics.lineHeight,
+        color: isUrl ? const Color(0xFF576B95) : const Color(0xFF191919),
+        decoration: isUrl ? TextDecoration.underline : TextDecoration.none,
+        decorationColor: const Color(0xFF576B95),
       );
+      spans.addAll(buildQqEmojiInlineSpans(text: segment, style: segmentStyle));
       if (index != segments.length - 1) {
         spans.add(const TextSpan(text: '\n'));
       }

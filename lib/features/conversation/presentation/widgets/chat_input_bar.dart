@@ -1,3 +1,5 @@
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
+import 'package:extended_text_field/extended_text_field.dart';
 import 'package:flutter/material.dart';
 
 /// QInputBarView 资源（来自 QKeyboardEmotionView）。
@@ -403,11 +405,12 @@ class _TextInputField extends StatelessWidget {
       ),
       child: Listener(
         onPointerUp: (_) => onInputPointerUp(),
-        child: TextField(
+        child: ExtendedTextField(
           controller: controller,
           focusNode: focusNode,
           readOnly: readOnly,
           showCursor: true,
+          specialTextSpanBuilder: qqEmojiSpanBuilder,
           minLines: 1,
           maxLines: null,
           keyboardType: TextInputType.multiline,

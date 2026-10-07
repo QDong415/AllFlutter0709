@@ -220,10 +220,7 @@ class _CommentTree extends StatelessWidget {
 }
 
 class _CommentAvatar extends StatelessWidget {
-  const _CommentAvatar({
-    required this.size,
-    required this.avatarUrl,
-  });
+  const _CommentAvatar({required this.size, required this.avatarUrl});
 
   final double size;
   final String avatarUrl;
@@ -288,12 +285,8 @@ class _CommentRichTextState extends State<_CommentRichText> {
       height: 1.45,
       color: Color(0xFF333333),
     );
-    final mentionStyle = baseStyle.copyWith(
-      color: const Color(0xFF3399FF),
-    );
-    final replyNameStyle = baseStyle.copyWith(
-      color: const Color(0xFF133465),
-    );
+    final mentionStyle = baseStyle.copyWith(color: const Color(0xFF3399FF));
+    final replyNameStyle = baseStyle.copyWith(color: const Color(0xFF133465));
     const timeStyle = TextStyle(
       fontSize: 12,
       height: 1.45,
@@ -304,6 +297,7 @@ class _CommentRichTextState extends State<_CommentRichText> {
     final contentSpans = buildTopicContentSpans(
       text: content,
       highlightStyle: mentionStyle,
+      baseStyle: baseStyle,
       recognizers: _recognizers,
       onMentionTap: (name) => openUserDetailByName(context, name: name),
     );
@@ -341,21 +335,14 @@ class _AuthorBadge extends StatelessWidget {
       ),
       child: const Text(
         '作者',
-        style: TextStyle(
-          fontSize: 10,
-          color: Color(0xFFEAA55E),
-          height: 1.1,
-        ),
+        style: TextStyle(fontSize: 10, color: Color(0xFFEAA55E), height: 1.1),
       ),
     );
   }
 }
 
 class _CommentLikeColumn extends StatelessWidget {
-  const _CommentLikeColumn({
-    required this.comment,
-    required this.onTap,
-  });
+  const _CommentLikeColumn({required this.comment, required this.onTap});
 
   final CommentModel comment;
   final VoidCallback onTap;

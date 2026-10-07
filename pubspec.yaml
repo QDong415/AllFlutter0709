@@ -72,6 +72,7 @@ dependencies:
   just_audio: ^0.10.6
   geolocator: ^13.0.4
   package_info_plus: ^10.2.1
+  extended_text_field: ^17.0.0
 
 dev_dependencies:
   flutter_test:
@@ -105,6 +106,7 @@ flutter:
     - assets/icons/user/
     - assets/icons/topic/
     - assets/icons/me/
+    - assets/emoji/qq/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

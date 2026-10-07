@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_emoji_panel.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
@@ -17,6 +19,7 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:chat_bottom_container/chat_bottom_container.dart';
+import 'package:extended_text_field/extended_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,6 +42,7 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
 
   late final AnimationController _shakeController;
   late final ChatPanelHelper _panelHelper;
+  late final QqEmojiSpanBuilder _emojiSpanBuilder;
 
   @override
   void initState() {
@@ -54,6 +58,12 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
           setState(() {});
         }
       },
+    );
+    _emojiSpanBuilder = QqEmojiSpanBuilder(
+      mentionRanges: () => [
+        for (final rangeModel in _textController.mentionList)
+          (from: rangeModel.from, to: rangeModel.to),
+      ],
     );
     _textController.setOnAtTyped(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -119,6 +129,13 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
 
   void _insertEmoji(String emoji) {
     _textController.insertPlainText(emoji);
+    setState(() {});
+  }
+
+  void _deleteEmoji() {
+    _textController.value = QqEmojiEditing.deleteBackward(
+      _textController.value,
+    );
     setState(() {});
   }
 
@@ -249,11 +266,12 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                           child: Listener(
                             onPointerUp: (_) =>
                                 _panelHelper.handleInputViewOnPointerUp(),
-                            child: TextField(
+                            child: ExtendedTextField(
                               controller: _textController,
                               focusNode: _focusNode,
                               readOnly: _panelHelper.readOnly,
                               showCursor: true,
+                              specialTextSpanBuilder: _emojiSpanBuilder,
                               scrollPhysics:
                                   const NeverScrollableScrollPhysics(),
                               maxLines: null,
@@ -346,6 +364,7 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
               return ChatEmojiPanel(
                 height: keyboardHeight > 0 ? keyboardHeight : 280,
                 onEmojiTap: _insertEmoji,
+                onDelete: _deleteEmoji,
               );
             },
           ),

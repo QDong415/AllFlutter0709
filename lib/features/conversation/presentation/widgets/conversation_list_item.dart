@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
@@ -290,8 +291,18 @@ class _ConversationListTile extends StatelessWidget {
                         child: Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                summaryModel.latestMessage,
+                              child: Text.rich(
+                                TextSpan(
+                                  children: buildQqEmojiInlineSpans(
+                                    text: summaryModel.latestMessage,
+                                    style: const TextStyle(
+                                      color:
+                                          ConversationListItem._secondaryColor,
+                                      fontSize: 14,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(

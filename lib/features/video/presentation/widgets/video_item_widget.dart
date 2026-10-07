@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -53,8 +54,17 @@ class VideoItemWidget extends StatelessWidget {
                             colors: [Colors.transparent, Color(0xB3000000)],
                           ),
                         ),
-                        child: Text(
-                          video.content,
+                        child: Text.rich(
+                          TextSpan(
+                            children: buildQqEmojiInlineSpans(
+                              text: video.content,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

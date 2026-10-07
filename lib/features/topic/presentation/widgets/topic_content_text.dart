@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 final RegExp topicContentTokenPattern = RegExp(
-  r'(https?:\/\/[^\s]+)|(@[A-Za-z0-9_\-\u4e00-\u9fa5]+)|(#[^#\s]+#?)',
+  r'(https?:\/\/[^\s]+)|(@[A-Za-z0-9_\-\u4e00-\u9fa5]+)|(#[^#\s]+#?)|(\[[0-9A-Za-z\u4e00-\u9fa5]+\])',
 );
 
 /// 把正文拆成普通字和可点击的 @ / # / 链接。
@@ -12,30 +14,49 @@ List<InlineSpan> buildTopicContentSpans({
   required String text,
   required TextStyle highlightStyle,
   required List<TapGestureRecognizer> recognizers,
+  TextStyle? baseStyle,
   FutureOr<void> Function(String mention)? onMentionTap,
   FutureOr<void> Function(String hashtag)? onHashtagTap,
   FutureOr<void> Function(String url)? onLinkTap,
 }) {
   final spans = <InlineSpan>[];
+  final emojiSize = qqEmojiSizeOf(baseStyle ?? highlightStyle);
   var start = 0;
   for (final match in topicContentTokenPattern.allMatches(text)) {
     if (match.start > start) {
       spans.add(TextSpan(text: text.substring(start, match.start)));
     }
     final token = match.group(0)!;
-    spans.add(
-      TextSpan(
-        text: token,
-        style: highlightStyle,
-        recognizer: _contentRecognizer(
-          token: token,
-          recognizers: recognizers,
-          onMentionTap: onMentionTap,
-          onHashtagTap: onHashtagTap,
-          onLinkTap: onLinkTap,
+    final emojiAsset = QqEmojiCatalog.assetOf(token);
+    if (emojiAsset != null) {
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Image.asset(
+            emojiAsset,
+            width: emojiSize,
+            height: emojiSize,
+            gaplessPlayback: true,
+          ),
         ),
-      ),
-    );
+      );
+    } else if (token.startsWith('[') && token.endsWith(']')) {
+      spans.add(TextSpan(text: token));
+    } else {
+      spans.add(
+        TextSpan(
+          text: token,
+          style: highlightStyle,
+          recognizer: _contentRecognizer(
+            token: token,
+            recognizers: recognizers,
+            onMentionTap: onMentionTap,
+            onHashtagTap: onHashtagTap,
+            onLinkTap: onLinkTap,
+          ),
+        ),
+      );
+    }
     start = match.end;
   }
   if (start < text.length) {
@@ -137,7 +158,7 @@ class _TopicContentTextState extends State<TopicContentText> {
     return Text.rich(
       TextSpan(
         style: baseStyle.copyWith(color: baseStyle.color ?? Colors.black87),
-        children: _buildSpans(activeStyle),
+        children: _buildSpans(activeStyle, baseStyle),
       ),
       maxLines: widget.maxLines,
       overflow: widget.maxLines == null
@@ -146,10 +167,11 @@ class _TopicContentTextState extends State<TopicContentText> {
     );
   }
 
-  List<InlineSpan> _buildSpans(TextStyle activeStyle) {
+  List<InlineSpan> _buildSpans(TextStyle activeStyle, TextStyle baseStyle) {
     return buildTopicContentSpans(
       text: widget.text,
       highlightStyle: activeStyle,
+      baseStyle: baseStyle,
       recognizers: _recognizers,
       onMentionTap: widget.onMentionTap,
       onHashtagTap: widget.onHashtagTap,
