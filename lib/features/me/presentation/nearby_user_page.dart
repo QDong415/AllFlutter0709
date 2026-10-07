@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_match_user_item.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
@@ -129,33 +130,23 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
           errorText: '定位或加载失败，下拉重试',
           successWidget: ListView.separated(
             itemCount: _userModelList.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(
+              height: AppDimens.dividerThickness,
+              thickness: AppDimens.dividerThickness,
+              color: AppColors.divider,
+            ),
             itemBuilder: (context, index) {
               final userModel = _userModelList[index];
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TopicMatchUserItem(
-                    userModel: userModel,
-                    onTap: () => openUserDetailPage(
-                      context,
-                      userId: userModel.userId,
-                      name: userModel.name,
-                      avatar: userModel.avatar,
-                      userType: userModel.userType,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 72, bottom: 8),
-                    child: Text(
-                      _distanceText(userModel),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF999999),
-                      ),
-                    ),
-                  ),
-                ],
+              return TopicMatchUserItem(
+                userModel: userModel,
+                distanceText: _distanceText(userModel),
+                onTap: () => openUserDetailPage(
+                  context,
+                  userId: userModel.userId,
+                  name: userModel.name,
+                  avatar: userModel.avatar,
+                  userType: userModel.userType,
+                ),
               );
             },
           ),

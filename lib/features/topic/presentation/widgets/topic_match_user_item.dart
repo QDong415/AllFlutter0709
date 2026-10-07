@@ -11,10 +11,14 @@ class TopicMatchUserItem extends StatelessWidget {
     super.key,
     required this.userModel,
     required this.onTap,
+    this.distanceText,
   });
 
   final UserBaseModel userModel;
   final VoidCallback onTap;
+
+  /// 附加距离，例如附近的人列表。为空则不展示。
+  final String? distanceText;
 
   Color get _nameColor {
     if (userModel.vip == 2) {
@@ -111,6 +115,18 @@ class TopicMatchUserItem extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 13,
+                          color: Color(0xFF999999),
+                        ),
+                      ),
+                    ],
+                    if (distanceText != null && distanceText!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        distanceText!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
                           color: Color(0xFF999999),
                         ),
                       ),

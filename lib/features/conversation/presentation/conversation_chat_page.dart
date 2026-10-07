@@ -328,7 +328,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
       return;
     }
 
-    final imageFile = await _sendHelper.pickImageFile();
+    final imageFile = await _sendHelper.pickImageFile(context);
     if (imageFile == null) {
       return;
     }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,17 +21,27 @@ class SignupAvatarHelper {
   final Random _random = Random();
 
   /// 从相册选图并裁剪为 1:1，返回本地文件；取消则返回 null。
-  Future<File?> pickAndCropAvatar() async {
-    final pickedFile = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 90,
-    );
-    if (pickedFile == null) {
+  ///
+  /// Android 打开应用内相册。系统选择器在手机上会变成选文件。
+  Future<File?> pickAndCropAvatar(BuildContext context) async {
+    final File? sourceFile;
+    if (Platform.isAndroid) {
+      sourceFile = await const AlbumImagePickHelper().pickImage(
+        context: context,
+      );
+    } else {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
+      sourceFile = pickedFile == null ? null : File(pickedFile.path);
+    }
+    if (sourceFile == null) {
       return null;
     }
 
     final croppedFile = await ImageCropper().cropImage(
-      sourcePath: pickedFile.path,
+      sourcePath: sourceFile.path,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       compressFormat: ImageCompressFormat.jpg,
       compressQuality: 90,

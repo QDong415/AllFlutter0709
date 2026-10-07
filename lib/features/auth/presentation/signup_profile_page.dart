@@ -47,7 +47,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
     }
 
     FocusScope.of(context).unfocus();
-    final cropped = await _helper.pickAndCropAvatar();
+    final cropped = await _helper.pickAndCropAvatar(context);
     if (cropped == null || !mounted) {
       return;
     }

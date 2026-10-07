@@ -50,7 +50,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     final helper = SignupAvatarHelper(
       qiniuUploadService: ref.read(qiniuUploadServiceProvider),
     );
-    final file = await helper.pickAndCropAvatar();
+    final file = await helper.pickAndCropAvatar(context);
     if (file == null) {
       return;
     }

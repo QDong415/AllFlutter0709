@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,7 +13,12 @@ class ChatSendHelper {
   final ImagePicker _imagePicker;
 
   /// 从相册选择图片；取消时返回 null。
-  Future<File?> pickImageFile() async {
+  ///
+  /// Android 打开应用内相册。系统选择器在手机上会变成选文件。
+  Future<File?> pickImageFile(BuildContext context) async {
+    if (Platform.isAndroid) {
+      return const AlbumImagePickHelper().pickImage(context: context);
+    }
     final pickedFile = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 92,
