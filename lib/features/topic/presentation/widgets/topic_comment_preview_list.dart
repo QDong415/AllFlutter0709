@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -100,8 +101,15 @@ class _CommentPreviewText extends StatefulWidget {
 }
 
 class _CommentPreviewTextState extends State<_CommentPreviewText> {
-  static final RegExp _tokenPattern = RegExp(
-    r'(https?:\/\/[^\s]+)|(@[A-Za-z0-9_\-\u4e00-\u9fa5]+)|(#[^#\s]+#?)',
+  static const TextStyle _baseStyle = TextStyle(
+    color: Color(0xFF333333),
+    fontSize: 14,
+    height: 1.45,
+  );
+
+  static const TextStyle _highlightStyle = TextStyle(
+    color: Color(0xFF3399FF),
+    fontWeight: FontWeight.w500,
   );
 
   final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
@@ -126,14 +134,7 @@ class _CommentPreviewTextState extends State<_CommentPreviewText> {
   @override
   Widget build(BuildContext context) {
     return Text.rich(
-      TextSpan(
-        style: const TextStyle(
-          color: Color(0xFF333333),
-          fontSize: 14,
-          height: 1.45,
-        ),
-        children: _buildSpans(),
-      ),
+      TextSpan(style: _baseStyle, children: _buildSpans()),
     );
   }
 
@@ -178,55 +179,15 @@ class _CommentPreviewTextState extends State<_CommentPreviewText> {
   }
 
   List<InlineSpan> _buildContentSpans(String text) {
-    final spans = <InlineSpan>[];
-    var start = 0;
-
-    for (final match in _tokenPattern.allMatches(text)) {
-      if (match.start > start) {
-        spans.add(TextSpan(text: text.substring(start, match.start)));
-      }
-
-      final token = match.group(0)!;
-      spans.add(
-        TextSpan(
-          text: token,
-          style: const TextStyle(
-            color: Color(0xFF3399FF),
-            fontWeight: FontWeight.w500,
-          ),
-          recognizer: _createTokenRecognizer(token),
-        ),
-      );
-      start = match.end;
-    }
-
-    if (start < text.length) {
-      spans.add(TextSpan(text: text.substring(start)));
-    }
-
-    return spans;
-  }
-
-  TapGestureRecognizer? _createTokenRecognizer(String token) {
-    FutureOr<void> Function()? onTap;
-    if (token.startsWith('http://') || token.startsWith('https://')) {
-      final handler = widget.onLinkTap;
-      if (handler != null) {
-        onTap = () => handler(token);
-      }
-    } else if (token.startsWith('@')) {
-      final handler = widget.onMentionTap;
-      if (handler != null) {
-        onTap = () => handler(token.substring(1));
-      }
-    } else if (token.startsWith('#')) {
-      final handler = widget.onHashtagTap;
-      if (handler != null) {
-        onTap = () => handler(token);
-      }
-    }
-
-    return _createRecognizer(onTap);
+    return buildTopicContentSpans(
+      text: text,
+      highlightStyle: _highlightStyle,
+      baseStyle: _baseStyle,
+      recognizers: _recognizers,
+      onMentionTap: widget.onMentionTap,
+      onHashtagTap: widget.onHashtagTap,
+      onLinkTap: widget.onLinkTap,
+    );
   }
 
   TapGestureRecognizer? _createRecognizer(FutureOr<void> Function()? onTap) {

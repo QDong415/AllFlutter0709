@@ -210,13 +210,19 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     }
   }
 
-  /// Android 系统返回：键盘或面板打开时先收起。
+  /// Android 系统返回：录音、气泡菜单、表情/拓展面板，或系统键盘仍在屏幕上时先收起。
+  ///
+  /// 键盘已经收起后不再拦截。系统返回收起键盘时输入框焦点经常还在，
+  /// 若继续拦截，下一次返回只会取消焦点，页面要再按一次才退出。
   bool get _blockAndroidBack {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return false;
     }
     if (_voiceRecordHelper.isRecording || _bubbleMenuHelper.isVisible) {
       return true;
+    }
+    if (_panelHelper.currentPanelType == ChatPanelType.keyboard) {
+      return MediaQuery.viewInsetsOf(context).bottom > 0;
     }
     return _panelHelper.isPanelOrKeyboardVisible;
   }
@@ -481,7 +487,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
           _scrollHelper.scrollIfNewMessages(items.length);
         }
 
-        // Android 系统返回：键盘/面板/录音/气泡菜单开着时先收起，不直接退出会话。
+        // Android 系统返回：键盘还在、自定义面板、录音或气泡菜单开着时先收起。
         return PopScope(
           canPop: !_blockAndroidBack,
           onPopInvokedWithResult: (didPop, result) {

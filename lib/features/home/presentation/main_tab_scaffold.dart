@@ -1,6 +1,7 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
+import 'package:all_flutter0709/features/home/presentation/widgets/main_tab_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,8 +78,13 @@ class MainTabScaffold extends ConsumerWidget {
                   barHeight: _kTabBarHeight,
                   horizontalPadding: _kTabBarHorizontalPadding,
                   verticalPadding: _kTabBarVerticalPadding,
+                  // 图标行不要再内缩。默认左右各 4，文字按整行均分，
+                  // 第 1 个和第 4 个的中线会错开。
+                  tabPadding: EdgeInsets.zero,
                   iconSize: _kTabIconSize,
                   iconLabelSpacing: _kTabIconLabelSpacing,
+                  // 选中图标不要单独放大，否则会相对叠在玻璃外的文字上移。
+                  magnification: 1,
                   onTabSelected: (index) {
                     navigationShell.goBranch(
                       index,
@@ -89,13 +95,15 @@ class MainTabScaffold extends ConsumerWidget {
                       .map(
                         (tab) => GlassTab(
                           icon: _TabGlyph(
-                            icon: tab.icon,
+                            kind: tab.kind,
+                            filled: false,
                             badgeCount: tab == MainTabItem.conversation
                                 ? unreadCount
                                 : 0,
                           ),
                           activeIcon: _TabGlyph(
-                            icon: tab.selectedIcon,
+                            kind: tab.kind,
+                            filled: true,
                             badgeCount: tab == MainTabItem.conversation
                                 ? unreadCount
                                 : 0,
@@ -134,50 +142,34 @@ class MainTabScaffold extends ConsumerWidget {
   }
 }
 
-/// 主 Tab 项：图标映射自 Material Icons，风格接近 QKotlin 矢量 Tab。
+/// 主 Tab 项。
 enum MainTabItem {
-  topic(
-    label: '动态',
-    icon: Icons.home_outlined,
-    selectedIcon: Icons.home,
-  ),
-  video(
-    label: '视频',
-    icon: Icons.videocam_outlined,
-    selectedIcon: Icons.videocam,
-  ),
-  conversation(
-    label: '聊天',
-    icon: Icons.chat_bubble_outline,
-    selectedIcon: Icons.chat_bubble,
-  ),
-  me(
-    label: '我的',
-    icon: Icons.person_outline,
-    selectedIcon: Icons.person,
-  );
+  topic(label: '动态', kind: MainTabIconKind.topic),
+  video(label: '视频', kind: MainTabIconKind.video),
+  conversation(label: '聊天', kind: MainTabIconKind.conversation),
+  me(label: '我的', kind: MainTabIconKind.me);
 
-  const MainTabItem({
-    required this.label,
-    required this.icon,
-    required this.selectedIcon,
-  });
+  const MainTabItem({required this.label, required this.kind});
 
   final String label;
-  final IconData icon;
-  final IconData selectedIcon;
+  final MainTabIconKind kind;
 }
 
 /// 玻璃内只放图标，并预留下方标签高度，保证与叠层文字对齐。
 class _TabGlyph extends StatelessWidget {
-  const _TabGlyph({required this.icon, required this.badgeCount});
+  const _TabGlyph({
+    required this.kind,
+    required this.filled,
+    required this.badgeCount,
+  });
 
-  final IconData icon;
+  final MainTabIconKind kind;
+  final bool filled;
   final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
-    final iconWidget = Icon(icon, size: _kTabIconSize);
+    final iconWidget = MainTabIcon(kind: kind, filled: filled);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

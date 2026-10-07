@@ -24,10 +24,12 @@ class ChatPanelHelper {
   /// 表情面板时为 true，避免弹出系统键盘但保留光标。
   bool readOnly = false;
 
-  /// 软键盘或自定义面板是否正在显示。
+  /// 表情、拓展或键盘面板是否还占着底部。
+  ///
+  /// 只看面板类型，不看输入框焦点。Android 用返回键收起键盘后焦点经常还在，
+  /// 这时面板类型会被收成 [ChatPanelType.none]。
   bool get isPanelOrKeyboardVisible {
-    return inputFocusNode.hasFocus ||
-        controller.currentPanelType != ChatBottomPanelType.none;
+    return currentPanelType != ChatPanelType.none;
   }
 
   /// 收起键盘与自定义面板。
