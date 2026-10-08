@@ -16,7 +16,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
-import 'package:uuid/uuid.dart';
 
 final chatLocalDataSourceProvider = Provider<ChatLocalDataSource>((ref) {
   final dataSource = ChatLocalDataSource();
@@ -43,12 +42,14 @@ class ConversationRepository {
   static const _chatTypeSingle = 1;
   static const _messagePullApi = '/api/message/pull';
   static const _messageSendApi = '/api/chat/send';
+  static const _messageRecallApi = '/api/chat/recall';
   static const _modifyUserApi = '/api/user/modifyarray';
   static const _doRegActionApi = '/api/user/doregaction';
 
   final ChatLocalDataSource _localDataSource;
   final QiniuUploadService _qiniuUploadService;
-  final Uuid _uuid = const Uuid();
+  int _lastClientMessageMillis = 0;
+  int _clientMessageSeq = 0;
 
   Future<List<ConversationSummary>> getConversationList(String userId) {
     return _localDataSource.getConversationList(userId);
@@ -77,7 +78,7 @@ class ConversationRepository {
   /// 删除单条本地消息。
   Future<void> deleteMessage({
     required String userId,
-    required String clientMessageId,
+    required int clientMessageId,
     required int msgId,
   }) {
     return _localDataSource.deleteMessage(
@@ -121,7 +122,7 @@ class ConversationRepository {
       return 0;
     }
     final inserted = await _localDataSource.insertMessages(userId, messages);
-    ChatPushLog.d('message/pull 新写入 $inserted 条（含去重跳过）');
+    ChatPushLog.d('message/pull 处理 $inserted 条（新写入或撤回更新）');
     await ensureLocalVoiceFiles(userId, messages);
     return inserted;
   }
@@ -136,7 +137,7 @@ class ConversationRepository {
   }) async {
     final message = ConversationMessage(
       msgId: 0,
-      clientMessageId: _uuid.v4(),
+      clientMessageId: _nextClientMessageId(),
       conversationId: conversationId,
       otherUserId: conversationId,
       otherName: peerName,
@@ -165,7 +166,7 @@ class ConversationRepository {
     required ConversationMessage message,
   }) async {
     try {
-      await _sendChatMessage(
+      final msgId = await _sendChatMessage(
         targetId: message.conversationId,
         content: message.content,
         type: message.type,
@@ -173,11 +174,12 @@ class ConversationRepository {
         filename: message.filename,
         extend: message.extend,
         username: account.name,
+        clientMessageId: message.clientMessageId,
       );
-      await _localDataSource.updateMessageStatus(
-        account.userId,
-        message.clientMessageId,
-        ConversationMessageStatus.sent,
+      await _localDataSource.markMessageSent(
+        userId: account.userId,
+        clientMessageId: message.clientMessageId,
+        msgId: msgId,
       );
     } catch (_) {
       await _localDataSource.updateMessageStatus(
@@ -204,7 +206,7 @@ class ConversationRepository {
     );
     final message = ConversationMessage(
       msgId: 0,
-      clientMessageId: _uuid.v4(),
+      clientMessageId: _nextClientMessageId(),
       conversationId: conversationId,
       otherUserId: conversationId,
       otherName: peerName,
@@ -263,7 +265,7 @@ class ConversationRepository {
       );
 
       ChatSendLog.d('开始调用 /api/chat/send ...');
-      await _sendChatMessage(
+      final msgId = await _sendChatMessage(
         targetId: message.conversationId,
         content: message.content,
         type: message.type,
@@ -271,13 +273,14 @@ class ConversationRepository {
         filename: message.filename,
         extend: message.extend,
         username: account.name,
+        clientMessageId: message.clientMessageId,
       );
-      ChatSendLog.d('chat/send 成功');
+      ChatSendLog.d('chat/send 成功 msgid=$msgId');
 
-      await _localDataSource.updateMessageStatus(
-        account.userId,
-        message.clientMessageId,
-        ConversationMessageStatus.sent,
+      await _localDataSource.markMessageSent(
+        userId: account.userId,
+        clientMessageId: message.clientMessageId,
+        msgId: msgId,
       );
     } catch (error, stackTrace) {
       ChatSendLog.d('发图失败: $error');
@@ -304,7 +307,7 @@ class ConversationRepository {
   }) async {
     final message = ConversationMessage(
       msgId: 0,
-      clientMessageId: _uuid.v4(),
+      clientMessageId: _nextClientMessageId(),
       conversationId: conversationId,
       otherUserId: conversationId,
       otherName: peerName,
@@ -364,7 +367,7 @@ class ConversationRepository {
       );
 
       ChatSendLog.d('开始调用 /api/chat/send ...');
-      await _sendChatMessage(
+      final msgId = await _sendChatMessage(
         targetId: message.conversationId,
         content: message.content,
         type: message.type,
@@ -372,13 +375,14 @@ class ConversationRepository {
         filename: message.filename,
         extend: message.extend,
         username: account.name,
+        clientMessageId: message.clientMessageId,
       );
-      ChatSendLog.d('语音 chat/send 成功');
+      ChatSendLog.d('语音 chat/send 成功 msgid=$msgId');
 
-      await _localDataSource.updateMessageStatus(
-        account.userId,
-        message.clientMessageId,
-        ConversationMessageStatus.sent,
+      await _localDataSource.markMessageSent(
+        userId: account.userId,
+        clientMessageId: message.clientMessageId,
+        msgId: msgId,
       );
     } catch (error, stackTrace) {
       ChatSendLog.d('发语音失败: $error');
@@ -506,6 +510,20 @@ class ConversationRepository {
     }
   }
 
+  /// 撤回已发送的消息：先请求服务端清空原文，成功后再改本地行。
+  Future<void> recallMessage({
+    required String userId,
+    required int clientMessageId,
+    required int msgId,
+  }) async {
+    await _recallChatMessage(clientMessageId: clientMessageId, msgId: msgId);
+    await _localDataSource.markMessageRecalled(
+      userId: userId,
+      clientMessageId: clientMessageId,
+      msgId: msgId,
+    );
+  }
+
   /// 通知服务端执行注册后续动作（`POST /api/user/doregaction`）。
   Future<void> notifyDoRegAction() async {
     try {
@@ -516,7 +534,7 @@ class ConversationRepository {
     } catch (_) {}
   }
 
-  Future<void> _sendChatMessage({
+  Future<int> _sendChatMessage({
     required String targetId,
     required String content,
     required int type,
@@ -524,6 +542,7 @@ class ConversationRepository {
     required String filename,
     required String extend,
     required String username,
+    required int clientMessageId,
   }) async {
     ChatSendLog.d(
       'chat/send targetId=$targetId type=$type subtype=$subtype '
@@ -540,6 +559,7 @@ class ConversationRepository {
           'filename': filename,
           'extend': extend,
           'username': username,
+          'client_messageid': clientMessageId,
         },
       );
       final json = response.data;
@@ -548,20 +568,53 @@ class ConversationRepository {
         throw Exception('服务器返回为空');
       }
 
-      final result = ApiResponse<void>.fromJson(json);
+      final result = ApiResponse<int>.fromJson(json, _readMsgId);
       if (!result.success) {
         throw Exception(result.message.isEmpty ? '发送失败' : result.message);
       }
+      return result.data ?? 0;
     } catch (error) {
       ChatSendLog.d('chat/send 失败: $error');
       rethrow;
     }
   }
 
+  Future<void> _recallChatMessage({
+    required int clientMessageId,
+    required int msgId,
+  }) async {
+    final response = await HttpClient.instance.post(
+      _messageRecallApi,
+      data: {'msgid': '$msgId', 'client_messageid': clientMessageId},
+    );
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<void>.fromJson(json);
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '撤回失败' : result.message);
+    }
+  }
+
+  int _readMsgId(Object? dataJson) {
+    if (dataJson is! Map) {
+      return 0;
+    }
+    final raw = dataJson['msgid'];
+    if (raw is int) {
+      return raw;
+    }
+    if (raw is num) {
+      return raw.toInt();
+    }
+    return int.tryParse(raw?.toString() ?? '') ?? 0;
+  }
+
   /// 上传聊天图片到七牛，并把进度写入本地消息（1~95）。
   Future<void> _uploadImageToQiniu({
     required String userId,
-    required String clientMessageId,
+    required int clientMessageId,
     required String filePath,
     required String filename,
   }) async {
@@ -589,6 +642,20 @@ class ConversationRepository {
     final randomPart = DateTime.now().millisecondsSinceEpoch;
     final suffix = extension.isEmpty ? '.jpg' : extension;
     return '$conversationId-${_nowSeconds()}-$randomPart$suffix';
+  }
+
+  /// 同一发送用户下不重复的整数 id：毫秒时间戳乘 1000，再加上同毫秒序号。
+  ///
+  /// 结果放得进 MySQL BIGINT。不要求全局唯一，服务端按发送用户加这个 id 查询。
+  int _nextClientMessageId() {
+    final millis = DateTime.now().millisecondsSinceEpoch;
+    if (millis == _lastClientMessageMillis) {
+      _clientMessageSeq = (_clientMessageSeq + 1) % 1000;
+    } else {
+      _lastClientMessageMillis = millis;
+      _clientMessageSeq = 0;
+    }
+    return millis * 1000 + _clientMessageSeq;
   }
 
   int _nowSeconds() => DateTime.now().millisecondsSinceEpoch ~/ 1000;

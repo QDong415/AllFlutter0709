@@ -134,6 +134,15 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
               msgId: message.msgId,
             );
       },
+      recallMessage: (message) {
+        return ref
+            .read(conversationControllerProvider)
+            .recallMessage(
+              conversationId: widget.chatId,
+              clientMessageId: message.clientMessageId,
+              msgId: message.msgId,
+            );
+      },
       stopIfPlaying: (messageId) async {
         if (_voicePlayHelper.playingMessageId != messageId) {
           return;

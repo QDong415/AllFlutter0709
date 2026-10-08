@@ -78,6 +78,7 @@ class ChatMessageListView extends StatelessWidget {
               return ChatListItemWidget(
                 key: switch (item) {
                   TimeItem() => ValueKey('time_$index'),
+                  RecallItem(:final id) => ValueKey('recall_$id'),
                   MessageItem(:final id) => ValueKey('msg_$id'),
                 },
                 item: item,

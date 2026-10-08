@@ -206,7 +206,7 @@ class ConversationController extends ChangeNotifier {
   /// 删除单条本地消息并刷新当前会话列表。
   Future<void> deleteMessage({
     required String conversationId,
-    required String clientMessageId,
+    required int clientMessageId,
     required int msgId,
   }) async {
     final account = _ref.read(accountProvider);
@@ -222,17 +222,62 @@ class ConversationController extends ChangeNotifier {
 
     final currentState = _messagesState[conversationId];
     if (currentState is AsyncData<List<ConversationMessage>>) {
-      final clientId = clientMessageId.trim();
       _messagesState[conversationId] = AsyncValue.data(
-        currentState.value.where((message) {
-          if (clientId.isNotEmpty) {
-            return message.clientMessageId != clientId;
-          }
-          if (msgId != 0) {
-            return message.msgId != msgId;
-          }
-          return true;
-        }).toList(growable: false),
+        currentState.value
+            .where((message) {
+              if (clientMessageId > 0) {
+                return message.clientMessageId != clientMessageId;
+              }
+              if (msgId != 0) {
+                return message.msgId != msgId;
+              }
+              return true;
+            })
+            .toList(growable: false),
+      );
+      notifyListeners();
+    }
+    await refreshConversations();
+  }
+
+  /// 撤回自己发出的消息，成功后把当前列表里的那条改成居中提示。
+  Future<void> recallMessage({
+    required String conversationId,
+    required int clientMessageId,
+    required int msgId,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      throw Exception('请先登录');
+    }
+    final repository = _ref.read(conversationRepositoryProvider);
+    await repository.recallMessage(
+      userId: account.userId,
+      clientMessageId: clientMessageId,
+      msgId: msgId,
+    );
+
+    final currentState = _messagesState[conversationId];
+    if (currentState is AsyncData<List<ConversationMessage>>) {
+      _messagesState[conversationId] = AsyncValue.data(
+        currentState.value
+            .map((message) {
+              final matched = clientMessageId > 0
+                  ? message.clientMessageId == clientMessageId
+                  : msgId > 0 && message.msgId == msgId;
+              if (!matched) {
+                return message;
+              }
+              return message.copyWith(
+                messageType: ConversationMessageType.recall,
+                content: '',
+                filename: '',
+                extend: '',
+                localFilePath: '',
+                uploadProgress: 0,
+              );
+            })
+            .toList(growable: false),
       );
       notifyListeners();
     }

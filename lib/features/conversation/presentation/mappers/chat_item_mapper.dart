@@ -47,6 +47,8 @@ ChatItem _mapMessage(
   };
 
   switch (message.messageType) {
+    case ConversationMessageType.recall:
+      return RecallItem(id: message.itemId, label: message.recallLabel);
     case ConversationMessageType.image:
       final imageSize = message.imageSize;
       return ImageMessage(
@@ -55,6 +57,7 @@ ChatItem _mapMessage(
         clientMessageId: message.clientMessageId,
         direction: direction,
         avatarUrl: avatarUrl,
+        createTimeSeconds: message.createTimeSeconds,
         deliveryStatus: deliveryStatus,
         uploadProgress: message.uploadProgress,
         imageUrl: message.localFilePath.isEmpty ? message.imageUrl : null,
@@ -69,6 +72,7 @@ ChatItem _mapMessage(
         clientMessageId: message.clientMessageId,
         direction: direction,
         avatarUrl: avatarUrl,
+        createTimeSeconds: message.createTimeSeconds,
         deliveryStatus: deliveryStatus,
         seconds: message.voiceSeconds,
         audioPath: message.localFilePath.isEmpty ? null : message.localFilePath,
@@ -115,6 +119,7 @@ TextMessage _textMessage({
     clientMessageId: message.clientMessageId,
     direction: direction,
     avatarUrl: avatarUrl,
+    createTimeSeconds: message.createTimeSeconds,
     deliveryStatus: deliveryStatus,
     text: text,
   );

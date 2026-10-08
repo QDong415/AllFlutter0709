@@ -10,6 +10,14 @@ final class TimeItem extends ChatItem {
   final String label;
 }
 
+/// 撤回后的居中提示。它是一条真实消息，不是按时间间隔算出来的 [TimeItem]。
+final class RecallItem extends ChatItem {
+  const RecallItem({required this.id, required this.label});
+
+  final String id;
+  final String label;
+}
+
 /// 气泡左右方向。
 enum MessageDirection { left, right }
 
@@ -24,6 +32,7 @@ sealed class MessageItem extends ChatItem {
     required this.clientMessageId,
     required this.direction,
     required this.avatarUrl,
+    required this.createTimeSeconds,
     this.deliveryStatus = MessageDeliveryStatus.sent,
     this.uploadProgress = 0,
   });
@@ -34,11 +43,14 @@ sealed class MessageItem extends ChatItem {
   /// 服务端消息 id；发送中可能为 0。
   final int msgId;
 
-  /// 客户端消息 id；本地发送链路用它更新状态。
-  final String clientMessageId;
+  /// 发送方本地生成的消息 id。同一用户下不重复即可。
+  final int clientMessageId;
 
   final MessageDirection direction;
   final String avatarUrl;
+
+  /// 消息创建时间，秒。用来判断还能不能撤回。
+  final int createTimeSeconds;
   final MessageDeliveryStatus deliveryStatus;
   final int uploadProgress;
 
@@ -60,6 +72,7 @@ final class TextMessage extends MessageItem {
     required super.clientMessageId,
     required super.direction,
     required super.avatarUrl,
+    required super.createTimeSeconds,
     super.deliveryStatus,
     required this.text,
   });
@@ -75,6 +88,7 @@ final class VoiceMessage extends MessageItem {
     required super.clientMessageId,
     required super.direction,
     required super.avatarUrl,
+    required super.createTimeSeconds,
     super.deliveryStatus,
     required this.seconds,
     this.audioPath,
@@ -103,6 +117,7 @@ final class ImageMessage extends MessageItem {
     required super.clientMessageId,
     required super.direction,
     required super.avatarUrl,
+    required super.createTimeSeconds,
     super.deliveryStatus,
     super.uploadProgress,
     this.imageUrl,

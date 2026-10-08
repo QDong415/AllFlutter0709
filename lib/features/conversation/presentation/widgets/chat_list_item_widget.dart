@@ -6,7 +6,7 @@ import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_voice_bubble.dart';
 import 'package:flutter/material.dart';
 
-/// 聊天气泡列表单项：时间 tips 或一条消息行。
+/// 聊天气泡列表单项：时间 tips、撤回提示或一条消息行。
 class ChatListItemWidget extends StatelessWidget {
   const ChatListItemWidget({
     super.key,
@@ -24,7 +24,8 @@ class ChatListItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (item) {
-      final TimeItem timeItem => _TimeItemWidget(item: timeItem),
+      final TimeItem timeItem => _CenterLabel(label: timeItem.label),
+      final RecallItem recallItem => _CenterLabel(label: recallItem.label),
       final TextMessage textItem => ChatMessageRow(
         item: textItem,
         actions: actions,
@@ -54,10 +55,11 @@ class ChatListItemWidget extends StatelessWidget {
   }
 }
 
-class _TimeItemWidget extends StatelessWidget {
-  const _TimeItemWidget({required this.item});
+/// 水平居中的灰色提示，时间分隔和撤回共用。
+class _CenterLabel extends StatelessWidget {
+  const _CenterLabel({required this.label});
 
-  final TimeItem item;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +67,7 @@ class _TimeItemWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
         child: Text(
-          item.label,
+          label,
           style: const TextStyle(
             color: Color(0xFFB2B2B2),
             fontSize: 12,

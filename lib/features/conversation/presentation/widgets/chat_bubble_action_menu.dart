@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 气泡长按菜单：贴着气泡显示「复制」「删除」。
+/// 气泡长按菜单：贴着气泡显示「复制」「撤回」「删除」。
 class ChatBubbleActionMenu extends StatelessWidget {
   const ChatBubbleActionMenu({
     super.key,
@@ -8,6 +8,7 @@ class ChatBubbleActionMenu extends StatelessWidget {
     required this.onCopy,
     required this.onDelete,
     required this.onDismiss,
+    this.onRecall,
   });
 
   /// 相对外层 Stack 的气泡矩形。
@@ -16,26 +17,32 @@ class ChatBubbleActionMenu extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onDismiss;
 
-  static const double _menuWidth = 132;
+  /// 仅自己发出、且还在撤回时限内的消息会传入。
+  final VoidCallback? onRecall;
+
+  static const double _itemWidth = 66;
   static const double _menuHeight = 42;
   static const double _arrowSize = 7;
   static const double _gap = 6;
   static const Color _background = Color(0xE64C4C4C);
 
+  double get _menuWidth => onRecall == null ? _itemWidth * 2 : _itemWidth * 3;
+
   @override
   Widget build(BuildContext context) {
+    final menuWidth = _menuWidth;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final showAbove =
-            anchorRect.top >= _menuHeight + _arrowSize + _gap + 8;
+        final showAbove = anchorRect.top >= _menuHeight + _arrowSize + _gap + 8;
         final menuTop = showAbove
             ? anchorRect.top - _gap - _arrowSize - _menuHeight
             : anchorRect.bottom + _gap;
-        var menuLeft = anchorRect.center.dx - _menuWidth / 2;
-        menuLeft = menuLeft.clamp(8.0, constraints.maxWidth - _menuWidth - 8);
+        var menuLeft = anchorRect.center.dx - menuWidth / 2;
+        final maxLeft = constraints.maxWidth - menuWidth - 8;
+        menuLeft = menuLeft.clamp(8.0, maxLeft < 8 ? 8.0 : maxLeft);
         final arrowLeft = (anchorRect.center.dx - menuLeft - _arrowSize).clamp(
           16.0,
-          _menuWidth - _arrowSize - 16,
+          menuWidth - _arrowSize - 16,
         );
 
         return Stack(
@@ -49,19 +56,19 @@ class ChatBubbleActionMenu extends StatelessWidget {
             Positioned(
               left: menuLeft,
               top: menuTop,
-              width: _menuWidth,
+              width: menuWidth,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (!showAbove)
                     _Arrow(left: arrowLeft, pointUp: true, color: _background),
-                  _MenuBar(onCopy: onCopy, onDelete: onDelete),
+                  _MenuBar(
+                    onCopy: onCopy,
+                    onDelete: onDelete,
+                    onRecall: onRecall,
+                  ),
                   if (showAbove)
-                    _Arrow(
-                      left: arrowLeft,
-                      pointUp: false,
-                      color: _background,
-                    ),
+                    _Arrow(left: arrowLeft, pointUp: false, color: _background),
                 ],
               ),
             ),
@@ -73,10 +80,11 @@ class ChatBubbleActionMenu extends StatelessWidget {
 }
 
 class _MenuBar extends StatelessWidget {
-  const _MenuBar({required this.onCopy, required this.onDelete});
+  const _MenuBar({required this.onCopy, required this.onDelete, this.onRecall});
 
   final VoidCallback onCopy;
   final VoidCallback onDelete;
+  final VoidCallback? onRecall;
 
   @override
   Widget build(BuildContext context) {
@@ -90,14 +98,27 @@ class _MenuBar extends StatelessWidget {
         child: Row(
           children: [
             _MenuItem(label: '复制', onTap: onCopy),
-            const ColoredBox(
-              color: Color(0x33FFFFFF),
-              child: SizedBox(width: 1, height: 18),
-            ),
+            const _MenuDivider(),
+            if (onRecall != null) ...[
+              _MenuItem(label: '撤回', onTap: onRecall!),
+              const _MenuDivider(),
+            ],
             _MenuItem(label: '删除', onTap: onDelete),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MenuDivider extends StatelessWidget {
+  const _MenuDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0x33FFFFFF),
+      child: SizedBox(width: 1, height: 18),
     );
   }
 }

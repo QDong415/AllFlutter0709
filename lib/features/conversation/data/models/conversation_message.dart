@@ -8,7 +8,10 @@ enum ConversationMessageType {
   image(2),
   voice(3),
   callAudio(10),
-  callVideo(11);
+  callVideo(11),
+
+  /// 撤回后的占位。正文已清空，界面显示居中提示。
+  recall(88);
 
   const ConversationMessageType(this.subtype);
 
@@ -64,7 +67,9 @@ class ConversationMessage {
 
   final int? localId;
   final int msgId;
-  final String clientMessageId;
+
+  /// 发送方本地生成的消息 id。同一用户下不重复即可，不是全局唯一。
+  final int clientMessageId;
   final String conversationId;
   final String otherUserId;
   final String otherName;
@@ -87,11 +92,19 @@ class ConversationMessage {
   /// 对方是否为 AI 账号。
   bool get isAi => UserType.isAi(otherUserType);
 
+  /// 发送后允许撤回的秒数，与服务端 `CHAT_RECALL_WINDOW_SECONDS` 一致。
+  static const recallWindowSeconds = 120;
+
+  /// 是否为撤回占位。
+  bool get isRecall => messageType == ConversationMessageType.recall;
+
+  /// 撤回提示文案。发送方和接收方不同。
+  String get recallLabel => isSender ? '你撤回了一条消息' : '对方撤回了一条消息';
+
   /// 展示层稳定 id：优先客户端 id，其次服务端 msgid，再次本地 dbid。
   String get itemId {
-    final clientId = clientMessageId.trim();
-    if (clientId.isNotEmpty) {
-      return clientId;
+    if (clientMessageId > 0) {
+      return '$clientMessageId';
     }
     if (msgId != 0) {
       return 'msg_$msgId';
@@ -236,6 +249,8 @@ class ConversationMessage {
         return '[语音通话]';
       case ConversationMessageType.callVideo:
         return '[视频通话]';
+      case ConversationMessageType.recall:
+        return recallLabel;
       case ConversationMessageType.text:
         return content;
     }
@@ -244,7 +259,7 @@ class ConversationMessage {
   ConversationMessage copyWith({
     int? localId,
     int? msgId,
-    String? clientMessageId,
+    int? clientMessageId,
     String? conversationId,
     String? otherUserId,
     String? otherName,
@@ -314,7 +329,7 @@ class ConversationMessage {
     return ConversationMessage(
       localId: _readNullableInt(map['dbid']),
       msgId: _readInt(map['msgid']),
-      clientMessageId: _readString(map['client_messageid']),
+      clientMessageId: _readInt(map['client_messageid']),
       conversationId: _readString(map['targetid']),
       otherUserId: _readString(map['other_userid']),
       otherName: _readString(map['other_name']),
@@ -347,7 +362,7 @@ class ConversationMessage {
         : rawExtend;
     return ConversationMessage(
       msgId: _readInt(json['msgid']),
-      clientMessageId: _readString(json['client_messageid']),
+      clientMessageId: _readInt(json['client_messageid']),
       conversationId: type == 1 && otherUserId.isNotEmpty
           ? otherUserId
           : targetId,

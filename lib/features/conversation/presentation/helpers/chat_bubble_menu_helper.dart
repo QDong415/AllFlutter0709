@@ -1,16 +1,18 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bubble_action_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// 气泡长按：选中高亮、菜单定位、复制与删除。
+/// 气泡长按：选中高亮、菜单定位、复制、撤回与删除。
 class ChatBubbleMenuHelper {
   ChatBubbleMenuHelper({
     required this.onUpdate,
     required this.deleteMessage,
+    required this.recallMessage,
     this.stopIfPlaying,
     this.onTip,
   });
@@ -20,6 +22,9 @@ class ChatBubbleMenuHelper {
 
   /// 删除本地消息。
   final Future<void> Function(MessageItem message) deleteMessage;
+
+  /// 撤回自己发出的消息。
+  final Future<void> Function(MessageItem message) recallMessage;
 
   /// 若正在播放该语音条则停止。
   final Future<void> Function(String messageId)? stopIfPlaying;
@@ -33,6 +38,7 @@ class ChatBubbleMenuHelper {
   String? _selectedMessageId;
   Rect? _menuAnchorRect;
   MessageItem? _menuMessage;
+  bool _canRecall = false;
 
   /// 当前高亮气泡 id；无菜单时为 null。
   String? get selectedMessageId => _selectedMessageId;
@@ -52,6 +58,7 @@ class ChatBubbleMenuHelper {
     _selectedMessageId = details.item.id;
     _menuAnchorRect = anchorRect;
     _menuMessage = details.item;
+    _canRecall = _canRecallMessage(details.item);
     onUpdate();
   }
 
@@ -63,6 +70,7 @@ class ChatBubbleMenuHelper {
     _selectedMessageId = null;
     _menuAnchorRect = null;
     _menuMessage = null;
+    _canRecall = false;
     onUpdate();
   }
 
@@ -92,6 +100,21 @@ class ChatBubbleMenuHelper {
     }
   }
 
+  /// 撤回当前选中气泡。
+  Future<void> recallSelected() async {
+    final message = _menuMessage;
+    hide();
+    if (message == null) {
+      return;
+    }
+    await stopIfPlaying?.call(message.id);
+    try {
+      await recallMessage(message);
+    } catch (error) {
+      onTip?.call(_tipFromError(error));
+    }
+  }
+
   /// 菜单浮层；未显示时返回 null。
   Widget? buildOverlay() {
     final anchorRect = _menuAnchorRect;
@@ -104,12 +127,37 @@ class ChatBubbleMenuHelper {
         onCopy: () {
           unawaited(copySelected());
         },
+        onRecall: _canRecall
+            ? () {
+                unawaited(recallSelected());
+              }
+            : null,
         onDelete: () {
           unawaited(deleteSelected());
         },
         onDismiss: hide,
       ),
     );
+  }
+
+  bool _canRecallMessage(MessageItem item) {
+    if (!item.isRight || item.deliveryStatus != MessageDeliveryStatus.sent) {
+      return false;
+    }
+    if (item.msgId <= 0 && item.clientMessageId <= 0) {
+      return false;
+    }
+    final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return nowSeconds - item.createTimeSeconds <=
+        ConversationMessage.recallWindowSeconds;
+  }
+
+  String _tipFromError(Object error) {
+    final text = error.toString().replaceFirst('Exception: ', '');
+    if (text.isEmpty || text.startsWith('DioException')) {
+      return '撤回失败';
+    }
+    return text;
   }
 
   String _copyTextOf(MessageItem item) {

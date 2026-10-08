@@ -30,7 +30,7 @@ class ChatLocalDataSource {
             dbid INTEGER PRIMARY KEY AUTOINCREMENT,
             userid TEXT NOT NULL,
             msgid INTEGER DEFAULT 0,
-            client_messageid TEXT DEFAULT '',
+            client_messageid INTEGER DEFAULT 0,
             targetid TEXT NOT NULL,
             other_userid TEXT DEFAULT '',
             other_name TEXT DEFAULT '',
@@ -187,6 +187,7 @@ class ChatLocalDataSource {
     await db.insert(_chatTable, message.toDbMap(userId: userId));
   }
 
+  /// 写入 pull 下来的消息。subtype 88 若本地已有同一条，则就地改成撤回，不另插一行。
   Future<int> insertMessages(
     String userId,
     List<ConversationMessage> messages,
@@ -195,25 +196,79 @@ class ChatLocalDataSource {
       return 0;
     }
 
-    var inserted = 0;
+    var changed = 0;
     final db = await database;
     await db.transaction((txn) async {
       for (final message in messages) {
+        if (message.messageType == ConversationMessageType.recall) {
+          final updated = await _rewriteExistingAsRecall(
+            txn,
+            userId,
+            msgId: message.msgId,
+            clientMessageId: message.clientMessageId,
+          );
+          if (updated) {
+            changed++;
+            continue;
+          }
+        }
         if (await _messageExists(userId, message, txn)) {
           continue;
         }
         await txn.insert(_chatTable, message.toDbMap(userId: userId));
-        inserted++;
+        changed++;
       }
     });
-    return inserted;
+    return changed;
+  }
+
+  /// 发送成功后写入服务端 msgid，并标为已发送。
+  Future<void> markMessageSent({
+    required String userId,
+    required int clientMessageId,
+    required int msgId,
+  }) async {
+    if (clientMessageId <= 0) {
+      return;
+    }
+    final values = <String, Object?>{
+      'state': ConversationMessageStatus.sent.code,
+    };
+    if (msgId > 0) {
+      values['msgid'] = msgId;
+    }
+    final db = await database;
+    await db.update(
+      _chatTable,
+      values,
+      where: 'userid = ? AND client_messageid = ?',
+      whereArgs: [userId, clientMessageId],
+    );
+  }
+
+  /// 把本地一条消息改成撤回占位，并清掉正文和本地文件路径。
+  Future<void> markMessageRecalled({
+    required String userId,
+    required int clientMessageId,
+    required int msgId,
+  }) async {
+    final db = await database;
+    await _rewriteExistingAsRecall(
+      db,
+      userId,
+      msgId: msgId,
+      clientMessageId: clientMessageId,
+    );
   }
 
   Future<void> updateMessageStatus(
     String userId,
-    String clientMessageId,
+    int clientMessageId,
     ConversationMessageStatus status,
   ) async {
+    if (clientMessageId <= 0) {
+      return;
+    }
     final db = await database;
     await db.update(
       _chatTable,
@@ -243,9 +298,12 @@ class ChatLocalDataSource {
 
   Future<void> updateUploadProgress(
     String userId,
-    String clientMessageId,
+    int clientMessageId,
     int progress,
   ) async {
+    if (clientMessageId <= 0) {
+      return;
+    }
     final db = await database;
     await db.update(
       _chatTable,
@@ -260,7 +318,7 @@ class ChatLocalDataSource {
     required String userId,
     required String localFilePath,
     int msgId = 0,
-    String clientMessageId = '',
+    int clientMessageId = 0,
   }) async {
     final db = await database;
     if (msgId > 0) {
@@ -272,7 +330,7 @@ class ChatLocalDataSource {
       );
       return;
     }
-    if (clientMessageId.trim().isEmpty) {
+    if (clientMessageId <= 0) {
       return;
     }
     await db.update(
@@ -327,16 +385,15 @@ class ChatLocalDataSource {
   /// 删除单条本地消息，优先 [clientMessageId]，否则 [msgId]。
   Future<void> deleteMessage({
     required String userId,
-    required String clientMessageId,
+    required int clientMessageId,
     required int msgId,
   }) async {
     final db = await database;
-    final clientId = clientMessageId.trim();
-    if (clientId.isNotEmpty) {
+    if (clientMessageId > 0) {
       await db.delete(
         _chatTable,
         where: 'userid = ? AND client_messageid = ?',
-        whereArgs: [userId, clientId],
+        whereArgs: [userId, clientMessageId],
       );
       return;
     }
@@ -352,8 +409,11 @@ class ChatLocalDataSource {
 
   Future<ConversationMessage?> findMessageByClientId(
     String userId,
-    String clientMessageId,
+    int clientMessageId,
   ) async {
+    if (clientMessageId <= 0) {
+      return null;
+    }
     final db = await database;
     final rows = await db.query(
       _chatTable,
@@ -366,6 +426,44 @@ class ChatLocalDataSource {
       return null;
     }
     return ConversationMessage.fromDbMap(rows.first);
+  }
+
+  /// 按 msgid，其次 client_messageid，把已有行改成撤回。命中则返回 true。
+  Future<bool> _rewriteExistingAsRecall(
+    DatabaseExecutor executor,
+    String userId, {
+    required int msgId,
+    required int clientMessageId,
+  }) async {
+    final values = <String, Object?>{
+      'subtype': ConversationMessageType.recall.subtype,
+      'content': '',
+      'filename': '',
+      'extend': '',
+      'local_file_path': '',
+      'upload_progress': 0,
+    };
+    if (msgId > 0) {
+      final count = await executor.update(
+        _chatTable,
+        values,
+        where: 'userid = ? AND msgid = ?',
+        whereArgs: [userId, msgId],
+      );
+      if (count > 0) {
+        return true;
+      }
+    }
+    if (clientMessageId <= 0) {
+      return false;
+    }
+    final count = await executor.update(
+      _chatTable,
+      values,
+      where: 'userid = ? AND client_messageid = ?',
+      whereArgs: [userId, clientMessageId],
+    );
+    return count > 0;
   }
 
   Future<bool> _messageExists(
@@ -386,7 +484,7 @@ class ChatLocalDataSource {
       }
     }
 
-    if (message.clientMessageId.trim().isNotEmpty) {
+    if (message.clientMessageId > 0) {
       final rows = await executor.query(
         _chatTable,
         columns: const ['dbid'],
