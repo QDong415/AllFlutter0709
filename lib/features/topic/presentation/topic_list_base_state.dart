@@ -8,6 +8,7 @@ import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_like_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_share_sheet.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
@@ -20,6 +21,7 @@ import 'package:go_router/go_router.dart';
 import 'package:inview_notifier_list/inview_notifier_list.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 动态列表页通用基类：刷新 / 加载更多 / 点赞 / 分享等。
 ///
@@ -36,6 +38,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   bool _hasMore = true;
   PageState _pageState = PageState.loading;
   StreamSubscription<Tid>? _deletedTidSubscription;
+  StreamSubscription<TopicLikeEvent>? _topicLikeSubscription;
 
   /// 从详情等页面返回后递增，驱动列表内视频重新同步播放。
   int _videoResumeNonce = 0;
@@ -83,12 +86,16 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     _deletedTidSubscription = TopicDeleteHelper.controller.stream.listen(
       _removeTopicByTid,
     );
+    _topicLikeSubscription = TopicLikeHelper.controller.stream.listen(
+      _onTopicLiked,
+    );
     requestList(isRefresh: true);
   }
 
   @override
   void dispose() {
     _deletedTidSubscription?.cancel();
+    _topicLikeSubscription?.cancel();
     super.dispose();
   }
 
@@ -127,9 +134,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
         });
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppToast.show(context, e.toString());
     }
   }
 
@@ -146,10 +151,25 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     await requestList(isRefresh: false);
   }
 
-  void _replaceTopic(TopicModel topic) {
-    final index = _topics.indexWhere((item) => item.tid == topic.tid);
-    if (index == -1) return;
-    _topics[index] = topic;
+  void _onTopicLiked(TopicLikeEvent event) {
+    if (!mounted) {
+      return;
+    }
+    final index = _topics.indexWhere((item) => item.tid == event.tid);
+    if (index == -1) {
+      return;
+    }
+    final topicModel = _topics[index];
+    if (topicModel.isLiked == event.isLiked &&
+        topicModel.likeCount == event.likeCount) {
+      return;
+    }
+    setState(() {
+      _topics[index] = topicModel.copyWith(
+        isLiked: event.isLiked,
+        likeCount: event.likeCount,
+      );
+    });
   }
 
   void _removeTopicByTid(Tid tid) {
@@ -329,9 +349,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('分享失败: $e')));
+      AppToast.show(context, '分享失败: $e');
     }
   }
 
@@ -379,26 +397,20 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
   @override
   void onHashtagTap(TopicModel topic, String hashtag) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('点击了 $hashtag')));
+    AppToast.show(context, '点击了 $hashtag');
   }
 
   @override
   Future<void> onLinkTap(TopicModel topic, String url) async {
     final uri = Uri.tryParse(url);
     if (uri == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('链接格式不正确')));
+      AppToast.show(context, '链接格式不正确');
       return;
     }
 
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('无法打开链接')));
+      AppToast.show(context, '无法打开链接');
     }
   }
 
@@ -407,34 +419,16 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     if (!context.ensureLoggedIn()) return;
     if (_likingTopicIds.contains(topic.tid)) return;
 
-    final nextIsLiked = !topic.isLiked;
-    final nextLikeCount = nextIsLiked
-        ? topic.likeCount + 1
-        : (topic.likeCount > 0 ? topic.likeCount - 1 : 0);
-    final updatedTopic = topic.copyWith(
-      isLiked: nextIsLiked,
-      likeCount: nextLikeCount,
-    );
-
     _likingTopicIds.add(topic.tid);
-    setState(() {
-      _replaceTopic(updatedTopic);
-    });
-
     try {
-      await topicRepository.likeTopic(
+      await TopicLikeHelper.toggle(
         tid: topic.tid,
         isLiked: topic.isLiked,
         likeCount: topic.likeCount,
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _replaceTopic(topic);
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppToast.show(context, e.toString());
     } finally {
       _likingTopicIds.remove(topic.tid);
     }
@@ -451,9 +445,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppToast.show(context, e.toString());
     }
   }
 

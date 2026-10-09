@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 用户个人主页：资料 Header + 该用户动态列表。
 class UserDetailPage extends StatefulWidget {
@@ -35,6 +36,7 @@ class UserDetailPage extends StatefulWidget {
   final String userId;
   final String? initialName;
   final String? initialAvatar;
+
   /// 预填账号类型，接口返回前即可展示 AI 标签。
   final int? initialUserType;
 
@@ -127,9 +129,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppToast.show(context, e.toString());
     }
   }
 
@@ -238,9 +238,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isFollowLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppToast.show(context, e.toString());
     }
   }
 
@@ -249,9 +247,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   }
 
   void _onMoreTap() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('更多功能开发中')));
+    AppToast.show(context, '更多功能开发中');
   }
 
   Widget _buildScrollBody(ScrollPhysics physics) {

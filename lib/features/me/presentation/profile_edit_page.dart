@@ -9,6 +9,7 @@ import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 编辑资料，对齐 Android「我的资料」页。
 class ProfileEditPage extends ConsumerStatefulWidget {
@@ -35,9 +36,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
           .setAccount(mergeModifiedAccount(current, serverJson));
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
+        AppToast.show(context, '$error');
       }
     } finally {
       if (mounted) {
@@ -59,9 +58,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       await _save(<String, String>{'avatar': key});
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
+        AppToast.show(context, '$error');
       }
     }
   }
@@ -119,9 +116,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       provinceList = await _userRepository.getCityList();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
+        AppToast.show(context, '$error');
       }
       return;
     }

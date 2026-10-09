@@ -11,6 +11,7 @@ import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 附近的人，对齐 Android `MineNearMemberActivity`。
 class NearbyUserPage extends StatefulWidget {
@@ -50,9 +51,7 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _pageState = PageState.error);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$error')));
+      AppToast.show(context, '$error');
     }
   }
 
@@ -91,9 +90,7 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
     } catch (error) {
       if (!mounted) return;
       if (_userModelList.isEmpty) setState(() => _pageState = PageState.error);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$error')));
+      AppToast.show(context, '$error');
     }
   }
 

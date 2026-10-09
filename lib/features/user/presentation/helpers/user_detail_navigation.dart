@@ -2,6 +2,7 @@ import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 打开用户主页时的预填参数（对齐 Android Intent extras）。
 class UserDetailArgs {
@@ -68,8 +69,6 @@ Future<void> openUserDetailByName(
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(error.toString())));
+    AppToast.show(context, error.toString());
   }
 }

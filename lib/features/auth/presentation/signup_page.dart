@@ -6,6 +6,7 @@ import 'package:all_flutter0709/features/auth/presentation/models/signup_args.da
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 注册第一步：手机号 + 验证码 + 密码。
 class SignupPage extends ConsumerStatefulWidget {
@@ -37,9 +38,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   Future<void> _requestSmsCode() async {
     final mobile = _mobileController.text.trim();
     if (mobile.length != 11) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('请输入 11 位手机号')));
+      AppToast.show(context, '请输入 11 位手机号');
       return;
     }
     if (_countdownSeconds > 0 || _isRequestingCode) {
@@ -52,24 +51,18 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     });
 
     try {
-      await ref
-          .read(accountRepositoryProvider)
-          .requestSmsCode(mobile: mobile);
+      await ref.read(accountRepositoryProvider).requestSmsCode(mobile: mobile);
       if (!mounted) {
         return;
       }
       _startCountdown();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('验证码已发送')));
+      AppToast.show(context, '验证码已发送');
     } catch (error) {
       if (!mounted) {
         return;
       }
       final message = error.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      AppToast.show(context, message);
     } finally {
       if (mounted) {
         setState(() {
@@ -214,10 +207,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: _goNext,
-                      child: const Text('下一步'),
-                    ),
+                    FilledButton(onPressed: _goNext, child: const Text('下一步')),
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () => context.go(AppRoutes.login),

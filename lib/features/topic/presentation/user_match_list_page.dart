@@ -9,6 +9,7 @@ import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_n
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 动态首页「匹配」用户列表，对齐 Android `UserFragment`。
 class UserMatchListPage extends StatefulWidget {
@@ -82,9 +83,7 @@ class _UserMatchListPageState extends State<UserMatchListPage>
           _pageState = PageState.error;
         });
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      AppToast.show(context, error.toString());
     }
   }
 

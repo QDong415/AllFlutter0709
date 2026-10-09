@@ -5,6 +5,7 @@ import 'package:all_flutter0709/core/bridge/native_event_model.dart';
 import 'package:all_flutter0709/core/bridge/native_events.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 「我的」页原生 Bridge 联调面板：ping / 设备信息 / 请求原生推事件。
 class BridgeDebugPanel extends StatefulWidget {
@@ -175,8 +176,6 @@ class _BridgeDebugPanelState extends State<BridgeDebugPanel> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context, message);
   }
 }

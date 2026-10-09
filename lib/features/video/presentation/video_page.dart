@@ -10,6 +10,7 @@ import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({super.key});
@@ -62,9 +63,7 @@ class _VideoPageState extends State<VideoPage> {
         });
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppToast.show(context, e.toString());
     }
   }
 
@@ -78,21 +77,21 @@ class _VideoPageState extends State<VideoPage> {
   }
 
   void _openDetail(VideoModel video) {
-    context.push(
-      '${AppRoutes.video}/detail/${video.videoId}',
-      extra: video,
-    );
+    context.push('${AppRoutes.video}/detail/${video.videoId}', extra: video);
   }
 
   void _showUploadPlaceholder() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('上传功能暂未实现')));
+    AppToast.show(context, '上传功能暂未实现');
   }
 
   Widget _buildListView() {
     return MasonryGridView.builder(
-      padding: const EdgeInsets.fromLTRB(8, 10, 8, AppDimens.glassTabBarContentInset),
+      padding: const EdgeInsets.fromLTRB(
+        8,
+        10,
+        8,
+        AppDimens.glassTabBarContentInset,
+      ),
       gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
       ),

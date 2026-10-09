@@ -8,6 +8,7 @@ import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_display_model.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_model.dart';
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_list_local_helper.dart';
+import 'package:all_flutter0709/features/comment/presentation/helpers/comment_long_press_menu.dart';
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_send_helper.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_bottom_input_bar.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item.dart';
@@ -19,11 +20,14 @@ import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_mention_helper.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:chat_bottom_container/chat_bottom_container.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 class CommentSection extends ConsumerStatefulWidget {
   const CommentSection({
@@ -425,6 +429,84 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     }
   }
 
+  Future<void> _handleCommentLongPress(
+    BuildContext anchorContext,
+    CommentModel commentModel,
+  ) async {
+    final currentUserId = context.currentUserId;
+    final isCommentOwner =
+        currentUserId.isNotEmpty && currentUserId == commentModel.userId;
+    final isFeedAuthor =
+        currentUserId.isNotEmpty && currentUserId == widget.authorUserId;
+    final action = await CommentLongPressMenu.show(
+      anchorContext: anchorContext,
+      canDelete: isCommentOwner || isFeedAuthor,
+    );
+    if (!mounted || action == null) return;
+
+    switch (action) {
+      case CommentLongPressAction.copy:
+        await Clipboard.setData(ClipboardData(text: commentModel.content));
+        _showSnack('复制成功');
+      case CommentLongPressAction.delete:
+        await _deleteComment(commentModel);
+      case CommentLongPressAction.report:
+        openWarningReportPage(context);
+      case CommentLongPressAction.reply:
+        _handleCommentTap(commentModel);
+    }
+  }
+
+  Future<void> _deleteComment(CommentModel commentModel) async {
+    if (!context.ensureLoggedIn()) return;
+    if (commentModel.cid.isEmpty) {
+      _showSnack('评论发送中，请稍后再试');
+      return;
+    }
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        useRootNavigator: true,
+        builder: (dialogContext) {
+          return const PopScope(
+            canPop: false,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        },
+      ),
+    );
+
+    Object? error;
+    var deletedCid = commentModel.cid;
+    try {
+      deletedCid = await _repository.deleteComment(cid: commentModel.cid);
+    } catch (caught) {
+      error = caught;
+    } finally {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+    if (!mounted) return;
+    if (error != null) {
+      _showSnack(error.toString());
+      return;
+    }
+
+    setState(() {
+      final removedCount = _listLocalHelper.removeDeletedComment(
+        _items,
+        deletedCid,
+      );
+      _syncCommentCount(_commentCount - removedCount);
+      _replyTarget = null;
+      _inputController.clearContent();
+    });
+    _panelHelper.hidePanel();
+  }
+
   void _handleCommentTap(CommentModel comment) {
     final currentUserId = context.currentUserId;
     final isReplyToCurrentUser =
@@ -492,9 +574,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
-    );
+    AppToast.show(context, message.replaceFirst('Exception: ', ''));
   }
 
   @override
@@ -561,6 +641,11 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                     authorUserId: widget.authorUserId,
                     displayType: item.displayType!,
                     onTap: () => _handleCommentTap(item.comment!),
+                    onLongPress: (anchorContext) {
+                      unawaited(
+                        _handleCommentLongPress(anchorContext, item.comment!),
+                      );
+                    },
                     onLikeTap: () => _toggleCommentLike(item.comment!),
                     onAvatarTap: () {
                       final comment = item.comment!;

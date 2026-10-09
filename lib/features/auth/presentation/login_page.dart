@@ -3,6 +3,7 @@ import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -52,9 +53,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
 
       final message = error.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      AppToast.show(context, message);
     } finally {
       if (mounted) {
         setState(() {

@@ -8,6 +8,7 @@ import 'package:all_flutter0709/features/comment/presentation/widgets/comment_se
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_like_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
@@ -21,6 +22,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 class TopicDetailPage extends ConsumerStatefulWidget {
   const TopicDetailPage({super.key, this.tid, this.topicModel})
@@ -41,6 +43,7 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
   bool _isLiking = false;
   String? _errorText;
   StreamSubscription<Tid>? _deletedTidSubscription;
+  StreamSubscription<TopicLikeEvent>? _topicLikeSubscription;
 
   String get _resolvedTid =>
       (widget.topicModel?.tid ?? widget.tid ?? '').trim();
@@ -50,6 +53,9 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
     super.initState();
     _deletedTidSubscription = TopicDeleteHelper.controller.stream.listen(
       _onTopicDeleted,
+    );
+    _topicLikeSubscription = TopicLikeHelper.controller.stream.listen(
+      _onTopicLiked,
     );
     _topicModel = widget.topicModel;
     if (_topicModel == null) {
@@ -64,6 +70,7 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
   @override
   void dispose() {
     _deletedTidSubscription?.cancel();
+    _topicLikeSubscription?.cancel();
     super.dispose();
   }
 
@@ -106,42 +113,18 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
     if (topicModel == null || _isLiking) return;
     if (!context.ensureLoggedIn()) return;
 
-    final nextIsLiked = !topicModel.isLiked;
-    final nextLikeCount = nextIsLiked
-        ? topicModel.likeCount + 1
-        : (topicModel.likeCount > 0 ? topicModel.likeCount - 1 : 0);
-    final optimisticTopic = topicModel.copyWith(
-      isLiked: nextIsLiked,
-      likeCount: nextLikeCount,
-    );
-
-    setState(() {
-      _topicModel = optimisticTopic;
-      _isLiking = true;
-    });
-
+    _isLiking = true;
     try {
-      await _topicRepository.likeTopic(
+      await TopicLikeHelper.toggle(
         tid: topicModel.tid,
         isLiked: topicModel.isLiked,
         likeCount: topicModel.likeCount,
       );
     } catch (error) {
       if (!mounted) return;
-      setState(() {
-        _topicModel = topicModel;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
+      AppToast.show(context, error.toString().replaceFirst('Exception: ', ''));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLiking = false;
-        });
-      }
+      _isLiking = false;
     }
   }
 
@@ -160,12 +143,28 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
+      AppToast.show(context, error.toString().replaceFirst('Exception: ', ''));
     }
+  }
+
+  void _onTopicLiked(TopicLikeEvent event) {
+    if (!mounted) {
+      return;
+    }
+    final topicModel = _topicModel;
+    if (topicModel == null || topicModel.tid != event.tid) {
+      return;
+    }
+    if (topicModel.isLiked == event.isLiked &&
+        topicModel.likeCount == event.likeCount) {
+      return;
+    }
+    setState(() {
+      _topicModel = topicModel.copyWith(
+        isLiked: event.isLiked,
+        likeCount: event.likeCount,
+      );
+    });
   }
 
   void _onTopicDeleted(Tid tid) {

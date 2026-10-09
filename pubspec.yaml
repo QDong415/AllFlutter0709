@@ -73,6 +73,7 @@ dependencies:
   geolocator: ^13.0.4
   package_info_plus: ^10.2.1
   extended_text_field: ^17.0.0
+  flutter_show_menu: ^1.0.1
 
 dev_dependencies:
   flutter_test:

@@ -10,6 +10,7 @@ import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 新粉丝列表，对齐 Android 消息页点「新粉丝」进入的粉丝列表。
 class FansListPage extends ConsumerStatefulWidget {
@@ -70,9 +71,7 @@ class _FansListPageState extends ConsumerState<FansListPage> {
       if (_userModelList.isEmpty) {
         setState(() => _pageState = PageState.error);
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      AppToast.show(context, error.toString());
     }
   }
 

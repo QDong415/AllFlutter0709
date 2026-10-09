@@ -19,6 +19,7 @@ class CommentItem extends StatelessWidget {
     required this.onLikeTap,
     super.key,
     this.onAvatarTap,
+    this.onLongPress,
   });
 
   final CommentModel comment;
@@ -29,102 +30,179 @@ class CommentItem extends StatelessWidget {
   final VoidCallback onLikeTap;
   final VoidCallback? onAvatarTap;
 
+  /// 按住约 0.8 秒后回调，参数是这条评论自己的 context，用来定位弹层。
+  final void Function(BuildContext anchorContext)? onLongPress;
+
   @override
   Widget build(BuildContext context) {
     final avatarUrl = comment.avatar ?? '';
     final isAuthor = authorUserId.isNotEmpty && authorUserId == comment.userId;
 
-    return ColoredBox(
-      color: Colors.white,
-      child: Padding(
-        padding: EdgeInsets.only(top: isChild ? 0 : 8),
-        child: Column(
-          children: [
-            InkWell(
-              onTap: onTap,
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _CommentTree(
-                      isChild: isChild,
-                      displayType: displayType,
-                      avatarUrl: avatarUrl,
-                      onAvatarTap: onAvatarTap,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: isChild ? 12 : 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    comment.userName.isEmpty
-                                        ? '匿名用户'
-                                        : comment.userName,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                      color: Color(0xFF133465),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if (comment.isAi) ...[
-                                  const SizedBox(width: 6),
-                                  const UserAiTag(compact: true),
-                                ],
-                                if (isAuthor) ...[
-                                  const SizedBox(width: 6),
-                                  const _AuthorBadge(),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            _CommentRichText(comment: comment),
-                            if (comment.pictures.isNotEmpty) ...[
-                              const SizedBox(height: 5),
-                              TopicPictureGrid(pictures: comment.pictures),
-                            ],
-                            if (comment.isPending) ...[
-                              const SizedBox(height: 4),
-                              const Row(
+    return Builder(
+      builder: (itemContext) {
+        return _CommentPressSurface(
+          onTap: onTap,
+          onLongPress: onLongPress == null
+              ? null
+              : () => onLongPress!(itemContext),
+          child: Padding(
+            padding: EdgeInsets.only(top: isChild ? 0 : 8),
+            child: Column(
+              children: [
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _CommentTree(
+                        isChild: isChild,
+                        displayType: displayType,
+                        avatarUrl: avatarUrl,
+                        onAvatarTap: onAvatarTap,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: isChild ? 12 : 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Text(
-                                    '发送中...',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF8E8E93),
+                                  Flexible(
+                                    child: Text(
+                                      comment.userName.isEmpty
+                                          ? '匿名用户'
+                                          : comment.userName,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF133465),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  if (comment.isAi) ...[
+                                    const SizedBox(width: 6),
+                                    const UserAiTag(compact: true),
+                                  ],
+                                  if (isAuthor) ...[
+                                    const SizedBox(width: 6),
+                                    const _AuthorBadge(),
+                                  ],
                                 ],
                               ),
+                              const SizedBox(height: 3),
+                              _CommentRichText(comment: comment),
+                              if (comment.pictures.isNotEmpty) ...[
+                                const SizedBox(height: 5),
+                                TopicPictureGrid(pictures: comment.pictures),
+                              ],
+                              if (comment.isPending) ...[
+                                const SizedBox(height: 4),
+                                const Row(
+                                  children: [
+                                    Text(
+                                      '发送中...',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(top: isChild ? 12 : 10),
-                      child: _CommentLikeColumn(
-                        comment: comment,
-                        onTap: onLikeTap,
+                      Padding(
+                        padding: EdgeInsets.only(top: isChild ? 12 : 10),
+                        child: _CommentLikeColumn(
+                          comment: comment,
+                          onTap: onLikeTap,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                if (showCommentSeparator(displayType))
+                  Padding(
+                    padding: EdgeInsets.only(left: isChild ? 85 : 61, top: 8),
+                    child: const Divider(height: 0.6, thickness: 0.6),
+                  ),
+              ],
             ),
-            if (showCommentSeparator(displayType))
-              Padding(
-                padding: EdgeInsets.only(left: isChild ? 85 : 61, top: 8),
-                child: const Divider(height: 0.6, thickness: 0.6),
-              ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 评论按下时把白底换成 Android `white_press_drawable`（#F2F2F2）。
+class _CommentPressSurface extends StatefulWidget {
+  const _CommentPressSurface({
+    required this.onTap,
+    required this.child,
+    this.onLongPress,
+  });
+
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final Widget child;
+
+  @override
+  State<_CommentPressSurface> createState() => _CommentPressSurfaceState();
+}
+
+class _CommentPressSurfaceState extends State<_CommentPressSurface> {
+  static const Duration _longPressDuration = Duration(milliseconds: 800);
+
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value) return;
+    setState(() {
+      _pressed = value;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (_) => _setPressed(true),
+      onPointerUp: (_) => _setPressed(false),
+      onPointerCancel: (_) => _setPressed(false),
+      child: RawGestureDetector(
+        behavior: HitTestBehavior.opaque,
+        gestures: widget.onLongPress == null
+            ? const <Type, GestureRecognizerFactory>{}
+            : <Type, GestureRecognizerFactory>{
+                LongPressGestureRecognizer:
+                    GestureRecognizerFactoryWithHandlers<
+                      LongPressGestureRecognizer
+                    >(
+                      () => LongPressGestureRecognizer(
+                        duration: _longPressDuration,
+                      ),
+                      (instance) {
+                        instance.onLongPress = () {
+                          Feedback.forLongPress(context);
+                          widget.onLongPress?.call();
+                        };
+                      },
+                    ),
+              },
+        child: Material(
+          color: _pressed ? const Color(0xFFF2F2F2) : Colors.white,
+          child: InkWell(
+            onTap: widget.onTap,
+            splashFactory: NoSplash.splashFactory,
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: widget.child,
+          ),
         ),
       ),
     );

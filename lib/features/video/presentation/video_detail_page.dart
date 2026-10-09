@@ -10,6 +10,7 @@ import 'package:all_flutter0709/features/video/presentation/widgets/video_detail
 import 'package:all_flutter0709/features/video/presentation/widgets/video_detail_nav_bar.dart';
 import 'package:all_flutter0709/features/video/presentation/widgets/video_detail_player.dart';
 import 'package:flutter/material.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 class VideoDetailPage extends StatefulWidget {
   const VideoDetailPage({required this.video, super.key});
@@ -96,11 +97,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
       setState(() {
         _video = previous;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
+      AppToast.show(context, error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() {
@@ -111,9 +108,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
   }
 
   void _onReport() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('举报功能暂未实现')));
+    AppToast.show(context, '举报功能暂未实现');
   }
 
   @override

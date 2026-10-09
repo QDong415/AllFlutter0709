@@ -8,6 +8,7 @@ import 'package:all_flutter0709/features/auth/presentation/models/signup_args.da
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 注册第二步：头像（可选）+ 昵称。
 class SignupProfilePage extends ConsumerStatefulWidget {
@@ -75,9 +76,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
         _uploadedAvatarKey = null;
       });
       final message = error.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('头像上传失败：$message')));
+      AppToast.show(context, '头像上传失败：$message');
     } finally {
       if (mounted) {
         setState(() {
@@ -92,9 +91,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
       return;
     }
     if (_isUploadingAvatar) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('头像上传中，请稍候')));
+      AppToast.show(context, '头像上传中，请稍候');
       return;
     }
 
@@ -122,9 +119,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
         return;
       }
       final message = error.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      AppToast.show(context, message);
     } finally {
       if (mounted) {
         setState(() {

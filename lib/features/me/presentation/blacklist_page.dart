@@ -6,6 +6,7 @@ import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 黑名单，点击后确认移出。
 class BlacklistPage extends StatefulWidget {
@@ -54,9 +55,7 @@ class _BlacklistPageState extends State<BlacklistPage> {
     } catch (error) {
       if (!mounted) return;
       if (_userModelList.isEmpty) setState(() => _pageState = PageState.error);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$error')));
+      AppToast.show(context, '$error');
     }
   }
 
@@ -87,9 +86,7 @@ class _BlacklistPageState extends State<BlacklistPage> {
       });
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
+        AppToast.show(context, '$error');
       }
     }
   }

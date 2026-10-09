@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 class TopicPicturePreviewPage extends StatefulWidget {
   const TopicPicturePreviewPage({
@@ -131,9 +132,7 @@ class _TopicPicturePreviewPageState extends State<TopicPicturePreviewPage> {
 
   void _showMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context, message);
   }
 
   @override

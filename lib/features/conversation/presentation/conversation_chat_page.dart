@@ -27,6 +27,7 @@ import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 单聊页；未登录时拦截并跳转登录，不加载会话消息。
 class ConversationChatPage extends ConsumerStatefulWidget {
@@ -436,9 +437,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context, message);
   }
 
   int _currentItemCountHint() {

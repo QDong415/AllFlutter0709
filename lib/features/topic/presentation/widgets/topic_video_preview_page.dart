@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 列表与放大预览之间移交 [VideoPlayerController] 的所有权标记。
 class TopicVideoControllerHandoff {
@@ -185,9 +186,7 @@ class _TopicVideoPreviewPageState extends State<TopicVideoPreviewPage> {
 
   void _showMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context, message);
   }
 
   void _togglePlayPause() {

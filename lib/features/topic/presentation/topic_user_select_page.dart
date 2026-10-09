@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 发布动态时选择 @好友，对齐 Android `UserSelectActivity`。
 class TopicUserSelectPage extends StatefulWidget {
@@ -73,9 +74,7 @@ class _TopicUserSelectPageState extends State<TopicUserSelectPage> {
           _pageState = PageState.error;
         });
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      AppToast.show(context, error.toString());
     }
   }
 

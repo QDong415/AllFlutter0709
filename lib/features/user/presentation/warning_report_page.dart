@@ -5,6 +5,7 @@ import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 打开意见或举报页。
 void openWarningReportPage(BuildContext context, {String toUserId = ''}) {
@@ -58,19 +59,13 @@ class _WarningReportPageState extends State<WarningReportPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('提交成功')));
+      AppToast.show(context, '提交成功');
       context.pop();
     } catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
+      AppToast.show(context, error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() {

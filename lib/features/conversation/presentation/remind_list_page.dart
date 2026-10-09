@@ -14,6 +14,7 @@ import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 赞、评论、@我 列表，对齐 Android `RemindActivity`。
 class RemindListPage extends ConsumerStatefulWidget {
@@ -118,9 +119,7 @@ class _RemindListPageState extends ConsumerState<RemindListPage> {
       if (_remindModelList.isEmpty) {
         setState(() => _pageState = PageState.error);
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      AppToast.show(context, error.toString());
     }
   }
 
@@ -188,10 +187,10 @@ class _RemindTile extends StatelessWidget {
     final cover = remindModel.pictures.isNotEmpty
         ? remindModel.pictures.first.thumbnailUrl
         : ValueUtil.getQiniuUrlByFileName(
-              remindModel.topicUserAvatar,
-              thumbnail: true,
-            ) ??
-            '';
+                remindModel.topicUserAvatar,
+                thumbnail: true,
+              ) ??
+              '';
 
     return Material(
       color: Colors.white,

@@ -2,6 +2,7 @@ import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 修改密码，对齐 Android `MineSystemPasswordActivity`。
 class ChangePasswordPage extends StatefulWidget {
@@ -31,15 +32,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     final password = _newController.text.trim();
     final confirm = _confirmController.text.trim();
     if (oldPassword.isEmpty || password.isEmpty || confirm.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('密码不能为空')));
+      AppToast.show(context, '密码不能为空');
       return;
     }
     if (password != confirm) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('两次密码不一致')));
+      AppToast.show(context, '两次密码不一致');
       return;
     }
     setState(() => _submitting = true);
@@ -49,15 +46,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         password: password,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('修改成功')));
+      AppToast.show(context, '修改成功');
       context.pop();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
+        AppToast.show(context, '$error');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

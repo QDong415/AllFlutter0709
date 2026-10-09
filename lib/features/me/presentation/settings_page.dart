@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 系统设置。不含夜间模式，也不含隐藏礼物 / 粉丝 / 关注。
 class SettingsPage extends ConsumerStatefulWidget {
@@ -38,9 +39,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           .setAccount(mergeModifiedAccount(current, serverJson));
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
+        AppToast.show(context, '$error');
       }
     }
   }
@@ -54,9 +53,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (!mounted) return;
       final newer = _compareVersion(info.version, latest.name) < 0;
       if (!newer) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('已是最新版本')));
+        AppToast.show(context, '已是最新版本');
         return;
       }
       await showDialog<void>(
@@ -88,9 +85,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$error')));
+        AppToast.show(context, '$error');
       }
     } finally {
       if (mounted) setState(() => _checking = false);

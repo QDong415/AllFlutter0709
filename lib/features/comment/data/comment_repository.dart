@@ -148,6 +148,32 @@ class CommentRepository {
     );
   }
 
+  /// 删除评论，对齐 Android `comment/delete`。
+  ///
+  /// 服务端允许评论作者或动态/视频作者删除，成功时 data 为被删的 cid。
+  Future<String> deleteComment({required String cid}) async {
+    final response = await HttpClient.instance.post(
+      '/api/comment/delete',
+      data: <String, dynamic>{'cid': cid},
+    );
+
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+
+    final result = ApiResponse<String>.fromJson(
+      json,
+      (dataJson) => dataJson?.toString().trim() ?? '',
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '删除失败' : result.message);
+    }
+
+    final deletedCid = result.data ?? '';
+    return deletedCid.isEmpty ? cid : deletedCid;
+  }
+
   /// 点赞 / 取消点赞评论。
   Future<void> likeComment({
     required String cid,

@@ -2,6 +2,7 @@ import 'package:all_flutter0709/features/me/presentation/profile_edit_page.dart'
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 修改昵称或自我介绍。
 class ProfileTextEditPage extends StatefulWidget {
@@ -27,9 +28,7 @@ class _ProfileTextEditPageState extends State<ProfileTextEditPage> {
   void _submit() {
     final text = _controller.text.trim();
     if (text.isEmpty && !widget.args.canEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('内容不能为空')));
+      AppToast.show(context, '内容不能为空');
       return;
     }
     context.pop(text);
