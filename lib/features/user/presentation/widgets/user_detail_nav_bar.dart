@@ -16,7 +16,9 @@ class UserDetailNavBar extends StatelessWidget {
   final double progress;
   final String title;
   final VoidCallback onBack;
-  final VoidCallback onMore;
+
+  /// 更多按钮点击，参数是按钮自身的 context，用于锚定弹出菜单。
+  final void Function(BuildContext anchorContext) onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +81,7 @@ class _NavBarContent extends StatelessWidget {
   final Color titleColor;
   final Color iconColor;
   final VoidCallback onBack;
-  final VoidCallback onMore;
+  final void Function(BuildContext anchorContext) onMore;
   final bool useShadowIcon;
 
   @override
@@ -121,21 +123,25 @@ class _NavBarContent extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                onPressed: onMore,
-                icon: Icon(
-                  Icons.more_horiz_rounded,
-                  size: 24,
-                  color: iconColor,
-                  shadows: useShadowIcon
-                      ? const [
-                          Shadow(
-                            color: Color(0x66000000),
-                            blurRadius: 4,
-                          ),
-                        ]
-                      : null,
-                ),
+              Builder(
+                builder: (buttonContext) {
+                  return IconButton(
+                    onPressed: () => onMore(buttonContext),
+                    icon: Icon(
+                      Icons.more_horiz_rounded,
+                      size: 24,
+                      color: iconColor,
+                      shadows: useShadowIcon
+                          ? const [
+                              Shadow(
+                                color: Color(0x66000000),
+                                blurRadius: 4,
+                              ),
+                            ]
+                          : null,
+                    ),
+                  );
+                },
               ),
             ],
           ),

@@ -11,10 +11,13 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/conve
 import 'package:all_flutter0709/features/topic/presentation/topic_list_base_state.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_more_menu.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_follow_helper.dart';
+import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_avatar_preview_page.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_header.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_nav_bar.dart';
+import 'package:all_flutter0709/shared/widgets/app_message_dialog.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +52,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   late UserProfileModel _profileModel;
   bool _isFollowLoading = false;
+  bool _isBlocking = false;
   double _collapseProgress = 0;
   double _stretchOffset = 0;
 
@@ -246,8 +250,39 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
     // 编辑资料本轮仅占位。
   }
 
-  void _onMoreTap() {
-    AppToast.show(context, '更多功能开发中');
+  Future<void> _onMoreTap(BuildContext anchorContext) async {
+    if (_isSelf) return;
+    if (!context.ensureLoggedIn()) return;
+
+    final action = await showUserDetailMoreMenu(anchorContext);
+    if (!mounted || action == null) return;
+    switch (action) {
+      case UserDetailMoreAction.block:
+        await _blockUser();
+      case UserDetailMoreAction.report:
+        await openWarningReportPage(context, toUserId: widget.userId);
+        if (!mounted) return;
+        _applySystemUiOverlayStyle();
+    }
+  }
+
+  Future<void> _blockUser() async {
+    if (_isBlocking) return;
+    _isBlocking = true;
+    try {
+      await _userRepository.blockUser(toUserId: widget.userId);
+      if (!mounted) return;
+      await AppMessageDialog.show(
+        context,
+        message: '已将其拉黑，可以在\n“我的”-“设置”-“黑名单列表”\n中将其移除黑名单',
+      );
+    } catch (error) {
+      if (mounted) {
+        AppToast.show(context, '$error');
+      }
+    } finally {
+      _isBlocking = false;
+    }
   }
 
   Widget _buildScrollBody(ScrollPhysics physics) {

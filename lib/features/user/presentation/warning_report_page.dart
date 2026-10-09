@@ -8,8 +8,11 @@ import 'package:go_router/go_router.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 打开意见或举报页。
-void openWarningReportPage(BuildContext context, {String toUserId = ''}) {
-  context.push(AppRoutes.warningReport, extra: toUserId);
+Future<void> openWarningReportPage(
+  BuildContext context, {
+  String toUserId = '',
+}) async {
+  await context.push(AppRoutes.warningReport, extra: toUserId);
 }
 
 /// 意见或举报提交页，对齐 Android `WarningReportActivity`。

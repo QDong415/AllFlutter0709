@@ -192,6 +192,15 @@ class UserRepository {
     _requireSuccess(response.data, '修改密码失败');
   }
 
+  /// 拉入黑名单（Android `user/block`）。
+  Future<void> blockUser({required String toUserId}) async {
+    final response = await HttpClient.instance.post(
+      '/api/user/block',
+      data: <String, dynamic>{'to_userid': toUserId},
+    );
+    _requireSuccess(response.data, '拉黑失败');
+  }
+
   /// 移出黑名单（Android `user/unblock`）。
   Future<void> unblockUser({required String toUserId}) async {
     final response = await HttpClient.instance.post(
