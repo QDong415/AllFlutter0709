@@ -126,12 +126,14 @@ class AiCharacterCard extends StatelessWidget {
     if (imageUrl == null || imageUrl.isEmpty) {
       return const _ImageFallback();
     }
-    return CachedNetworkImage(
-      imageUrl: imageUrl,
-      fit: BoxFit.cover,
-      alignment: Alignment.topCenter,
-      placeholder: (_, _) => const _ImageFallback(showProgress: true),
-      errorWidget: (_, _, _) => const _ImageFallback(),
+    return SizedBox.expand(
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: BoxFit.cover,
+        alignment: Alignment.center,
+        placeholder: (_, _) => const _ImageFallback(showProgress: true),
+        errorWidget: (_, _, _) => const _ImageFallback(),
+      ),
     );
   }
 }

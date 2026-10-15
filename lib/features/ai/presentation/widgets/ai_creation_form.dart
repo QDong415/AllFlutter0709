@@ -40,7 +40,11 @@ class _AiCreationFormState extends State<AiCreationForm> {
   String _personality = 'random';
   String _outfit = 'random';
   String _career = 'random';
+  bool _personalityExpanded = false;
+  bool _careerExpanded = false;
+  bool _outfitExpanded = false;
 
+  static const int _previewCount = 4;
   static const List<_Option<String>> _personalityOptionList = [
     _Option(value: 'random', label: '随机'),
     _Option(value: 'gentle', label: '温柔'),
@@ -70,8 +74,8 @@ class _AiCreationFormState extends State<AiCreationForm> {
     _Option(value: 'random', label: '随机'),
     _Option(value: 'designer', label: '设计师'),
     _Option(value: 'teacher', label: '教师'),
-    _Option(value: 'doctor', label: '医生'),
     _Option(value: 'programmer', label: '程序员'),
+    _Option(value: 'doctor', label: '医生'),
     _Option(value: 'entrepreneur', label: '创业者'),
     _Option(value: 'lawyer', label: '律师'),
     _Option(value: 'musician', label: '音乐人'),
@@ -90,6 +94,12 @@ class _AiCreationFormState extends State<AiCreationForm> {
     _personality = initialValue.personality;
     _outfit = initialValue.outfit;
     _career = initialValue.career;
+    _personalityExpanded = _isBeyondPreview(
+      _personality,
+      _personalityOptionList,
+    );
+    _outfitExpanded = _isBeyondPreview(_outfit, _outfitOptionList);
+    _careerExpanded = _isBeyondPreview(_career, _careerOptionList);
   }
 
   @override
@@ -174,26 +184,33 @@ class _AiCreationFormState extends State<AiCreationForm> {
           const SizedBox(height: 22),
           const _SectionTitle(title: '性格'),
           const SizedBox(height: 9),
-          _choiceWrap<String>(
+          _expandableChoices(
             optionList: _personalityOptionList,
             selected: _personality,
+            expanded: _personalityExpanded,
             onSelected: (value) => setState(() => _personality = value),
+            onToggle: () =>
+                setState(() => _personalityExpanded = !_personalityExpanded),
           ),
           const SizedBox(height: 22),
           const _SectionTitle(title: '职业'),
           const SizedBox(height: 9),
-          _choiceWrap<String>(
+          _expandableChoices(
             optionList: _careerOptionList,
             selected: _career,
+            expanded: _careerExpanded,
             onSelected: (value) => setState(() => _career = value),
+            onToggle: () => setState(() => _careerExpanded = !_careerExpanded),
           ),
           const SizedBox(height: 22),
           const _SectionTitle(title: '穿搭'),
           const SizedBox(height: 9),
-          _choiceWrap<String>(
+          _expandableChoices(
             optionList: _outfitOptionList,
             selected: _outfit,
+            expanded: _outfitExpanded,
             onSelected: (value) => setState(() => _outfit = value),
+            onToggle: () => setState(() => _outfitExpanded = !_outfitExpanded),
           ),
           const SizedBox(height: 22),
           const _SectionTitle(title: '补充人设（选填）'),
@@ -214,8 +231,7 @@ class _AiCreationFormState extends State<AiCreationForm> {
             maxLines: 5,
             textInputAction: TextInputAction.newline,
             decoration: InputDecoration(
-              hintText:
-                  '例如：喜欢摄影，刚认识时有点高冷，熟悉后会变得很健谈。\n穿搭提示：白衬衫、牛仔裤和白色运动鞋。',
+              hintText: '例如：喜欢摄影，刚认识时有点高冷，熟悉后会变得很健谈。\n穿搭提示：白衬衫、牛仔裤和白色运动鞋。',
               filled: true,
               fillColor: AppColors.white,
               border: OutlineInputBorder(
@@ -248,6 +264,76 @@ class _AiCreationFormState extends State<AiCreationForm> {
         ],
       ),
     );
+  }
+
+  /// 默认露出前 4 个标签。点「更多」展开全部，再点「收起」回到预览。
+  Widget _expandableChoices({
+    required List<_Option<String>> optionList,
+    required String selected,
+    required bool expanded,
+    required ValueChanged<String> onSelected,
+    required VoidCallback onToggle,
+  }) {
+    final canExpand = optionList.length > _previewCount;
+    final visibleOptionList = !canExpand || expanded
+        ? optionList
+        : _previewOptionList(optionList, selected);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _choiceWrap<String>(
+          optionList: visibleOptionList,
+          selected: selected,
+          onSelected: onSelected,
+        ),
+        if (canExpand)
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 9),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    expanded ? '收起' : '更多',
+                    style: const TextStyle(
+                      color: Color(0xFF888888),
+                      fontSize: 13,
+                      height: 1,
+                    ),
+                  ),
+                  Icon(
+                    expanded
+                        ? Icons.arrow_drop_up_rounded
+                        : Icons.arrow_drop_down_rounded,
+                    size: 18,
+                    color: const Color(0xFF888888),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  List<_Option<String>> _previewOptionList(
+    List<_Option<String>> optionList,
+    String selected,
+  ) {
+    final previewList = optionList.take(_previewCount).toList();
+    final selectedIndex = optionList.indexWhere(
+      (option) => option.value == selected,
+    );
+    if (selectedIndex < _previewCount) return previewList;
+    previewList.add(optionList[selectedIndex]);
+    return previewList;
+  }
+
+  bool _isBeyondPreview(String value, List<_Option<String>> optionList) {
+    final index = optionList.indexWhere((option) => option.value == value);
+    return index >= _previewCount;
   }
 
   Widget _choiceWrap<T>({
