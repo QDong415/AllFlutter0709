@@ -1,5 +1,7 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/features/ai/presentation/ai_character_page.dart';
+import 'package:all_flutter0709/features/ai/presentation/ai_creation_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
 import 'package:all_flutter0709/features/auth/presentation/signup_page.dart';
@@ -30,10 +32,6 @@ import 'package:all_flutter0709/features/topic/presentation/topic_user_select_pa
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/user_detail_page.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
-import 'package:all_flutter0709/features/video/data/models/video_model.dart';
-import 'package:all_flutter0709/features/video/presentation/missing_video_page.dart';
-import 'package:all_flutter0709/features/video/presentation/video_detail_page.dart';
-import 'package:all_flutter0709/features/video/presentation/video_page.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -151,20 +149,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.video,
+                path: AppRoutes.ai,
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: VideoPage()),
+                    const NoTransitionPage(child: AiCharacterPage()),
                 routes: [
                   GoRoute(
                     parentNavigatorKey: _rootNavigatorKey,
-                    path: AppRoutes.videoDetail,
-                    builder: (context, state) {
-                      final video = state.extra;
-                      if (video is! VideoModel) {
-                        return const MissingVideoPage();
-                      }
-                      return VideoDetailPage(video: video);
-                    },
+                    path: AppRoutes.aiCreate,
+                    builder: (context, state) => const AiCreationPage(),
                   ),
                 ],
               ),

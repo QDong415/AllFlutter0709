@@ -94,14 +94,20 @@ class HttpClient {
     Object? data,
     Map<String, dynamic>? queryParameters,
     bool formUrlEncoded = true,
+    Duration? sendTimeout,
+    Duration? receiveTimeout,
   }) {
     return _dio.post<Map<String, dynamic>>(
       path,
       data: data,
       queryParameters: queryParameters,
-      options: formUrlEncoded
-          ? Options(contentType: Headers.formUrlEncodedContentType)
-          : null,
+      options: Options(
+        contentType: formUrlEncoded
+            ? Headers.formUrlEncodedContentType
+            : Headers.jsonContentType,
+        sendTimeout: sendTimeout,
+        receiveTimeout: receiveTimeout,
+      ),
     );
   }
 

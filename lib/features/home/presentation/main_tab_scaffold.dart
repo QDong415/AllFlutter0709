@@ -120,9 +120,11 @@ class MainTabScaffold extends ConsumerWidget {
                   child: IgnorePointer(
                     child: Row(
                       children: [
-                        for (var index = 0;
-                            index < MainTabItem.values.length;
-                            index++)
+                        for (
+                          var index = 0;
+                          index < MainTabItem.values.length;
+                          index++
+                        )
                           Expanded(
                             child: _TabLabelOverlay(
                               label: MainTabItem.values[index].label,
@@ -145,7 +147,7 @@ class MainTabScaffold extends ConsumerWidget {
 /// 主 Tab 项。
 enum MainTabItem {
   topic(label: '动态', kind: MainTabIconKind.topic),
-  video(label: '视频', kind: MainTabIconKind.video),
+  ai(label: 'AI', kind: MainTabIconKind.ai),
   conversation(label: '聊天', kind: MainTabIconKind.conversation),
   me(label: '我的', kind: MainTabIconKind.me);
 

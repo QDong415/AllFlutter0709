@@ -5,8 +5,8 @@ enum MainTabIconKind {
   /// 动态
   topic,
 
-  /// 视频
-  video,
+  /// AI 伙伴
+  ai,
 
   /// 聊天
   conversation,
@@ -20,11 +20,7 @@ enum MainTabIconKind {
 /// 四个图形共用 24 格、同一线宽、同一外接框（约 3.8–20.2），
 /// 几何中心都在格子正中，避免 Material 字形光学尺寸和中心不一致。
 class MainTabIcon extends StatelessWidget {
-  const MainTabIcon({
-    super.key,
-    required this.kind,
-    this.filled = false,
-  });
+  const MainTabIcon({super.key, required this.kind, this.filled = false});
 
   /// 画哪一个 Tab。
   final MainTabIconKind kind;
@@ -39,11 +35,7 @@ class MainTabIcon extends StatelessWidget {
     final color = iconTheme.color ?? const Color(0xFF000000);
     return CustomPaint(
       size: Size.square(size),
-      painter: _MainTabIconPainter(
-        kind: kind,
-        filled: filled,
-        color: color,
-      ),
+      painter: _MainTabIconPainter(kind: kind, filled: filled, color: color),
     );
   }
 }
@@ -74,8 +66,8 @@ class _MainTabIconPainter extends CustomPainter {
     switch (kind) {
       case MainTabIconKind.topic:
         _paintTopic(canvas, paint);
-      case MainTabIconKind.video:
-        _paintVideo(canvas, paint);
+      case MainTabIconKind.ai:
+        _paintAi(canvas, paint);
       case MainTabIconKind.conversation:
         _paintConversation(canvas, paint);
       case MainTabIconKind.me:
@@ -109,25 +101,47 @@ class _MainTabIconPainter extends CustomPainter {
     );
   }
 
-  void _paintVideo(Canvas canvas, Paint paint) {
-    final frame = Path()
+  void _paintAi(Canvas canvas, Paint paint) {
+    final head = Path()
       ..addRRect(
-        RRect.fromLTRBR(3.8, 3.8, 20.2, 20.2, const Radius.circular(4.2)),
+        RRect.fromLTRBR(4.2, 6.2, 19.8, 19.8, const Radius.circular(4.2)),
       );
-    final play = Path()
-      ..moveTo(10.35, 8.55)
-      ..lineTo(15.85, 12)
-      ..lineTo(10.35, 15.45)
-      ..close();
+    final antenna = Path()
+      ..moveTo(12, 6.2)
+      ..lineTo(12, 3.8);
     if (filled) {
-      frame
-        ..addPath(play, Offset.zero)
-        ..fillType = PathFillType.evenOdd;
-      canvas.drawPath(frame, paint);
+      canvas.drawPath(head, paint);
+      final detailPaint = Paint()
+        ..color = const Color(0xFFFFFFFF)
+        ..strokeWidth = _strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke
+        ..isAntiAlias = true;
+      canvas.drawLine(
+        const Offset(8.8, 11.6),
+        const Offset(8.8, 13.2),
+        detailPaint,
+      );
+      canvas.drawLine(
+        const Offset(15.2, 11.6),
+        const Offset(15.2, 13.2),
+        detailPaint,
+      );
+      canvas.drawLine(
+        const Offset(9.2, 16.1),
+        const Offset(14.8, 16.1),
+        detailPaint,
+      );
+      canvas.drawPath(antenna, paint..style = PaintingStyle.stroke);
+      canvas.drawCircle(const Offset(12, 3.8), 0.8, paint);
       return;
     }
-    canvas.drawPath(frame, paint);
-    canvas.drawPath(play, paint);
+    canvas.drawPath(head, paint);
+    canvas.drawPath(antenna, paint);
+    canvas.drawCircle(const Offset(12, 3.8), 0.8, paint);
+    canvas.drawLine(const Offset(8.8, 11.6), const Offset(8.8, 13.2), paint);
+    canvas.drawLine(const Offset(15.2, 11.6), const Offset(15.2, 13.2), paint);
+    canvas.drawLine(const Offset(9.2, 16.1), const Offset(14.8, 16.1), paint);
   }
 
   void _paintConversation(Canvas canvas, Paint paint) {
