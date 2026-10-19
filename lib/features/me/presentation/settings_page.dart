@@ -92,6 +92,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  Future<void> _cancelAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('注销账号'),
+          content: const Text('确定要注销账号吗？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                '确定',
+                style: TextStyle(color: AppColors.primary),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('注销账号'),
+          content: const Text('你的注销账号申请已经提交，1 个工作日内我们会与您联系'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('确定'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// 当前版本低于服务端时返回 -1。
   int _compareVersion(String current, String latest) {
     final left = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
@@ -164,7 +206,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: '关于我们',
             onTap: () => context.push(AppRoutes.meAbout),
           ),
-          if (account != null)
+          if (account != null) ...[
+            _SettingTile(
+              title: '注销账号',
+              titleColor: AppColors.primary,
+              onTap: _cancelAccount,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 28, 16, 16),
               child: FilledButton(
@@ -175,6 +222,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 child: const Text('退出登录'),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -182,11 +230,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 }
 
 class _SettingTile extends StatelessWidget {
-  const _SettingTile({required this.title, required this.onTap, this.trailing});
+  const _SettingTile({
+    required this.title,
+    required this.onTap,
+    this.trailing,
+    this.titleColor,
+  });
 
   final String title;
   final VoidCallback onTap;
   final String? trailing;
+  final Color? titleColor;
 
   @override
   Widget build(BuildContext context) {
@@ -205,7 +259,10 @@ class _SettingTile extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(title, style: const TextStyle(fontSize: 15)),
+                child: Text(
+                  title,
+                  style: TextStyle(fontSize: 15, color: titleColor),
+                ),
               ),
               if (trailing != null)
                 Text(

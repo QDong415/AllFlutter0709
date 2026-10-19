@@ -4,7 +4,8 @@ import 'package:all_flutter0709/features/ai/presentation/ai_character_page.dart'
 import 'package:all_flutter0709/features/ai/presentation/ai_creation_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
-import 'package:all_flutter0709/features/auth/presentation/signup_page.dart';
+import 'package:all_flutter0709/features/auth/presentation/password_login_page.dart';
+import 'package:all_flutter0709/features/auth/presentation/signup_password_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/signup_profile_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_chat_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_page.dart';
@@ -52,7 +53,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final isAuthPage =
           location == AppRoutes.login ||
-          location == AppRoutes.signup ||
+          location == AppRoutes.passwordLogin ||
+          location == AppRoutes.signupPassword ||
           location == AppRoutes.signupProfile;
 
       // 未登录可浏览主流程；需登录操作由 AccountGuardX 按需跳转登录页。
@@ -61,9 +63,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return AppRoutes.topic;
       }
 
-      // 完善资料页必须带着第一步参数进入。
+      // 完善资料页必须带着手机号、验证码和密码进入。
       if (location == AppRoutes.signupProfile && state.extra is! SignupArgs) {
-        return AppRoutes.signup;
+        return AppRoutes.login;
+      }
+      if (location == AppRoutes.signupPassword && state.extra is! SignupArgs) {
+        return AppRoutes.login;
       }
 
       return null;
@@ -74,8 +79,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginPage(),
       ),
       GoRoute(
-        path: AppRoutes.signup,
-        builder: (context, state) => const SignupPage(),
+        path: AppRoutes.passwordLogin,
+        builder: (context, state) {
+          final mobile = state.extra is String ? state.extra! as String : '';
+          return PasswordLoginPage(initialMobile: mobile);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.signupPassword,
+        builder: (context, state) {
+          return SignupPasswordPage(args: state.extra! as SignupArgs);
+        },
       ),
       GoRoute(
         path: AppRoutes.signupProfile,

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/app_flags.dart';
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
@@ -10,17 +11,35 @@ import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 注册第一步：手机号 + 验证码 + 密码。
 class SignupPage extends ConsumerStatefulWidget {
-  const SignupPage({super.key});
+  const SignupPage({super.key, this.initialMobile = '', this.initialCode});
+
+  /// 从验证码登录带入的手机号。
+  final String initialMobile;
+
+  /// 从验证码登录带入的验证码。测试开关打开且未带入时，才预填 0000。
+  final String? initialCode;
 
   @override
   ConsumerState<SignupPage> createState() => _SignupPageState();
 }
 
 class _SignupPageState extends ConsumerState<SignupPage> {
-  final _mobileController = TextEditingController();
-  final _codeController = TextEditingController(text: '0000');
+  late final TextEditingController _mobileController;
+  late final TextEditingController _codeController;
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    final initialCode = widget.initialCode?.trim();
+    _mobileController = TextEditingController(text: widget.initialMobile);
+    _codeController = TextEditingController(
+      text: initialCode == null || initialCode.isEmpty
+          ? (AppFlags.testLogin ? '0000' : '')
+          : initialCode,
+    );
+  }
 
   bool _isRequestingCode = false;
   int _countdownSeconds = 0;
@@ -136,7 +155,11 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '验证码默认 0000，也可点击获取真实验证码',
+                      widget.initialCode != null
+                          ? '验证码已填好，请设置登录密码'
+                          : AppFlags.testLogin
+                          ? '验证码默认 0000，也可点击获取真实验证码'
+                          : '请输入短信验证码',
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),

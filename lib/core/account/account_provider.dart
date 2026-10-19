@@ -26,6 +26,38 @@ class AccountNotifier extends Notifier<AccountModel?> {
     state = account;
   }
 
+  /// 友盟一键登录并落登录态。未注册时不写本地账号，把结果交回页面。
+  Future<CarrierLoginResult> loginByCarrierToken({
+    required String token,
+    required String verifyId,
+  }) async {
+    final result = await _repository.loginByCarrierToken(
+      token: token,
+      verifyId: verifyId,
+    );
+    final account = result.account;
+    if (account != null) {
+      await _repository.writeAccountToStorage(account);
+      HttpClient.instance.updateUserId(account.userId);
+      state = account;
+    }
+    return result;
+  }
+
+  /// 验证码登录并落登录态。未注册时原样抛出，由页面去完善资料。
+  Future<void> loginBySmsCode({
+    required String mobile,
+    required String code,
+  }) async {
+    final account = await _repository.loginBySmsCode(
+      mobile: mobile,
+      code: code,
+    );
+    await _repository.writeAccountToStorage(account);
+    HttpClient.instance.updateUserId(account.userId);
+    state = account;
+  }
+
   /// 注册并落登录态。
   Future<void> register({
     required String mobile,
@@ -75,6 +107,17 @@ class AccountNotifier extends Notifier<AccountModel?> {
   }
 
   Future<void> logout() async {
+    await _repository.clearAccount();
+    HttpClient.instance.updateUserId(null);
+    state = null;
+  }
+
+  /// 注销账号并清除本地登录态。服务端成功后才清本地，失败时保持登录。
+  Future<void> cancelAccount() async {
+    if (state == null) {
+      throw Exception('请先登录');
+    }
+    await _repository.cancelAccount();
     await _repository.clearAccount();
     HttpClient.instance.updateUserId(null);
     state = null;

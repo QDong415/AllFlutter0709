@@ -1,10 +1,22 @@
+import 'dart:async';
+
+import 'package:all_flutter0709/app/app_flags.dart';
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/core/account/account_api_exception.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/account/account_repository.dart';
+import 'package:all_flutter0709/core/auth/auth_vendor_config.dart';
+import 'package:all_flutter0709/core/auth/umeng_one_tap_login.dart';
+import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
+import 'package:all_flutter0709/features/auth/presentation/widgets/aliyun_captcha_page.dart';
+import 'package:all_flutter0709/features/auth/presentation/widgets/sms_login_code_view.dart';
+import 'package:all_flutter0709/features/auth/presentation/widgets/sms_login_phone_view.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
+/// 登录页：默认短信验证码，可切换密码登录。
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -12,21 +24,134 @@ class LoginPage extends ConsumerStatefulWidget {
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
+enum _LoginStage { phone, code }
+
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _mobileController = TextEditingController(text: '13570835313');
-  final _passwordController = TextEditingController(text: '123');
-  final _formKey = GlobalKey<FormState>();
+  final _mobileController = TextEditingController();
+  final _codeController = TextEditingController();
+
+  _LoginStage _stage = _LoginStage.phone;
+  bool _agreed = false;
+  bool _isRequestingCode = false;
   bool _isSubmitting = false;
+  bool _isOneTapBusy = false;
+  int _countdownSeconds = 0;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (AuthVendorConfig.oneTapEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _startOneTap();
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _mobileController.dispose();
-    _passwordController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) {
+  String get _mobile => _mobileController.text.trim();
+
+  Future<void> _requestSmsCode() async {
+    if (_mobile.length != 11) {
+      AppToast.show(context, '请输入手机号码');
+      return;
+    }
+    if (!_agreed) {
+      AppToast.show(context, '请先同意用户协议和隐私政策');
+      return;
+    }
+    if (_countdownSeconds > 0 || _isRequestingCode) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+    String? captchaVerifyParam;
+    if (AuthVendorConfig.captchaEnabled) {
+      captchaVerifyParam = await AliyunCaptchaPage.show(context);
+      if (!mounted ||
+          captchaVerifyParam == null ||
+          captchaVerifyParam.isEmpty) {
+        return;
+      }
+    }
+
+    setState(() {
+      _isRequestingCode = true;
+    });
+
+    try {
+      await ref
+          .read(accountRepositoryProvider)
+          .requestSmsCode(
+            mobile: _mobile,
+            captchaVerifyParam: captchaVerifyParam,
+          );
+      if (!mounted) {
+        return;
+      }
+      _codeController.clear();
+      _startCountdown();
+      setState(() {
+        _stage = _LoginStage.code;
+      });
+      AppToast.show(context, '验证码已发送');
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      AppToast.show(context, _messageOf(error));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRequestingCode = false;
+        });
+      }
+    }
+  }
+
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    setState(() {
+      _countdownSeconds = 60;
+    });
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_countdownSeconds <= 1) {
+        timer.cancel();
+        setState(() {
+          _countdownSeconds = 0;
+        });
+        return;
+      }
+      setState(() {
+        _countdownSeconds -= 1;
+      });
+    });
+  }
+
+  Future<void> _loginByCode(String code) async {
+    if (_isSubmitting || code.length != 4) {
+      return;
+    }
+
+    if (AppFlags.testLogin && code == '0000') {
+      _codeController.clear();
+      context.push(
+        AppRoutes.signupPassword,
+        extra: SignupArgs(mobile: _mobile, code: code, password: ''),
+      );
       return;
     }
 
@@ -38,22 +163,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     try {
       await ref
           .read(accountProvider.notifier)
-          .login(
-            mobile: _mobileController.text.trim(),
-            password: _passwordController.text,
-          );
-
+          .loginBySmsCode(mobile: _mobile, code: code);
       if (mounted) {
-        // 通知点击待跳转由 GetuiPushService.flushPendingNavigation 消费。
         context.go(AppRoutes.topic);
       }
+    } on AccountApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      if (error.isUnregistered) {
+        _codeController.clear();
+        AppToast.show(context, '尚未注册，请完善资料');
+        context.push(
+          AppRoutes.signupPassword,
+          extra: SignupArgs(mobile: _mobile, code: code, password: ''),
+        );
+        return;
+      }
+      _codeController.clear();
+      AppToast.show(context, error.message);
     } catch (error) {
       if (!mounted) {
         return;
       }
-
-      final message = error.toString().replaceFirst('Exception: ', '');
-      AppToast.show(context, message);
+      _codeController.clear();
+      AppToast.show(context, _messageOf(error));
     } finally {
       if (mounted) {
         setState(() {
@@ -63,91 +197,93 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  Future<void> _startOneTap() async {
+    if (_isOneTapBusy || _stage != _LoginStage.phone) {
+      return;
+    }
+    setState(() {
+      _isOneTapBusy = true;
+    });
+    try {
+      final result = await UmengOneTapLogin.start();
+      if (!mounted || result.cancelled) {
+        return;
+      }
+      if (!result.success || result.credential == null) {
+        AppToast.show(context, result.message ?? '一键登录不可用，请使用短信验证码');
+        return;
+      }
+      final credential = result.credential!;
+      final loginResult = await ref
+          .read(accountProvider.notifier)
+          .loginByCarrierToken(
+            token: credential.token,
+            verifyId: credential.verifyId,
+          );
+      if (!mounted) {
+        return;
+      }
+      final account = loginResult.account;
+      if (account != null) {
+        context.go(AppRoutes.topic);
+        return;
+      }
+      AppToast.show(context, '尚未注册，请完善资料');
+      context.push(
+        AppRoutes.signupPassword,
+        extra: SignupArgs(
+          mobile: loginResult.mobile ?? '',
+          code: loginResult.smsCode ?? '',
+          password: '',
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      AppToast.show(context, _messageOf(error));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isOneTapBusy = false;
+        });
+      }
+    }
+  }
+
+  String _messageOf(Object error) {
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Login',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'iTopic 登录入口',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    TextFormField(
-                      controller: _mobileController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: '手机号',
-                        hintText: '请输入登录手机号',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        final mobile = value?.trim() ?? '';
-                        if (mobile.isEmpty) {
-                          return '请输入手机号';
-                        }
-                        if (mobile.length < 6) {
-                          return '手机号格式不正确';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: '密码',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.length < 3) {
-                          return '密码至少 3 位';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: _isSubmitting ? null : _login,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('登录'),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => context.push(AppRoutes.signup),
-                      child: const Text('前往注册'),
-                    ),
-                  ],
-                ),
-              ),
+        child: switch (_stage) {
+          _LoginStage.phone => SmsLoginPhoneView(
+            mobileController: _mobileController,
+            agreed: _agreed,
+            countdownSeconds: _countdownSeconds,
+            isRequestingCode: _isRequestingCode,
+            onAgreedChanged: (value) => setState(() => _agreed = value),
+            onRequestCode: _requestSmsCode,
+            onPasswordLogin: () => context.push(
+              AppRoutes.passwordLogin,
+              extra: _mobile,
             ),
           ),
-        ),
+          _LoginStage.code => SmsLoginCodeView(
+            mobile: _mobile,
+            codeController: _codeController,
+            countdownSeconds: _countdownSeconds,
+            isRequestingCode: _isRequestingCode,
+            isSubmitting: _isSubmitting,
+            onBack: () => setState(() => _stage = _LoginStage.phone),
+            onResend: _requestSmsCode,
+            onCompleted: _loginByCode,
+          ),
+        },
       ),
     );
   }

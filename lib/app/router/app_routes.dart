@@ -1,6 +1,7 @@
 abstract final class AppRoutes {
   static const login = '/login';
-  static const signup = '/signup';
+  static const passwordLogin = '/login/password';
+  static const signupPassword = '/signup/password';
   static const signupProfile = '/signup/profile';
 
   static const topic = '/topic';
