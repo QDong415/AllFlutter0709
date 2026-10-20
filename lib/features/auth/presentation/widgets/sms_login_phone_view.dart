@@ -137,7 +137,7 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
             ),
             const SizedBox(height: 28),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Checkbox(
                   value: widget.agreed,
