@@ -74,14 +74,6 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
           children: [
             const SizedBox(height: 24),
             const _BrandMark(),
-            const SizedBox(height: 28),
-            Text(
-              '用手机号登录',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: const Color(0xFF8A8A8A)),
-            ),
             const SizedBox(height: 36),
             TextField(
               controller: widget.mobileController,
@@ -204,27 +196,15 @@ class _BrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          width: 72,
+        Image.asset(
+          'assets/icons/app_logo.png',
+          width: 88,
           height: 72,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Text(
-            'i',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.w600,
-              height: 1,
-            ),
-          ),
+          fit: BoxFit.contain,
         ),
         const SizedBox(height: 16),
         Text(
-          'iTopic',
+          '爱说说',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             color: AppColors.titleText,
             fontWeight: FontWeight.w700,
