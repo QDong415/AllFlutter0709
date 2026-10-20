@@ -210,7 +210,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         return;
       }
       if (!result.success || result.credential == null) {
-        AppToast.show(context, result.message ?? '一键登录不可用，请使用短信验证码');
         return;
       }
       final credential = result.credential!;
@@ -237,11 +236,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           password: '',
         ),
       );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      AppToast.show(context, _messageOf(error));
+    } catch (_) {
     } finally {
       if (mounted) {
         setState(() {
