@@ -21,7 +21,7 @@
     <!-- permission 由 gtsdk 声明（signature），勿再手写 normal，避免 merger 冲突 -->
 
     <application
-        android:label="all_flutter0709"
+        android:label="爱说说"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

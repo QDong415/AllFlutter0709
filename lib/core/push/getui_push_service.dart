@@ -39,16 +39,16 @@ final getuiPushServiceProvider = Provider<GetuiPushService>((ref) {
     if (previous?.userId == next?.userId) {
       return;
     }
-    // 通知会话层：清空或拉取本地会话 + message/pull
-    unawaited(
-      ref.read(conversationControllerProvider).onLoginStateChanged(next),
-    );
-    if (next != null) {
-      // 登录后：把本地缓存的 CID 再上报一次；消费「点通知但当时未登录」留下的跳转
-      unawaited(service.syncCachedClientId());
-      service.markLoginRestored();
-      unawaited(service.flushPendingNavigation());
+    if (next == null) {
+      unawaited(
+        ref.read(conversationControllerProvider).onLoginStateChanged(null),
+      );
+      return;
     }
+    // 密码、验证码、一键登录都走这里：先绑 CID，再让小助手发欢迎消息，最后拉取会话。
+    unawaited(service.onAccountLoggedIn());
+    service.markLoginRestored();
+    unawaited(service.flushPendingNavigation());
   });
   ref.onDispose(service.dispose);
   return service;
@@ -296,7 +296,8 @@ class GetuiPushService extends ChangeNotifier {
   }) async {
     final decodedPayload = _extractBusinessPayload(payload);
     if (decodedPayload == null) {
-      final raw = payload['payload'] ??
+      final raw =
+          payload['payload'] ??
           payload['payloadMsg'] ??
           payload['content'] ??
           payload;
@@ -319,9 +320,7 @@ class GetuiPushService extends ChangeNotifier {
     _appendLog('业务 payload: ${jsonEncode(payload)}');
 
     if (needPull || type == 1 || type == 2) {
-      _appendLog(
-        '触发 message/pull (needPull=$needPull type=$type)',
-      );
+      _appendLog('触发 message/pull (needPull=$needPull type=$type)');
       await _ref.read(conversationControllerProvider).syncMessagesFromServer();
       return;
     }
@@ -335,17 +334,13 @@ class GetuiPushService extends ChangeNotifier {
     if (remindKind != null) {
       final userId = _ref.read(accountProvider)?.userId ?? '';
       final dataId = payload['dataid']?.toString() ?? '';
-      _ref.read(remindUnreadStoreProvider).insert(
-            userId: userId,
-            kind: remindKind,
-            dataId: dataId,
-          );
+      _ref
+          .read(remindUnreadStoreProvider)
+          .insert(userId: userId, kind: remindKind, dataId: dataId);
       _appendLog('记录动态提醒未读 type=$type dataid=$dataId');
       return;
     }
-    _appendLog(
-      '业务 payload 未触发拉消息 (needPull=$needPull type=$type)',
-    );
+    _appendLog('业务 payload 未触发拉消息 (needPull=$needPull type=$type)');
   }
 
   Map<String, dynamic>? _extractBusinessPayload(Map<String, dynamic> payload) {
@@ -405,6 +400,19 @@ class GetuiPushService extends ChangeNotifier {
     return null;
   }
 
+  /// 登录成功后的统一收尾。不区分密码、验证码还是一键登录。
+  Future<void> onAccountLoggedIn() async {
+    await syncCachedClientId();
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
+    await _ref.read(conversationRepositoryProvider).notifyDoRegAction();
+    await _ref
+        .read(conversationControllerProvider)
+        .onLoginStateChanged(account);
+  }
+
   /// 把本地缓存的 CID 同步到内存，并在已登录时上报后端
   Future<void> syncCachedClientId() async {
     final preferences = _ref.read(sharedPreferencesProvider);
@@ -453,18 +461,15 @@ class GetuiPushService extends ChangeNotifier {
       final cidChanged = account.cid != trimmed;
       final repository = _ref.read(conversationRepositoryProvider);
       await repository.updatePushClientId(clientId: trimmed, account: account);
-      if (cidChanged) {
-        await repository.notifyDoRegAction();
-      }
       final current = _ref.read(accountProvider);
       if (current?.userId != account.userId) {
         _appendLog('CID 同步完成时账号已退出，不写回本地');
         return;
       }
       if (cidChanged) {
-        await _ref.read(accountProvider.notifier).setAccount(
-          account.copyWith(cid: trimmed),
-        );
+        await _ref
+            .read(accountProvider.notifier)
+            .setAccount(account.copyWith(cid: trimmed));
       }
       _appendLog('CID 已同步: $trimmed');
     } catch (error) {
@@ -516,6 +521,14 @@ class GetuiPushService extends ChangeNotifier {
     if (!fromClick) {
       return;
     }
+    // 推送 SDK 的启动回放、权限弹框结束等回调都不应改变未登录用户的页面。
+    // 真正点击通知但尚未登录时也保持当前页，由用户自行进入登录流程。
+    if (_ref.read(accountProvider) == null) {
+      _pendingConversationId = '';
+      _pendingOpenConversationList = false;
+      _appendLog('未登录，忽略推送导航');
+      return;
+    }
 
     final businessPayload =
         _extractBusinessPayload(payload) ?? _lastBusinessPayload ?? payload;
@@ -543,12 +556,6 @@ class GetuiPushService extends ChangeNotifier {
       _pendingOpenConversationList = true;
       _latestEventSummary = '通知点击待跳转会话列表';
       notifyListeners();
-    }
-
-    if (_ref.read(accountProvider) == null) {
-      _appendLog('未登录，先跳登录页，保留待跳转');
-      _ref.read(appRouterProvider).go(AppRoutes.login);
-      return;
     }
 
     await _performNavigation(

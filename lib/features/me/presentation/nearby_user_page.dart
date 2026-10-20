@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_match_user_item.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
@@ -28,6 +29,7 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
   bool _hasMore = true;
   PageState _pageState = PageState.loading;
   Position? _position;
+  bool _clearing = false;
 
   @override
   void initState() {
@@ -94,6 +96,41 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
     }
   }
 
+  Future<void> _clearFootprint() async {
+    if (!context.ensureLoggedIn() || _clearing) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('清除位置'),
+          content: const Text('清除后，别人将不能在附近的人中看到你'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('清除'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _clearing = true);
+    try {
+      await _userRepository.clearLocation();
+      if (!mounted) return;
+      AppToast.show(context, '已清除位置信息');
+      Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _clearing = false);
+      AppToast.show(context, '$error');
+    }
+  }
+
   String _distanceText(UserBaseModel userModel) {
     final position = _position;
     if (position == null ||
@@ -117,7 +154,15 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bodyBackground,
-      appBar: const CommonAppBar(title: '附近的人'),
+      appBar: CommonAppBar(
+        title: '附近的人',
+        actions: [
+          TextButton(
+            onPressed: _clearing ? null : _clearFootprint,
+            child: const Text('清除位置'),
+          ),
+        ],
+      ),
       body: EasyRefresh(
         onRefresh: () => _request(isRefresh: true),
         onLoad: _hasMore ? () => _request(isRefresh: false) : null,

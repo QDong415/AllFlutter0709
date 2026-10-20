@@ -86,7 +86,7 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
             TextField(
               controller: widget.mobileController,
               keyboardType: TextInputType.phone,
-              autofocus: true,
+              autofocus: false,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(11),

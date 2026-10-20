@@ -144,6 +144,18 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     await requestList(isRefresh: true);
   }
 
+  /// 空态或错误态点击刷新：先进入加载中，再请求第一页。
+  @protected
+  Future<void> refreshFromPlaceholder() async {
+    if (!mounted || _pageState == PageState.loading) {
+      return;
+    }
+    setState(() {
+      _pageState = PageState.loading;
+    });
+    await requestList(isRefresh: true);
+  }
+
   /// 上拉加载更多。
   @protected
   Future<void> onLoadMoreList() async {
@@ -290,8 +302,10 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   }
 
   /// 默认列表主体：EasyRefresh + PageStateView。
+  ///
+  /// [onPlaceholderRefresh] 非空时，空数据和失败态展示刷新按钮。
   @protected
-  Widget buildTopicListBody() {
+  Widget buildTopicListBody({VoidCallback? onPlaceholderRefresh}) {
     return EasyRefresh(
       header: const ClassicHeader(showMessage: false, showText: false),
       triggerAxis: Axis.vertical,
@@ -301,6 +315,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
         state: _pageState,
         emptyText: emptyText,
         errorText: errorText,
+        onRefresh: onPlaceholderRefresh,
         successWidget: buildTopicListView(),
       ),
     );

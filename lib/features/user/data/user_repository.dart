@@ -201,6 +201,12 @@ class UserRepository {
     _requireSuccess(response.data, '拉黑失败');
   }
 
+  /// 清除附近的人足迹（`POST /api/user/clearloc`）。
+  Future<void> clearLocation() async {
+    final response = await HttpClient.instance.post('/api/user/clearloc');
+    _requireSuccess(response.data, '清除位置失败');
+  }
+
   /// 移出黑名单（Android `user/unblock`）。
   Future<void> unblockUser({required String toUserId}) async {
     final response = await HttpClient.instance.post(

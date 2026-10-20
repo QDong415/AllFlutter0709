@@ -5,6 +5,7 @@ import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/auth/auth_vendor_config.dart';
 import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:umeng_common_sdk/umeng_common_sdk.dart';
 import 'package:umeng_verify_sdk/umeng_verify_sdk.dart';
@@ -43,27 +44,50 @@ class OneTapLoginResult {
 class UmengOneTapLogin {
   UmengOneTapLogin._();
 
+  static const MethodChannel _iosAuthChannel = MethodChannel(
+    'com.dq.itopic/umeng_auth',
+  );
   static bool _prepared = false;
+  static Future<void>? _preparing;
   static Completer<OneTapLoginResult>? _pending;
 
-  /// 初始化方案密钥。未配置时直接返回。
-  static Future<void> prepare() async {
+  /// 初始化方案密钥。可重复调用，进行中的那一次会被共用。
+  static Future<void> prepare() {
     if (!AuthVendorConfig.oneTapEnabled || _prepared) {
-      return;
+      return Future<void>.value();
     }
-    if (Platform.isAndroid) {
-      UmengVerifySdk.register_android();
+    return _preparing ??= _prepare();
+  }
+
+  static Future<void> _prepare() async {
+    try {
+      if (Platform.isIOS) {
+        final result = await _iosAuthChannel
+            .invokeMapMethod<String, dynamic>('waitUntilPrepared');
+        final code =
+            (result?['resultCode'] ?? result?['code'])?.toString() ?? '';
+        if (code != '600000') {
+          throw Exception(result?['msg']?.toString() ?? '友盟认证初始化失败');
+        }
+      } else if (Platform.isAndroid) {
+        UmengVerifySdk.register_android();
+        unawaited(
+          UmengCommonSdk.initCommon(
+            AuthVendorConfig.androidAppKey,
+            AuthVendorConfig.iosAppKey,
+            'itopic',
+          ),
+        );
+        await UmengVerifySdk.setVerifySDKInfo(
+          AuthVendorConfig.androidVerifySecret,
+          AuthVendorConfig.iosVerifySecret,
+        );
+      }
+      _prepared = true;
+    } catch (error) {
+      _preparing = null;
+      rethrow;
     }
-    await UmengCommonSdk.initCommon(
-      AuthVendorConfig.androidAppKey,
-      AuthVendorConfig.iosAppKey,
-      'itopic',
-    );
-    await UmengVerifySdk.setVerifySDKInfo(
-      AuthVendorConfig.androidVerifySecret,
-      AuthVendorConfig.iosVerifySecret,
-    );
-    _prepared = true;
   }
 
   /// 拉起授权页。同一时间只允许一次。
@@ -83,6 +107,23 @@ class UmengOneTapLogin {
         await Permission.phone.request();
       }
       await prepare();
+      if (Platform.isIOS) {
+        final accelerate = await UmengVerifySdk.accelerateLoginPageWithTimeout(
+          3,
+        );
+        final accelerateCode = accelerate is Map
+            ? (accelerate['resultCode'] ?? accelerate['code'])?.toString() ?? ''
+            : '';
+        if (accelerateCode != '600000') {
+          final message = accelerate is Map
+              ? accelerate['msg']?.toString()
+              : null;
+          _finish(
+            OneTapLoginResult.failed(message ?? '一键登录预取号失败'),
+          );
+          return pending.future;
+        }
+      }
       _listen();
       UmengVerifySdk.getLoginTokenWithTimeout(5, _uiModel());
     } catch (error) {
@@ -113,9 +154,13 @@ class UmengOneTapLogin {
     if (code == '600001' || code.isEmpty) {
       return;
     }
-    if (code == '700000' || code == '700001') {
-      _closePage();
-      _finish(const OneTapLoginResult.cancelled());
+    // 700002 点登录、700003 点协议勾选、700004 点协议文字。这些不是失败。
+    // 未勾选时原生授权页会震动协议区，不能当成登录失败把授权页关掉。
+    if (code.startsWith('700')) {
+      if (code == '700000' || code == '700001') {
+        _closePage();
+        _finish(const OneTapLoginResult.cancelled());
+      }
       return;
     }
     final token = result['token']?.toString() ?? '';
@@ -166,12 +211,19 @@ class UmengOneTapLogin {
     final model = UMCustomModel();
     model.navIsHidden = true;
     model.logoIsHidden = true;
-    model.loginBtnText = <Object>['本机号码一键登录', 0xFFFFFFFF, 16.0];
+    model.loginBtnText = const <Object>['本机号码一键登录', 0xFFFFFF, 16.0];
+    model.loginBtnBgImgs_ios = const <String>[
+      'one_tap_login_normal',
+      'one_tap_login_disabled',
+      'one_tap_login_pressed',
+    ];
     model.changeBtnTitle = <Object>[
       '使用手机验证码登录',
-      AppColors.titleText.toARGB32(),
+      AppColors.titleText.toARGB32() & 0xFFFFFF,
       14.0,
     ];
+    // y、宽、高传 0 或负数，原生侧沿用默认纵向位置并把按钮拉满，避免文案被截断。
+    model.changeBtnFrame = const <double>[0, -1, 0, 0];
     model.privacyOne = <String>[
       '《用户服务协议》',
       '${AppEnv.apiBaseUrl}/home/article/agreement?agreementid=1',

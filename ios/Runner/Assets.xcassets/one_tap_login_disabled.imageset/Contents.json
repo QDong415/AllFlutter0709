@@ -1,0 +1,6 @@
+{
+  "images" : [
+    { "filename" : "one_tap_login_disabled.png", "idiom" : "universal", "scale" : "1x" }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 }
+}

@@ -29,6 +29,7 @@ class _AliyunCaptchaPageState extends State<AliyunCaptchaPage> {
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0xFFFFFFFF))
       ..addJavaScriptChannel(
         'CaptchaBridge',
         onMessageReceived: (message) {
@@ -44,6 +45,10 @@ class _AliyunCaptchaPageState extends State<AliyunCaptchaPage> {
     }
     final text = raw.trim();
     if (text.isEmpty) {
+      return;
+    }
+    if (text == '__captcha_cancelled__') {
+      _close(null);
       return;
     }
     if (text.startsWith('{')) {
@@ -115,14 +120,19 @@ String _html() {
         success: function (captchaVerifyParam) {
           CaptchaBridge.postMessage(String(captchaVerifyParam));
         },
-        fail: function () {
-          CaptchaBridge.postMessage(JSON.stringify({ failed: true }));
+        fail: function () {},
+        getInstance: function (instance) {
+          window.__captcha = instance;
+          if (instance && instance.show) {
+            instance.show();
+          }
+        },
+        onClose: function (reason) {
+          if (reason === "userDismiss") {
+            CaptchaBridge.postMessage("__captcha_cancelled__");
+          }
         }
       });
-      setTimeout(function () {
-        var button = document.getElementById("captcha-button");
-        if (button) button.click();
-      }, 400);
     }
     boot();
   </script>

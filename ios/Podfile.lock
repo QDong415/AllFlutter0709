@@ -3,20 +3,37 @@ PODS:
   - getuiflut (0.0.1):
     - Flutter
     - GTSDK
-  - GTCommonSDK (3.2.3.0):
+  - GTCommonSDK (3.2.7.0):
     - ZXSDK
-  - GTSDK (3.1.0.0):
+  - GTSDK (3.1.2.0):
     - GTCommonSDK (> 3.0.9.0)
-  - ZXSDK (3.3.2)
+  - UMCommon (7.7.0):
+    - UMDevice
+  - UMDevice (3.6.0)
+  - umeng_common_sdk (0.0.1):
+    - Flutter
+    - UMCommon
+    - UMDevice
+  - umeng_verify_sdk (2.1.0):
+    - Flutter
+    - UMVerify (>= 3.3.0)
+  - UMVerify (4.0.0):
+    - UMCommon
+  - ZXSDK (3.3.3)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - getuiflut (from `.symlinks/plugins/getuiflut/ios`)
+  - umeng_common_sdk (from `.symlinks/plugins/umeng_common_sdk/ios`)
+  - umeng_verify_sdk (from `.symlinks/plugins/umeng_verify_sdk/ios`)
 
 SPEC REPOS:
   trunk:
     - GTCommonSDK
     - GTSDK
+    - UMCommon
+    - UMDevice
+    - UMVerify
     - ZXSDK
 
 EXTERNAL SOURCES:
@@ -24,14 +41,23 @@ EXTERNAL SOURCES:
     :path: Flutter
   getuiflut:
     :path: ".symlinks/plugins/getuiflut/ios"
+  umeng_common_sdk:
+    :path: ".symlinks/plugins/umeng_common_sdk/ios"
+  umeng_verify_sdk:
+    :path: ".symlinks/plugins/umeng_verify_sdk/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   getuiflut: ea9b200062f474810671171f9f36985ff5d431d0
-  GTCommonSDK: 238c6735add91e654f8564638854686ee3dcb4ac
-  GTSDK: edf67f0d2c9fee263c16cd4d85a9bc6777bc3263
-  ZXSDK: 786338c0a18e98e03eda00699c3bfd2700b97117
+  GTCommonSDK: d4ca7956556a2803f8c3edc167812c52009165e2
+  GTSDK: 766d59a91808ac58ea12c7285f22a3fa27793abc
+  UMCommon: 7740aabc9bdf25ee76d05c06ce09f980f4422cb2
+  UMDevice: 20b7b3c37a36b2c5c7ca8b5a54386ff9ed2b3b19
+  umeng_common_sdk: 095b63e6f83b71548725a7c03a6c17b23be6674b
+  umeng_verify_sdk: 64a823bd4528bf46c40759c613d6ab34935b8293
+  UMVerify: d961ffe2e4b9f00ad578c373e420ad17f72a1f7c
+  ZXSDK: ae61fd6163428d62bf5b12e4c90ac9840d58ca54
 
-PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
+PODFILE CHECKSUM: ebf4e7b54c0027885e1b904a42b0b63ad7f72ff5
 
 COCOAPODS: 1.16.2

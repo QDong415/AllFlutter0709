@@ -53,7 +53,7 @@ class SignupAvatarHelper {
           initAspectRatio: CropAspectRatioPreset.square,
           lockAspectRatio: true,
           aspectRatioPresets: const [CropAspectRatioPreset.square],
-          cropStyle: CropStyle.circle,
+          cropStyle: CropStyle.rectangle,
         ),
         IOSUiSettings(
           title: '裁剪头像',
@@ -61,7 +61,7 @@ class SignupAvatarHelper {
           resetAspectRatioEnabled: false,
           aspectRatioPickerButtonHidden: true,
           aspectRatioPresets: const [CropAspectRatioPreset.square],
-          cropStyle: CropStyle.circle,
+          cropStyle: CropStyle.rectangle,
         ),
       ],
     );

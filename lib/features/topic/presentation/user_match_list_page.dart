@@ -87,6 +87,17 @@ class _UserMatchListPageState extends State<UserMatchListPage>
     }
   }
 
+  /// 空态或错误态点击刷新：先进入加载中，再请求第一页。
+  Future<void> _refreshFromPlaceholder() async {
+    if (!mounted || _pageState == PageState.loading) {
+      return;
+    }
+    setState(() {
+      _pageState = PageState.loading;
+    });
+    await _requestList(isRefresh: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -108,6 +119,9 @@ class _UserMatchListPageState extends State<UserMatchListPage>
             state: _pageState,
             emptyText: '暂无匹配用户',
             errorText: '网络异常，请稍后重试',
+            onRefresh: () {
+              unawaited(_refreshFromPlaceholder());
+            },
             successWidget: CustomScrollView(
               physics: physics,
               slivers: [

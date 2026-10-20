@@ -98,7 +98,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       builder: (context) {
         return AlertDialog(
           title: const Text('注销账号'),
-          content: const Text('确定要注销账号吗？'),
+          content: const Text('注销后将删除账号及相关内容，且无法恢复'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -117,21 +117,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
     if (confirmed != true || !mounted) return;
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('注销账号'),
-          content: const Text('你的注销账号申请已经提交，1 个工作日内我们会与您联系'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('确定'),
-            ),
-          ],
-        );
-      },
-    );
+    try {
+      await ref.read(accountProvider.notifier).cancelAccount();
+      if (!mounted) return;
+      AppToast.show(context, '账号已注销');
+      context.go(AppRoutes.topic);
+    } catch (error) {
+      if (mounted) {
+        AppToast.show(context, '$error');
+      }
+    }
   }
 
   /// 当前版本低于服务端时返回 -1。

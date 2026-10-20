@@ -136,7 +136,8 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('完善资料')),
       body: SafeArea(
-        child: Center(
+        child: Align(
+          alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Padding(
@@ -144,9 +145,10 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const SizedBox(height: 50),
                     Center(
                       child: GestureDetector(
                         onTap: busy ? null : _pickAvatar,

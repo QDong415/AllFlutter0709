@@ -93,6 +93,10 @@ class _TopicFeedListPageState extends TopicListBaseState<TopicFeedListPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return buildTopicListBody();
+    return buildTopicListBody(
+      onPlaceholderRefresh: () {
+        unawaited(refreshFromPlaceholder());
+      },
+    );
   }
 }
