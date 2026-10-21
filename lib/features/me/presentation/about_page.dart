@@ -18,16 +18,16 @@ class AboutPage extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             children: [
               const Text(
-                '秘缘',
+                '爱说说',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               Text('版本号：$version', textAlign: TextAlign.center),
               const SizedBox(height: 24),
-              const Text('联系邮箱：2911088438@qq.com'),
+              const Text('联系邮箱：1651659295@qq.com'),
               const SizedBox(height: 8),
-              const Text('QQ：2911088438'),
+              const Text('QQ：1651659295'),
             ],
           );
         },
