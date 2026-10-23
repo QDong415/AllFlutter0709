@@ -1,8 +1,13 @@
 import 'package:all_flutter0709/core/network/app_env.dart';
+import 'package:all_flutter0709/core/network/request_sign.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
-/// 全局 HTTP 客户端：统一 baseUrl、超时、日志与 userid 注入。
+/// 全局 HTTP 客户端：统一 baseUrl、超时、日志，并按 Buddy 规则附带验签参数。
 ///
 /// Repository 请调用 [get] / [post]，不要直接访问 Dio。
 class HttpClient {
@@ -10,8 +15,12 @@ class HttpClient {
 
   static final HttpClient instance = HttpClient._();
 
+  static const _deviceIdKey = 'dev_id';
+
   final Logger _logger = Logger();
-  String? _userId;
+  String _userId = '';
+  String _deviceId = '';
+  String _clientVersion = '0';
 
   late final Dio _dio =
       Dio(
@@ -26,7 +35,7 @@ class HttpClient {
         ..interceptors.add(
           InterceptorsWrapper(
             onRequest: (options, handler) {
-              _appendUserId(options);
+              _appendSign(options);
               _logger.d(
                 '[HTTP] ${options.method} ${options.uri} '
                 'data=${_formatRequestData(options.data)}',
@@ -52,10 +61,31 @@ class HttpClient {
           ),
         );
 
-  /// 更新当前登录用户 id（请求拦截器会自动附带 `userid`）。
+  /// 读取或生成设备号，并缓存版本号。应在发起业务请求前调用。
+  Future<void> prepare(SharedPreferences preferences) async {
+    final savedDeviceId = preferences.getString(_deviceIdKey)?.trim() ?? '';
+    if (savedDeviceId.isEmpty) {
+      _deviceId = const Uuid().v4();
+      await preferences.setString(_deviceIdKey, _deviceId);
+    } else {
+      _deviceId = savedDeviceId;
+    }
+
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final version = info.version.trim();
+      if (version.isNotEmpty) {
+        _clientVersion = version;
+      }
+    } catch (error) {
+      _logger.w('[HTTP] 读取版本号失败，clientver 使用 0: $error');
+    }
+  }
+
+  /// 更新当前登录用户 id。未登录时请求里的 `userid` 为空字符串。
   void updateUserId(String? value) {
     final nextUserId = value?.trim();
-    _userId = nextUserId == null || nextUserId.isEmpty ? null : nextUserId;
+    _userId = nextUserId == null || nextUserId.isEmpty ? '' : nextUserId;
   }
 
   /// GET 请求。
@@ -122,35 +152,88 @@ class HttpClient {
     return data;
   }
 
-  void _appendUserId(RequestOptions options) {
-    final userId = _userId ?? '';
-    if (userId.isEmpty) {
-      return;
-    }
-
-    options.queryParameters.putIfAbsent('userid', () => userId);
-
-    final data = options.data;
-    if (data == null) {
-      options.data = <String, dynamic>{'userid': userId};
-      return;
-    }
-
-    if (data is Map<String, dynamic>) {
-      data.putIfAbsent('userid', () => userId);
-      return;
-    }
-
-    if (data is Map) {
-      data.putIfAbsent('userid', () => userId);
-      return;
-    }
-
-    if (data is FormData) {
-      final hasUserId = data.fields.any((field) => field.key == 'userid');
-      if (!hasUserId) {
-        data.fields.add(MapEntry('userid', userId));
+  /// GET 签在 query 上；POST 签在 body 上，并清掉 query。
+  ///
+  /// PHP 以后若开启校验，用的是 `empty($_GET) ? $_POST : $_GET`，
+  /// 同一请求不能同时带 query 和 body。
+  void _appendSign(RequestOptions options) {
+    final isGet = options.method.toUpperCase() == 'GET';
+    final fieldMap = <String, String>{};
+    if (isGet) {
+      fieldMap.addAll(_asStringMap(options.queryParameters));
+    } else {
+      fieldMap.addAll(_asStringMap(options.queryParameters));
+      final data = options.data;
+      if (data is FormData) {
+        fieldMap.addAll(_asStringMapFromFormData(data));
+      } else {
+        fieldMap.addAll(_asStringMap(data));
       }
     }
+
+    fieldMap.addAll(_commonFieldMap());
+    fieldMap['sig'] = RequestSign.sign(fieldMap);
+
+    if (isGet) {
+      options.queryParameters
+        ..clear()
+        ..addAll(fieldMap);
+      return;
+    }
+
+    options.queryParameters.clear();
+    final data = options.data;
+    if (data is FormData) {
+      data.fields.clear();
+      fieldMap.forEach((key, value) {
+        data.fields.add(MapEntry(key, value));
+      });
+      return;
+    }
+    options.data = fieldMap;
+  }
+
+  Map<String, String> _commonFieldMap() {
+    return <String, String>{
+      'userid': _userId,
+      'ts': '${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
+      'os': _osName(),
+      'clientver': _clientVersion,
+      'deviceid': _deviceId,
+    };
+  }
+
+  String _osName() {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.android:
+        return 'android';
+      default:
+        return defaultTargetPlatform.name;
+    }
+  }
+
+  Map<String, String> _asStringMap(Object? data) {
+    if (data is! Map) {
+      return <String, String>{};
+    }
+    return <String, String>{
+      for (final entry in data.entries)
+        entry.key.toString(): _asSignValue(entry.value),
+    };
+  }
+
+  Map<String, String> _asStringMapFromFormData(FormData data) {
+    return <String, String>{
+      for (final field in data.fields) field.key: field.value,
+    };
+  }
+
+  String _asSignValue(Object? value) {
+    if (value == null) {
+      return '';
+    }
+    return value.toString();
   }
 }
