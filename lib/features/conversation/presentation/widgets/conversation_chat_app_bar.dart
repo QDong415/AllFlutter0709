@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_ai_typing_helper.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
@@ -16,6 +17,7 @@ class ConversationChatAppBar extends StatelessWidget
     required this.peerIsAi,
     required this.aiTypingHelper,
     required this.onLeadingPressed,
+    required this.onPeerPressed,
   });
 
   final ValueListenable<AsyncValue<List<ConversationMessage>>>
@@ -24,6 +26,9 @@ class ConversationChatAppBar extends StatelessWidget
   final bool peerIsAi;
   final ChatAiTypingHelper aiTypingHelper;
   final VoidCallback onLeadingPressed;
+
+  /// 打开对方个人主页。
+  final VoidCallback onPeerPressed;
 
   @override
   Size get preferredSize => const CommonAppBar().preferredSize;
@@ -43,7 +48,20 @@ class ConversationChatAppBar extends StatelessWidget
         return CommonAppBar(
           title: isPeerTyping ? '对方正在输入中...' : conversationName,
           titleTrailing: peerIsAi && !isPeerTyping ? const UserAiTag() : null,
-          actions: const [SizedBox(width: 12)],
+          actions: [
+            IconButton(
+              tooltip: '个人主页',
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 45),
+              onPressed: onPeerPressed,
+              icon: const Icon(
+                Icons.person_outline,
+                size: 22,
+                color: AppColors.titleText,
+              ),
+            ),
+          ],
           onLeadingPressed: onLeadingPressed,
         );
       },

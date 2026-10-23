@@ -192,6 +192,50 @@ class UserRepository {
     _requireSuccess(response.data, '修改密码失败');
   }
 
+  /// 保存给 [toUserId] 的备注。空字符串表示清除。
+  Future<void> setRemark({
+    required String toUserId,
+    required String remark,
+  }) async {
+    final response = await HttpClient.instance.post(
+      '/api/user/remark',
+      data: <String, dynamic>{
+        'to_userid': toUserId,
+        'remark': remark.trim(),
+      },
+    );
+    _requireSuccess(response.data, '备注保存失败');
+  }
+
+  /// 拉取当前用户的全部备注，key 是对方 userId。
+  Future<Map<String, String>> fetchRemarkMap() async {
+    final response = await HttpClient.instance.get('/api/user/remarklist');
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<List<dynamic>>.fromJson(
+      json,
+      (dataJson) => dataJson is List ? dataJson : const <dynamic>[],
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '备注加载失败' : result.message);
+    }
+    final remarkMap = <String, String>{};
+    for (final item in result.data ?? const <dynamic>[]) {
+      if (item is! Map) {
+        continue;
+      }
+      final userId = item['to_userid']?.toString().trim() ?? '';
+      final remark = item['remark']?.toString().trim() ?? '';
+      if (userId.isEmpty || remark.isEmpty) {
+        continue;
+      }
+      remarkMap[userId] = remark;
+    }
+    return remarkMap;
+  }
+
   /// 拉入黑名单（Android `user/block`）。
   Future<void> blockUser({required String toUserId}) async {
     final response = await HttpClient.instance.post(

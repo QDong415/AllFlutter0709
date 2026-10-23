@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
@@ -41,6 +42,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (mounted) {
         AppToast.show(context, '$error');
       }
+    }
+  }
+
+  Future<void> _openSystemNotificationSettings() async {
+    final opened = await openAppSettings();
+    if (!opened && mounted) {
+      AppToast.show(context, '无法打开系统设置');
     }
   }
 
@@ -178,6 +186,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               if (value != null) await _setSlience(value);
             },
           ),
+          _SettingTile(title: '系统通知设置', onTap: _openSystemNotificationSettings),
           _SettingTile(title: '检查更新', onTap: _checkUpdate),
           _SettingTile(
             title: '黑名单',

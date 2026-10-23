@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 
 /// 别人主页右上角菜单的选项。
 enum UserDetailMoreAction {
+  /// 给对方设置备注。
+  remark,
+
   /// 拉入黑名单。
   block,
 
@@ -44,6 +47,14 @@ Future<UserDetailMoreAction?> showUserDetailMoreMenu(
       Offset.zero & overlay.size,
     ),
     items: const [
+      PopupMenuItem<UserDetailMoreAction>(
+        value: UserDetailMoreAction.remark,
+        height: 44,
+        child: Text(
+          '设置备注',
+          style: TextStyle(fontSize: 17, color: AppColors.titleText),
+        ),
+      ),
       PopupMenuItem<UserDetailMoreAction>(
         value: UserDetailMoreAction.block,
         height: 44,

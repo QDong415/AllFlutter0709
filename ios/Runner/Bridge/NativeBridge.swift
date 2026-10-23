@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UserNotifications
 
 /// iOS 侧原生 Bridge：注册 MethodChannel + EventChannel，处理 Flutter `call`。
 ///
@@ -16,6 +17,8 @@ final class NativeBridge: NSObject, FlutterStreamHandler {
   private static let apiPing = "ping"
   private static let apiGetDeviceInfo = "getDeviceInfo"
   private static let apiEmitDemo = "emitDemo"
+  private static let apiShowGetuiOnlineNotification =
+    "showGetuiOnlineNotification"
 
   private static let eventDemoTick = "demo.tick"
 
@@ -86,6 +89,11 @@ final class NativeBridge: NSObject, FlutterStreamHandler {
     case NativeBridge.apiEmitDemo:
       emitDemo()
       result(true)
+    case NativeBridge.apiShowGetuiOnlineNotification:
+      showGetuiOnlineNotification(
+        arguments: payload["args"] as? [String: Any],
+        result: result
+      )
     default:
       result(
         FlutterError(
@@ -107,6 +115,74 @@ final class NativeBridge: NSObject, FlutterStreamHandler {
       "systemVersion": device.systemVersion,
       "identifierForVendor": device.identifierForVendor?.uuidString ?? "",
     ]
+  }
+
+  /// App 真正处于后台时，把个推在线透传展示为本地通知。
+  private func showGetuiOnlineNotification(
+    arguments: [String: Any]?,
+    result: @escaping FlutterResult
+  ) {
+    guard UIApplication.shared.applicationState == .background else {
+      result(false)
+      return
+    }
+
+    let title = nonEmptyString(arguments?["title"]) ?? "新消息"
+    let body = nonEmptyString(arguments?["body"]) ?? "发来一条消息"
+    let taskId = nonEmptyString(arguments?["taskId"]) ?? ""
+    let messageId = nonEmptyString(arguments?["messageId"]) ?? ""
+    let soundEnabled = arguments?["soundEnabled"] as? Bool ?? true
+
+    let content = UNMutableNotificationContent()
+    content.title = title
+    content.body = body
+    if soundEnabled {
+      content.sound = .default
+    }
+
+    var userInfo: [String: Any] = [:]
+    if let payload = nonEmptyString(arguments?["payload"]) {
+      userInfo["payload"] = payload
+    }
+    if !taskId.isEmpty {
+      userInfo["taskId"] = taskId
+    }
+    if !messageId.isEmpty {
+      userInfo["messageId"] = messageId
+    }
+    content.userInfo = userInfo
+
+    let identifier = taskId.isEmpty || messageId.isEmpty
+      ? UUID().uuidString
+      : "getui-\(taskId)-\(messageId)"
+    let request = UNNotificationRequest(
+      identifier: identifier,
+      content: content,
+      trigger: nil
+    )
+    UNUserNotificationCenter.current().add(request) { error in
+      DispatchQueue.main.async {
+        if let error {
+          result(
+            FlutterError(
+              code: "local_notification_failed",
+              message: "本地通知调度失败",
+              details: error.localizedDescription
+            )
+          )
+        } else {
+          result(true)
+        }
+      }
+    }
+  }
+
+  private func nonEmptyString(_ value: Any?) -> String? {
+    guard let value = value as? String else {
+      return nil
+    }
+    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? nil : trimmed
   }
 
   /// 学习用：同一时刻走两条通道各推一条 demo.tick，方便对比。

@@ -36,19 +36,35 @@ class NativeBridge {
     return result == true;
   }
 
-  /// 通用 `call`：payload 带 `v: 1`，与文档协议一致。
-  Future<T?> call<T>({
-    required String api,
-    Map<String, dynamic>? args,
+  /// iOS 后台收到个推在线透传时，请求原生展示本地通知。
+  Future<bool> showGetuiOnlineNotification({
+    required String title,
+    required String body,
+    required String payload,
+    required String taskId,
+    required String messageId,
+    required bool soundEnabled,
   }) async {
+    final result = await call<bool>(
+      api: NativeApis.showGetuiOnlineNotification,
+      args: <String, dynamic>{
+        'title': title,
+        'body': body,
+        'payload': payload,
+        'taskId': taskId,
+        'messageId': messageId,
+        'soundEnabled': soundEnabled,
+      },
+    );
+    return result == true;
+  }
+
+  /// 通用 `call`：payload 带 `v: 1`，与文档协议一致。
+  Future<T?> call<T>({required String api, Map<String, dynamic>? args}) async {
     try {
       final raw = await _channel.invokeMethod<dynamic>(
         NativeMethods.call,
-        <String, dynamic>{
-          'v': 1,
-          'api': api,
-          'args': ?args,
-        },
+        <String, dynamic>{'v': 1, 'api': api, 'args': ?args},
       );
       return raw as T?;
     } on MissingPluginException catch (error, stackTrace) {

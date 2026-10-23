@@ -26,6 +26,9 @@ abstract final class NativeApis {
 
   /// 学习用：让原生同时通过 MethodChannel.emit 与 EventChannel 推一条事件。
   static const emitDemo = 'emitDemo';
+
+  /// iOS 个推在线透传到达后台时，展示本地通知。
+  static const showGetuiOnlineNotification = 'showGetuiOnlineNotification';
 }
 
 /// Native → Flutter 事件名。

@@ -11,7 +11,9 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/conve
 import 'package:all_flutter0709/features/topic/presentation/topic_list_base_state.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
+import 'package:all_flutter0709/features/user/data/user_remark_store.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_more_menu.dart';
+import 'package:all_flutter0709/features/user/presentation/helpers/user_remark_dialog.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_follow_helper.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_avatar_preview_page.dart';
@@ -128,6 +130,14 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
         toUserId: widget.userId,
       );
       if (!mounted) return;
+      final container = ProviderScope.containerOf(context);
+      final myId = container.read(accountProvider)?.userId.trim() ?? '';
+      if (myId.isNotEmpty && myId != profile.userId) {
+        container.read(userRemarkStoreProvider).put(
+          toUserId: profile.userId,
+          remark: profile.remark,
+        );
+      }
       setState(() {
         _profileModel = profile;
       });
@@ -257,12 +267,52 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
     final action = await showUserDetailMoreMenu(anchorContext);
     if (!mounted || action == null) return;
     switch (action) {
+      case UserDetailMoreAction.remark:
+        await _editRemark();
       case UserDetailMoreAction.block:
         await _blockUser();
       case UserDetailMoreAction.report:
         await openWarningReportPage(context, toUserId: widget.userId);
         if (!mounted) return;
         _applySystemUiOverlayStyle();
+    }
+  }
+
+  Future<void> _editRemark() async {
+    final container = ProviderScope.containerOf(context);
+    final store = container.read(userRemarkStoreProvider);
+    final saved = store.remarkOf(widget.userId);
+    final initial = saved.isNotEmpty ? saved : _profileModel.remark;
+    final next = await showUserRemarkDialog(
+      context,
+      nickname: _profileModel.name,
+      initialRemark: initial,
+      maxLength: store.maxLength,
+    );
+    if (next == null || !mounted) {
+      return;
+    }
+    if (next == initial.trim()) {
+      return;
+    }
+    try {
+      await _userRepository.setRemark(toUserId: widget.userId, remark: next);
+      if (!mounted) {
+        return;
+      }
+      ProviderScope.containerOf(context).read(userRemarkStoreProvider).put(
+        toUserId: widget.userId,
+        remark: next,
+        localEdit: true,
+      );
+      setState(() {
+        _profileModel = _profileModel.copyWith(remark: next);
+      });
+      AppToast.show(context, next.isEmpty ? '已清除备注' : '备注已保存');
+    } catch (error) {
+      if (mounted) {
+        AppToast.show(context, '$error');
+      }
     }
   }
 

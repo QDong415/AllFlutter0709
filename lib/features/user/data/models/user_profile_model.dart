@@ -17,6 +17,7 @@ class UserProfileModel {
     required this.videoCount,
     required this.follow,
     this.userType = UserType.human,
+    this.remark = '',
   });
 
   final String userId;
@@ -37,6 +38,9 @@ class UserProfileModel {
 
   /// 账号类型：0 真人 / 1 AI。
   final int userType;
+
+  /// 我给对方设置的备注。个人主页标题不用它，只给设置弹框和聊天显示名。
+  final String remark;
 
   /// 性别文案；0 或未知返回 null。
   String? get genderLabel {
@@ -80,6 +84,7 @@ class UserProfileModel {
     int? videoCount,
     int? follow,
     int? userType,
+    String? remark,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -96,6 +101,7 @@ class UserProfileModel {
       videoCount: videoCount ?? this.videoCount,
       follow: follow ?? this.follow,
       userType: userType ?? this.userType,
+      remark: remark ?? this.remark,
     );
   }
 
@@ -115,6 +121,7 @@ class UserProfileModel {
       videoCount: _readInt(json['videocount']),
       follow: _readInt(json['follow']),
       userType: UserType.parse(json['user_type']),
+      remark: _readString(json['remark']),
     );
   }
 

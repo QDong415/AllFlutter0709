@@ -41,6 +41,8 @@ class UserDetailHeader extends StatelessWidget {
     final avatarUrl =
         ValueUtil.getQiniuUrlByFileName(profileModel.avatar, limitPx: 240) ??
         '';
+    final remark = profileModel.remark.trim();
+    final displayName = remark.isNotEmpty ? remark : profileModel.name.trim();
     final intro = profileModel.intro.trim().isEmpty
         ? '尚未填写个人介绍'
         : profileModel.intro;
@@ -186,7 +188,7 @@ class UserDetailHeader extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        profileModel.name.isEmpty ? '加载中' : profileModel.name,
+                        displayName.isEmpty ? '加载中' : displayName,
                         style: const TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.bold,

@@ -9,6 +9,7 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/conve
 import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/conversation_list_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/conversation_remind_entry.dart';
+import 'package:all_flutter0709/features/user/data/user_remark_store.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -69,6 +70,7 @@ class ConversationPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentAccount = ref.watch(accountProvider);
     final controller = ref.read(conversationControllerProvider);
+    final remarkStore = ref.watch(userRemarkStoreProvider);
 
     return Scaffold(
       backgroundColor: AppColors.bodyBackground,
@@ -81,7 +83,7 @@ class ConversationPage extends ConsumerWidget {
               onTap: () => context.ensureLoggedIn(),
             )
           : ListenableBuilder(
-              listenable: controller,
+              listenable: Listenable.merge([controller, remarkStore]),
               builder: (context, _) {
                 final state = controller.conversationsState;
                 return state.when(
@@ -124,9 +126,13 @@ class ConversationPage extends ConsumerWidget {
                             }
                             final item =
                                 conversations[index - _remindEntries.length];
+                            final displayName = remarkStore.displayName(
+                              userId: item.conversationId,
+                              nickname: item.name,
+                            );
                             return ConversationListItem(
                               key: ValueKey(item.conversationId),
-                              summaryModel: item,
+                              summaryModel: item.copyWith(name: displayName),
                               onTap: () {
                                 if (!context.ensureLoggedIn()) return;
                                 context.push(

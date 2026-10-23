@@ -6,6 +6,7 @@ import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
+import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_ai_typing_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_bubble_menu_helper.dart';
@@ -21,6 +22,7 @@ import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_area.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/conversation_chat_app_bar.dart';
+import 'package:all_flutter0709/features/user/data/user_remark_store.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -69,10 +71,24 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   /// 在 dispose 里不能依赖 ref，提前拿到 controller 以便可靠清除 active 会话。
   ConversationController? _conversationController;
 
-  /// 对方昵称/头像：路由带什么就用什么。
+  /// 备注变化时刷新标题。Provider 本身不会在 notifyListeners 时重建页面。
+  UserRemarkStore? _remarkStore;
+
+  /// 对方昵称。路由没带名字时，用会话列表里的昵称，备注在标题处另算。
   String get _peerName {
-    final name = widget.initialPeerName?.trim() ?? '';
-    return name.isEmpty ? '用户${widget.chatId}' : name;
+    final routedName = widget.initialPeerName?.trim() ?? '';
+    if (routedName.isNotEmpty) {
+      return routedName;
+    }
+    final conversationList =
+        _conversationController?.conversationsState.value ??
+        const <ConversationSummary>[];
+    for (final item in conversationList) {
+      if (item.conversationId == widget.chatId && item.name.trim().isNotEmpty) {
+        return item.name.trim();
+      }
+    }
+    return '用户${widget.chatId}';
   }
 
   String get _peerAvatar => widget.initialPeerAvatar?.trim() ?? '';
@@ -155,6 +171,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
       },
     );
     _conversationController = ref.read(conversationControllerProvider);
+    _conversationController!.addListener(_onConversationChanged);
+    _remarkStore = ref.read(userRemarkStoreProvider);
+    _remarkStore!.addListener(_onConversationChanged);
     _focusNode.addListener(_handleFocusChange);
     _textController.addListener(_handleTextChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -171,7 +190,10 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   void dispose() {
     unawaited(_voicePlayHelper.dispose());
     unawaited(_voiceRecordHelper.dispose());
-    _conversationController?.closeConversation(widget.chatId);
+    _conversationController
+      ?..removeListener(_onConversationChanged)
+      ..closeConversation(widget.chatId);
+    _remarkStore?.removeListener(_onConversationChanged);
     _focusNode
       ..removeListener(_handleFocusChange)
       ..dispose();
@@ -180,6 +202,12 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
       ..dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onConversationChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _handleFocusChange() {
@@ -199,6 +227,18 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   void _resetInputState() {
     _panelHelper.hidePanel();
     _bubbleMenuHelper.hide();
+  }
+
+  /// 打开对方个人主页。主页展示昵称，不用备注。
+  void _openPeerProfile() {
+    _resetInputState();
+    openUserDetailPage(
+      context,
+      userId: widget.chatId,
+      name: _peerName,
+      avatar: _peerAvatar,
+      userType: _peerUserType,
+    );
   }
 
   /// 气泡点按：图片预览；语音播放下一步挂在 [VoiceMessage] 分支。
@@ -470,6 +510,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     final controller = ref.read(conversationControllerProvider);
     final myAvatar = ref.watch(accountProvider)?.avatar ?? '';
     final messagesListenable = controller.messagesListenableOf(widget.chatId);
+    final conversationName = ref
+        .watch(userRemarkStoreProvider)
+        .displayName(userId: widget.chatId, nickname: _peerName);
 
     // Android 系统返回：键盘还在、自定义面板、录音或气泡菜单开着时先收起。
     return PopScope(
@@ -489,10 +532,11 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         resizeToAvoidBottomInset: false,
         appBar: ConversationChatAppBar(
           messagesListenable: messagesListenable,
-          conversationName: _peerName,
+          conversationName: conversationName,
           peerIsAi: _peerIsAi,
           aiTypingHelper: _aiTypingHelper,
           onLeadingPressed: () => Navigator.of(context).pop(),
+          onPeerPressed: _openPeerProfile,
         ),
         body: Stack(
           key: _bubbleMenuHelper.overlayStackKey,
@@ -520,9 +564,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                       _bubbleMenuHelper.show(details);
                     },
                     onAvatarTap: (message) {
-                      _panelHelper.hidePanel();
                       // 右侧为自己，左侧为对方；个人主页内再校验登录。
                       if (message.direction == MessageDirection.right) {
+                        _panelHelper.hidePanel();
                         final account = ref.read(accountProvider);
                         openUserDetailPage(
                           context,
@@ -533,13 +577,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                         );
                         return;
                       }
-                      openUserDetailPage(
-                        context,
-                        userId: widget.chatId,
-                        name: _peerName,
-                        avatar: _peerAvatar,
-                        userType: _peerUserType,
-                      );
+                      _openPeerProfile();
                     },
                   ),
                 ),

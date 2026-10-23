@@ -7,11 +7,13 @@ import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
+import 'package:all_flutter0709/core/bridge/native_bridge.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/push/getui_push_config.dart';
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
 import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
+import 'package:all_flutter0709/features/user/data/user_remark_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -193,11 +195,54 @@ class GetuiPushService extends ChangeNotifier {
     await _navigateFromPushData(message, fromClick: true);
   }
 
-  /// iOS 透传等：拉消息；有 taskId/messageId 时回执
+  /// iOS 透传：拉消息；有 taskId/messageId 时回执。
+  ///
+  /// App 在后台但仍在线时，系统不会出 APNs，通过自有 MethodChannel
+  /// 请求 iOS 补一条本地通知。
   Future<dynamic> _onReceivePayload(Map<String, dynamic> message) async {
     _captureRawEvent('onReceivePayload', message);
+    await _showIosOnlineNotificationIfNeeded(message);
     await _handlePayloadCandidate(message, fromClick: false);
     _sendFeedbackIfPossible(message);
+  }
+
+  Future<void> _showIosOnlineNotificationIfNeeded(
+    Map<String, dynamic> message,
+  ) async {
+    if (!Platform.isIOS ||
+        !_readPushBool(message['fromGetui']) ||
+        _readPushBool(message['offLine'])) {
+      return;
+    }
+
+    final businessPayloadMap = _extractBusinessPayload(message);
+    final title = businessPayloadMap?['title']?.toString() ?? '';
+    final body = businessPayloadMap?['body']?.toString() ?? '';
+    final payload =
+        message['payloadMsg']?.toString() ??
+        message['payload']?.toString() ??
+        (businessPayloadMap == null ? '' : jsonEncode(businessPayloadMap));
+    try {
+      final shown = await NativeBridge.instance.showGetuiOnlineNotification(
+        title: title,
+        body: body,
+        payload: payload,
+        taskId: message['taskId']?.toString() ?? '',
+        messageId: message['messageId']?.toString() ?? '',
+        soundEnabled: businessPayloadMap?['slience']?.toString() != '1',
+      );
+      if (shown) {
+        _appendLog('iOS 在线透传已补本地通知');
+      }
+    } catch (error) {
+      _appendLog('iOS 在线透传本地通知失败: $error');
+    }
+  }
+
+  bool _readPushBool(dynamic value) {
+    return value == true ||
+        value == 1 ||
+        value?.toString().toLowerCase() == 'true';
   }
 
   /// iOS 通知响应。冷启动时个推也会把上次通知从这里再送一次。
@@ -407,6 +452,9 @@ class GetuiPushService extends ChangeNotifier {
     if (account == null) {
       return;
     }
+    final remarkStore = _ref.read(userRemarkStoreProvider);
+    remarkStore.switchToLoggedInUser(account.userId);
+    unawaited(remarkStore.syncFromServer());
     await _ref.read(conversationRepositoryProvider).notifyDoRegAction();
     await _ref
         .read(conversationControllerProvider)
