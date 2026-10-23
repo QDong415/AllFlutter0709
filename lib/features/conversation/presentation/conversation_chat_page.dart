@@ -17,13 +17,11 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_record_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/mappers/chat_item_mapper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
-import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bottom_panel_host.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
-import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_list_view.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_area.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/conversation_chat_app_bar.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
-import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
-import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -471,163 +469,123 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   Widget build(BuildContext context) {
     final controller = ref.read(conversationControllerProvider);
     final myAvatar = ref.watch(accountProvider)?.avatar ?? '';
-    return ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) {
-        final state = controller.messagesStateOf(widget.chatId);
-        final messages = state is AsyncData<List<ConversationMessage>>
-            ? state.value
-            : const <ConversationMessage>[];
-        final conversationName = _peerName;
-        final peerAvatar = _peerAvatar;
-        final incomingCount = messages
-            .where((message) => !message.isSender)
-            .length;
-        final isPeerTyping =
-            _peerIsAi && _aiTypingHelper.isTyping(incomingCount);
-        final items = buildChatItems(
-          messages,
-          myAvatar: myAvatar,
-          peerAvatar: peerAvatar,
-        );
+    final messagesListenable = controller.messagesListenableOf(widget.chatId);
 
-        if (state.hasValue && items.isNotEmpty) {
-          _scrollHelper.scrollIfNewMessages(items.length);
+    // Android 系统返回：键盘还在、自定义面板、录音或气泡菜单开着时先收起。
+    return PopScope(
+      canPop: !_blockAndroidBack,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
         }
-
-        // Android 系统返回：键盘还在、自定义面板、录音或气泡菜单开着时先收起。
-        return PopScope(
-          canPop: !_blockAndroidBack,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) {
-              return;
-            }
-            if (_bubbleMenuHelper.isVisible) {
-              _bubbleMenuHelper.hide();
-              return;
-            }
-            _panelHelper.hidePanel();
-          },
-          child: Scaffold(
-            backgroundColor: const Color(0xFFEDEDED),
-            resizeToAvoidBottomInset: false,
-            appBar: CommonAppBar(
-              title: isPeerTyping ? '对方正在输入中...' : conversationName,
-              titleTrailing: _peerIsAi && !isPeerTyping
-                  ? const UserAiTag()
-                  : null,
-              actions: const [SizedBox(width: 12)],
-              onLeadingPressed: () => Navigator.of(context).pop(),
-            ),
-            body: Stack(
-              key: _bubbleMenuHelper.overlayStackKey,
+        if (_bubbleMenuHelper.isVisible) {
+          _bubbleMenuHelper.hide();
+          return;
+        }
+        _panelHelper.hidePanel();
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFEDEDED),
+        resizeToAvoidBottomInset: false,
+        appBar: ConversationChatAppBar(
+          messagesListenable: messagesListenable,
+          conversationName: _peerName,
+          peerIsAi: _peerIsAi,
+          aiTypingHelper: _aiTypingHelper,
+          onLeadingPressed: () => Navigator.of(context).pop(),
+        ),
+        body: Stack(
+          key: _bubbleMenuHelper.overlayStackKey,
+          children: [
+            Column(
               children: [
-                Column(
-                  children: [
-                    Expanded(
-                      child: Listener(
-                        behavior: HitTestBehavior.translucent,
-                        // 点列表收键盘并取消选中。长按菜单 Overlay 放到外层 Stack，避免点菜单被当成点空白。
-                        onPointerDown: (_) => _resetInputState(),
-                        child: ChatMessageListView(
-                          state: state,
-                          items: items,
-                          scrollController: _scrollController,
-                          playingMessageId: _voicePlayHelper.playingMessageId,
-                          selectedMessageId:
-                              _bubbleMenuHelper.selectedMessageId,
-                          onRefresh: () => ref
-                              .read(conversationControllerProvider)
-                              .syncMessagesFromServer(),
-                          onRetry: () {
-                            unawaited(
-                              ref
-                                  .read(conversationControllerProvider)
-                                  .syncMessagesFromServer(),
-                            );
-                          },
-                          actions: ChatMessageActions(
-                            onMessageTap: (message) {
-                              _handleMessageTap(message, items);
-                            },
-                            onMessageLongPress: (details) {
-                              _panelHelper.hidePanel();
-                              _bubbleMenuHelper.show(details);
-                            },
-                            onAvatarTap: (message) {
-                              _panelHelper.hidePanel();
-                              // 右侧为自己，左侧为对方；不在此处拦登录，由个人主页内操作再校验。
-                              if (message.direction == MessageDirection.right) {
-                                final account = ref.read(accountProvider);
-                                openUserDetailPage(
-                                  context,
-                                  userId: account?.userId ?? widget.chatId,
-                                  name: account?.name,
-                                  avatar: account?.avatar,
-                                  userType: account?.userType,
-                                );
-                                return;
-                              }
-                              openUserDetailPage(
-                                context,
-                                userId: widget.chatId,
-                                name: conversationName,
-                                avatar: peerAvatar,
-                                userType: _peerUserType,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    ChatInputBar(
-                      isVoiceMode: _isVoiceMode,
-                      isEmojiPanel:
-                          _panelHelper.currentPanelType == ChatPanelType.emoji,
-                      isRecording: _voiceRecordHelper.isRecording,
-                      willCancelRecording: _voiceRecordHelper.willCancel,
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      readOnly: _panelHelper.readOnly,
-                      onToggleVoiceMode: _toggleVoiceMode,
-                      onToggleEmoji: _toggleEmoji,
-                      onTogglePanel: _togglePanel,
-                      onInputPointerUp: _panelHelper.handleInputViewOnPointerUp,
-                      onSendText: () {
-                        unawaited(_sendText());
-                      },
-                      onVoicePointerDown: (position) {
-                        unawaited(
-                          _voiceRecordHelper.handlePointerDown(position),
+                Expanded(
+                  child: ChatMessageArea(
+                    messagesListenable: messagesListenable,
+                    myAvatar: myAvatar,
+                    peerAvatar: _peerAvatar,
+                    scrollController: _scrollController,
+                    playingMessageId: _voicePlayHelper.playingMessageId,
+                    selectedMessageId: _bubbleMenuHelper.selectedMessageId,
+                    onRefresh: controller.syncMessagesFromServer,
+                    onRetry: () {
+                      unawaited(controller.syncMessagesFromServer());
+                    },
+                    // 点列表收键盘并取消选中；菜单 Overlay 在外层 Stack。
+                    onPointerDown: _resetInputState,
+                    onItemsChanged: _scrollHelper.scrollIfNewMessages,
+                    onMessageTap: _handleMessageTap,
+                    onMessageLongPress: (details) {
+                      _panelHelper.hidePanel();
+                      _bubbleMenuHelper.show(details);
+                    },
+                    onAvatarTap: (message) {
+                      _panelHelper.hidePanel();
+                      // 右侧为自己，左侧为对方；个人主页内再校验登录。
+                      if (message.direction == MessageDirection.right) {
+                        final account = ref.read(accountProvider);
+                        openUserDetailPage(
+                          context,
+                          userId: account?.userId ?? widget.chatId,
+                          name: account?.name,
+                          avatar: account?.avatar,
+                          userType: account?.userType,
                         );
-                      },
-                      onVoicePointerMove: _voiceRecordHelper.handlePointerMove,
-                      onVoicePointerUp: _voiceRecordHelper.handlePointerUp,
-                      onVoicePointerCancel:
-                          _voiceRecordHelper.handlePointerCancel,
-                    ),
-                    ChatBottomPanelHost(
-                      controller: _panelHelper.controller,
-                      inputFocusNode: _focusNode,
-                      onPanelTypeChange: (panelType, data) {
-                        _panelHelper.onPanelTypeChange(panelType, data);
-                        _scrollHelper.scrollToBottom();
-                      },
-                      onSendImage: () {
-                        unawaited(_sendImage());
-                      },
-                      onEmojiTap: _insertEmoji,
-                      onEmojiDelete: _deleteEmoji,
-                    ),
-                  ],
+                        return;
+                      }
+                      openUserDetailPage(
+                        context,
+                        userId: widget.chatId,
+                        name: _peerName,
+                        avatar: _peerAvatar,
+                        userType: _peerUserType,
+                      );
+                    },
+                  ),
                 ),
-                ?_voiceRecordHelper.buildOverlay(),
-                ?_bubbleMenuHelper.buildOverlay(),
+                ChatInputBar(
+                  isVoiceMode: _isVoiceMode,
+                  isEmojiPanel:
+                      _panelHelper.currentPanelType == ChatPanelType.emoji,
+                  isRecording: _voiceRecordHelper.isRecording,
+                  willCancelRecording: _voiceRecordHelper.willCancel,
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  readOnly: _panelHelper.readOnly,
+                  onToggleVoiceMode: _toggleVoiceMode,
+                  onToggleEmoji: _toggleEmoji,
+                  onTogglePanel: _togglePanel,
+                  onInputPointerUp: _panelHelper.handleInputViewOnPointerUp,
+                  onSendText: () {
+                    unawaited(_sendText());
+                  },
+                  onVoicePointerDown: (position) {
+                    unawaited(_voiceRecordHelper.handlePointerDown(position));
+                  },
+                  onVoicePointerMove: _voiceRecordHelper.handlePointerMove,
+                  onVoicePointerUp: _voiceRecordHelper.handlePointerUp,
+                  onVoicePointerCancel: _voiceRecordHelper.handlePointerCancel,
+                ),
+                ChatBottomPanelHost(
+                  controller: _panelHelper.controller,
+                  inputFocusNode: _focusNode,
+                  onPanelTypeChange: (panelType, data) {
+                    _panelHelper.onPanelTypeChange(panelType, data);
+                    _scrollHelper.scrollToBottom();
+                  },
+                  onSendImage: () {
+                    unawaited(_sendImage());
+                  },
+                  onEmojiTap: _insertEmoji,
+                  onEmojiDelete: _deleteEmoji,
+                ),
               ],
             ),
-          ),
-        );
-      },
+            ?_voiceRecordHelper.buildOverlay(),
+            ?_bubbleMenuHelper.buildOverlay(),
+          ],
+        ),
+      ),
     );
   }
 }

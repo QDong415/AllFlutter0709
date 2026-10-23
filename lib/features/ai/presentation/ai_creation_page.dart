@@ -178,8 +178,8 @@ class _AiCreationPageState extends State<AiCreationPage> {
             detail: 'AI 正在勾勒五官和发型，这通常需要几十秒。',
           ),
           _CreationPhase.generatingFullBody => const AiGenerationAnimation(
-            title: '正在绘制全身形象',
-            detail: '我们会锁定头像中的角色，继续完成服装和全身构图。',
+            title: '正在绘制生活照',
+            detail: '我们会参考刚生成的头像，继续完成服装和生活场景。',
           ),
           _CreationPhase.preview => _buildPreview(),
           _CreationPhase.confirming => const AiGenerationAnimation(
@@ -224,7 +224,7 @@ class _AiCreationPageState extends State<AiCreationPage> {
             const SizedBox(width: 12),
             Expanded(
               child: _PreviewImage(
-                title: '全身形象',
+                title: '生活照',
                 imageUrl: creationModel.fullBodyImageUrl!,
                 aspectRatio: 3 / 4,
               ),

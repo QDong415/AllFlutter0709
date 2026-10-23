@@ -141,7 +141,7 @@ class _AiCreationFormState extends State<AiCreationForm> {
           ),
           const SizedBox(height: 7),
           const Text(
-            '选择角色设定后，我们会依次生成头像和全身形象。',
+            '选择角色设定后，我们会依次生成头像和生活照。',
             style: TextStyle(color: Color(0xFF777777), fontSize: 14),
           ),
           const SizedBox(height: 24),
@@ -216,7 +216,7 @@ class _AiCreationFormState extends State<AiCreationForm> {
           const _SectionTitle(title: '补充人设（选填）'),
           const SizedBox(height: 7),
           const Text(
-            '可以补充性格、爱好、经历和说话方式。若写了衣服、鞋子、配饰或发型，会用于生成头像和全身图。内容会经过 AI 自动审核与整理。',
+            '可以补充性格、爱好、经历和说话方式。若写了衣服、鞋子、配饰或发型，会用于生成头像和生活照。内容会经过 AI 自动审核与整理。',
             style: TextStyle(
               color: Color(0xFF888888),
               fontSize: 12,

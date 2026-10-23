@@ -8,6 +8,9 @@ import 'package:all_flutter0709/features/conversation/data/conversation_reposito
 import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
+import 'package:all_flutter0709/features/conversation/presentation/controllers/chat_send_coordinator.dart';
+import 'package:all_flutter0709/features/conversation/presentation/controllers/conversation_message_store.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,14 +23,22 @@ final conversationControllerProvider = Provider<ConversationController>((ref) {
 
 class ConversationController extends ChangeNotifier {
   ConversationController(this._ref) {
-    _ref.read(remindUnreadStoreProvider).addListener(_onRemindStoreChanged);
+    _remindUnreadStore = _ref.read(remindUnreadStoreProvider);
+    _remindUnreadStore.addListener(_onRemindStoreChanged);
+    _sendCoordinator = ChatSendCoordinator(
+      repository: _ref.read(conversationRepositoryProvider),
+      messageStore: _messageStore,
+      refreshConversations: refreshConversations,
+    );
   }
 
   final Ref _ref;
+  late final RemindUnreadStore _remindUnreadStore;
+  final ConversationMessageStore _messageStore = ConversationMessageStore();
+  late final ChatSendCoordinator _sendCoordinator;
 
   AsyncValue<List<ConversationSummary>> conversationsState =
       const AsyncValue.loading();
-  final Map<String, AsyncValue<List<ConversationMessage>>> _messagesState = {};
 
   bool _initialized = false;
   bool _syncing = false;
@@ -41,13 +52,18 @@ class ConversationController extends ChangeNotifier {
   /// 某一类动态提醒的未读数。
   int remindUnreadCount(RemindKind kind) {
     final userId = _ref.read(accountProvider)?.userId ?? '';
-    return _ref
-        .read(remindUnreadStoreProvider)
-        .countOf(userId: userId, kind: kind);
+    return _remindUnreadStore.countOf(userId: userId, kind: kind);
   }
 
   AsyncValue<List<ConversationMessage>> messagesStateOf(String conversationId) {
-    return _messagesState[conversationId] ?? const AsyncValue.loading();
+    return _messageStore.stateOf(conversationId);
+  }
+
+  /// 监听指定会话的消息，避免会话列表和未读数变化时重建聊天页。
+  ValueListenable<AsyncValue<List<ConversationMessage>>> messagesListenableOf(
+    String conversationId,
+  ) {
+    return _messageStore.listenableOf(conversationId);
   }
 
   Future<void> initialize() async {
@@ -95,9 +111,7 @@ class ConversationController extends ChangeNotifier {
 
   void _syncRemindUnread({bool notify = true}) {
     final userId = _ref.read(accountProvider)?.userId ?? '';
-    final count = userId.isEmpty
-        ? 0
-        : _ref.read(remindUnreadStoreProvider).totalOf(userId);
+    final count = userId.isEmpty ? 0 : _remindUnreadStore.totalOf(userId);
     if (_remindUnreadCount == count) {
       return;
     }
@@ -109,12 +123,13 @@ class ConversationController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _ref.read(remindUnreadStoreProvider).removeListener(_onRemindStoreChanged);
+    _remindUnreadStore.removeListener(_onRemindStoreChanged);
+    _messageStore.dispose();
     super.dispose();
   }
 
   Future<void> ensureMessagesLoaded(String conversationId) async {
-    final state = _messagesState[conversationId];
+    final state = messagesStateOf(conversationId);
     if (state is AsyncData<List<ConversationMessage>> &&
         state.value.isNotEmpty) {
       return;
@@ -125,26 +140,37 @@ class ConversationController extends ChangeNotifier {
   Future<void> refreshMessages(String conversationId) async {
     final account = _ref.read(accountProvider);
     if (account == null) {
-      _messagesState[conversationId] = const AsyncValue.data(
-        <ConversationMessage>[],
+      _messageStore.setState(
+        conversationId,
+        const AsyncValue.data(<ConversationMessage>[]),
       );
-      notifyListeners();
       return;
     }
 
-    _messagesState[conversationId] = const AsyncValue.loading();
-    notifyListeners();
+    final previousState = messagesStateOf(conversationId);
+    final hasPreviousData =
+        previousState is AsyncData<List<ConversationMessage>>;
+    // 只有首次加载才用整页 loading。后台同步、发送完成和标记已读时保留
+    // 当前消息，避免列表被 loading 短暂替换后整棵重新挂载而闪烁。
+    if (!hasPreviousData) {
+      _messageStore.setState(conversationId, const AsyncValue.loading());
+    }
     try {
       final repository = _ref.read(conversationRepositoryProvider);
       final messages = await repository.getMessages(
         account.userId,
         conversationId,
       );
-      _messagesState[conversationId] = AsyncValue.data(messages);
-      notifyListeners();
+      _messageStore.setState(conversationId, AsyncValue.data(messages));
     } catch (error, stackTrace) {
-      _messagesState[conversationId] = AsyncValue.error(error, stackTrace);
-      notifyListeners();
+      if (!hasPreviousData) {
+        _messageStore.setState(
+          conversationId,
+          AsyncValue.error(error, stackTrace),
+        );
+      } else {
+        ChatPushLog.d('后台刷新消息失败，保留当前列表: $error');
+      }
     }
   }
 
@@ -196,7 +222,7 @@ class ConversationController extends ChangeNotifier {
 
     final repository = _ref.read(conversationRepositoryProvider);
     await repository.deleteConversation(account.userId, id);
-    _messagesState.remove(id);
+    _messageStore.setState(id, const AsyncValue.data(<ConversationMessage>[]));
     if (_activeConversationId == id) {
       _activeConversationId = null;
     }
@@ -220,23 +246,11 @@ class ConversationController extends ChangeNotifier {
       msgId: msgId,
     );
 
-    final currentState = _messagesState[conversationId];
-    if (currentState is AsyncData<List<ConversationMessage>>) {
-      _messagesState[conversationId] = AsyncValue.data(
-        currentState.value
-            .where((message) {
-              if (clientMessageId > 0) {
-                return message.clientMessageId != clientMessageId;
-              }
-              if (msgId != 0) {
-                return message.msgId != msgId;
-              }
-              return true;
-            })
-            .toList(growable: false),
-      );
-      notifyListeners();
-    }
+    _messageStore.remove(
+      conversationId: conversationId,
+      clientMessageId: clientMessageId,
+      msgId: msgId,
+    );
     await refreshConversations();
   }
 
@@ -257,30 +271,19 @@ class ConversationController extends ChangeNotifier {
       msgId: msgId,
     );
 
-    final currentState = _messagesState[conversationId];
-    if (currentState is AsyncData<List<ConversationMessage>>) {
-      _messagesState[conversationId] = AsyncValue.data(
-        currentState.value
-            .map((message) {
-              final matched = clientMessageId > 0
-                  ? message.clientMessageId == clientMessageId
-                  : msgId > 0 && message.msgId == msgId;
-              if (!matched) {
-                return message;
-              }
-              return message.copyWith(
-                messageType: ConversationMessageType.recall,
-                content: '',
-                filename: '',
-                extend: '',
-                localFilePath: '',
-                uploadProgress: 0,
-              );
-            })
-            .toList(growable: false),
-      );
-      notifyListeners();
-    }
+    _messageStore.updateByIdentity(
+      conversationId: conversationId,
+      clientMessageId: clientMessageId,
+      msgId: msgId,
+      transform: (message) => message.copyWith(
+        messageType: ConversationMessageType.recall,
+        content: '',
+        filename: '',
+        extend: '',
+        localFilePath: '',
+        uploadProgress: 0,
+      ),
+    );
     await refreshConversations();
   }
 
@@ -359,8 +362,7 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       throw Exception('请先登录');
     }
-    final repository = _ref.read(conversationRepositoryProvider);
-    final message = await repository.createPendingTextMessage(
+    await _sendCoordinator.sendText(
       account: account,
       conversationId: conversationId,
       text: text,
@@ -368,18 +370,6 @@ class ConversationController extends ChangeNotifier {
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
     );
-    await _appendAndNotify(conversationId, message);
-    await refreshConversations();
-
-    try {
-      await repository.sendPendingTextMessage(
-        account: account,
-        message: message,
-      );
-    } finally {
-      await refreshMessages(conversationId);
-      await refreshConversations();
-    }
   }
 
   Future<void> sendImageMessage({
@@ -394,12 +384,7 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       throw Exception('请先登录');
     }
-    ChatSendLog.d(
-      'Controller 发图 conversationId=$conversationId '
-      'path=${imageFile.path} size=${imageSize.width}x${imageSize.height}',
-    );
-    final repository = _ref.read(conversationRepositoryProvider);
-    final message = await repository.createPendingImageMessage(
+    await _sendCoordinator.sendImage(
       account: account,
       conversationId: conversationId,
       imageFile: imageFile,
@@ -408,27 +393,6 @@ class ConversationController extends ChangeNotifier {
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
     );
-    ChatSendLog.d(
-      '本地 pending 已创建 clientId=${message.clientMessageId} '
-      'filename=${message.filename}',
-    );
-    await _appendAndNotify(conversationId, message);
-    await refreshConversations();
-
-    try {
-      await repository.sendPendingImageMessage(
-        account: account,
-        message: message,
-      );
-      ChatSendLog.d('Controller 发图完成');
-    } catch (error, stackTrace) {
-      ChatSendLog.d('Controller 发图失败: $error');
-      ChatSendLog.d('$stackTrace');
-      rethrow;
-    } finally {
-      await refreshMessages(conversationId);
-      await refreshConversations();
-    }
   }
 
   /// 发送语音：先落本地 pending，再上传七牛并 `/api/chat/send`。
@@ -445,12 +409,7 @@ class ConversationController extends ChangeNotifier {
     if (account == null) {
       throw Exception('请先登录');
     }
-    ChatSendLog.d(
-      'Controller 发语音 conversationId=$conversationId '
-      'file=${audioFile.path} duration=$durationSeconds filename=$filename',
-    );
-    final repository = _ref.read(conversationRepositoryProvider);
-    final message = await repository.createPendingVoiceMessage(
+    await _sendCoordinator.sendVoice(
       account: account,
       conversationId: conversationId,
       audioFile: audioFile,
@@ -460,27 +419,6 @@ class ConversationController extends ChangeNotifier {
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
     );
-    ChatSendLog.d(
-      '本地 pending 语音已创建 clientId=${message.clientMessageId} '
-      'filename=${message.filename} extend=${message.extend}',
-    );
-    await _appendAndNotify(conversationId, message);
-    await refreshConversations();
-
-    try {
-      await repository.sendPendingVoiceMessage(
-        account: account,
-        message: message,
-      );
-      ChatSendLog.d('Controller 发语音完成');
-    } catch (error, stackTrace) {
-      ChatSendLog.d('Controller 发语音失败: $error');
-      ChatSendLog.d('$stackTrace');
-      rethrow;
-    } finally {
-      await refreshMessages(conversationId);
-      await refreshConversations();
-    }
   }
 
   /// 标记语音已播放并刷新当前会话。
@@ -500,24 +438,16 @@ class ConversationController extends ChangeNotifier {
       durationSeconds: durationSeconds,
     );
 
-    final currentState = _messagesState[conversationId];
-    if (currentState is! AsyncData<List<ConversationMessage>>) {
-      return;
-    }
     final extend = ConversationMessage.voiceExtendJson(
       durationSeconds: durationSeconds,
       hadPlay: true,
     );
-    _messagesState[conversationId] = AsyncValue.data(
-      currentState.value
-          .map(
-            (message) => message.msgId == msgId
-                ? message.copyWith(extend: extend)
-                : message,
-          )
-          .toList(growable: false),
+    _messageStore.updateByIdentity(
+      conversationId: conversationId,
+      clientMessageId: 0,
+      msgId: msgId,
+      transform: (message) => message.copyWith(extend: extend),
     );
-    notifyListeners();
   }
 
   /// 【入口 A】运行期登录 / 退出后调用（见 GetuiPushService 的 ref.listen）。
@@ -535,7 +465,7 @@ class ConversationController extends ChangeNotifier {
   Future<void> _refreshList(AccountModel? account) async {
     if (account == null) {
       conversationsState = const AsyncValue.data(<ConversationSummary>[]);
-      _messagesState.clear();
+      _messageStore.clearAll();
       _totalUnreadCount = 0;
       _activeConversationId = null;
       notifyListeners();
@@ -543,19 +473,5 @@ class ConversationController extends ChangeNotifier {
     }
     await refreshConversations();
     await syncMessagesFromServer();
-  }
-
-  Future<void> _appendAndNotify(
-    String conversationId,
-    ConversationMessage message,
-  ) async {
-    final currentState = _messagesState[conversationId];
-    final currentMessages = currentState is AsyncData<List<ConversationMessage>>
-        ? currentState.value
-        : const <ConversationMessage>[];
-    _messagesState[conversationId] = AsyncValue.data(
-      List<ConversationMessage>.from(currentMessages)..add(message),
-    );
-    notifyListeners();
   }
 }

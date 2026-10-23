@@ -74,6 +74,7 @@ ChatItem _mapMessage(
         avatarUrl: avatarUrl,
         createTimeSeconds: message.createTimeSeconds,
         deliveryStatus: deliveryStatus,
+        uploadProgress: message.uploadProgress,
         seconds: message.voiceSeconds,
         audioPath: message.localFilePath.isEmpty ? null : message.localFilePath,
         audioUrl: message.localFilePath.isEmpty ? message.voiceUrl : null,

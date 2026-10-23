@@ -90,6 +90,7 @@ final class VoiceMessage extends MessageItem {
     required super.avatarUrl,
     required super.createTimeSeconds,
     super.deliveryStatus,
+    super.uploadProgress,
     required this.seconds,
     this.audioPath,
     this.audioUrl,

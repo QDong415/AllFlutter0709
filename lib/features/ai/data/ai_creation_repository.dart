@@ -41,7 +41,7 @@ class AiCreationRepository {
     );
   }
 
-  /// 同步生成全身图。
+  /// 同步生成 3:4 角色生活照；服务端暂时保留原接口名。
   Future<AiCreationModel> generateFullBody(int creationId) {
     return _post(
       '/api/ai/creationfullbody',

@@ -236,7 +236,7 @@ class UmengOneTapLogin {
     model.privacyOperatorSufText = '》';
     model.privacyColors = <int>[0xFF8A8A8A, AppColors.link.toARGB32()];
     model.checkBoxIsHidden = false;
-    model.checkBoxIsChecked = false;
+    model.checkBoxIsChecked = true;
     return model;
   }
 }

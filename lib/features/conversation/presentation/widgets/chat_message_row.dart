@@ -20,10 +20,6 @@ class ChatMessageRow extends StatelessWidget {
 
   bool get _isRight => item.isRight;
 
-  bool get _showStatus =>
-      item.deliveryStatus == MessageDeliveryStatus.sending ||
-      item.deliveryStatus == MessageDeliveryStatus.failed;
-
   @override
   Widget build(BuildContext context) {
     final bubbleChild = _BubbleGesture(
@@ -46,14 +42,21 @@ class ChatMessageRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_showStatus)
-                      Padding(
+                    // 固定保留状态槽，sending 消失或 failed 出现时气泡不横向跳动。
+                    SizedBox(
+                      width: 26,
+                      child: Padding(
                         padding: const EdgeInsets.only(top: 12, right: 10),
-                        child: _MessageStatusIndicator(
-                          status: item.deliveryStatus,
-                          uploadProgress: item.uploadProgress,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 160),
+                          child: _MessageStatusIndicator(
+                            key: ValueKey(item.deliveryStatus),
+                            status: item.deliveryStatus,
+                            uploadProgress: item.uploadProgress,
+                          ),
                         ),
                       ),
+                    ),
                     Flexible(child: bubbleChild),
                   ],
                 ),
@@ -199,6 +202,7 @@ class _ChatAvatar extends StatelessWidget {
 
 class _MessageStatusIndicator extends StatelessWidget {
   const _MessageStatusIndicator({
+    super.key,
     required this.status,
     required this.uploadProgress,
   });
