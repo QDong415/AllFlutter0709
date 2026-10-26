@@ -15,6 +15,11 @@
   <img src="http://qiniu.itopic.com.cn/httpqiniu.itopic.com.cnapp-flutter-release.apk.png" width="200" />
 </p>
 
+### ios扫码体验 ：
+<p align="center">
+  <img src="http://qiniu.itopic.com.cn/ios-app-store-qr.png" width="200" />
+</p>
+
 一个偏真实业务的 Flutter 社交客户端示例：动态、视频、聊天、对接AI机器人 ，但**重点不是业务本身，而是怎么把 Flutter 工程搭清楚**。
 
 ---
