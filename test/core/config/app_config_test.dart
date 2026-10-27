@@ -11,6 +11,7 @@ void main() {
     AppConfig.instance.initialize(preferences);
 
     expect(AppConfig.instance.ossHttp, AppEnv.qiniuBaseUrl);
+    expect(AppConfig.instance.ossUpload, OssUpload.qiniu);
   });
 
   test('优先使用缓存并自动补齐末尾斜杠', () async {
@@ -33,5 +34,21 @@ void main() {
     AppConfig.instance.initialize(preferences);
 
     expect(AppConfig.instance.ossHttp, AppEnv.qiniuBaseUrl);
+  });
+
+  test('缓存图片上传目标，未知值回退到七牛', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'app_config_oss_upload': OssUpload.aws.value,
+    });
+    final awsPreferences = await SharedPreferences.getInstance();
+    AppConfig.instance.initialize(awsPreferences);
+    expect(AppConfig.instance.ossUpload, OssUpload.aws);
+
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'app_config_oss_upload': 9,
+    });
+    final invalidPreferences = await SharedPreferences.getInstance();
+    AppConfig.instance.initialize(invalidPreferences);
+    expect(AppConfig.instance.ossUpload, OssUpload.qiniu);
   });
 }

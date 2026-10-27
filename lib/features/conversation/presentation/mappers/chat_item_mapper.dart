@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
@@ -51,6 +53,8 @@ ChatItem _mapMessage(
       return RecallItem(id: message.itemId, label: message.recallLabel);
     case ConversationMessageType.image:
       final imageSize = message.imageSize;
+      final localPath = message.localFilePath.trim();
+      final hasLocalFile = localPath.isNotEmpty && File(localPath).existsSync();
       return ImageMessage(
         id: message.itemId,
         msgId: message.msgId,
@@ -60,8 +64,8 @@ ChatItem _mapMessage(
         createTimeSeconds: message.createTimeSeconds,
         deliveryStatus: deliveryStatus,
         uploadProgress: message.uploadProgress,
-        imageUrl: message.localFilePath.isEmpty ? message.imageUrl : null,
-        imagePath: message.localFilePath.isEmpty ? null : message.localFilePath,
+        imageUrl: message.imageUrl,
+        imagePath: hasLocalFile ? localPath : null,
         imageWidth: imageSize['width']!.toDouble(),
         imageHeight: imageSize['height']!.toDouble(),
       );

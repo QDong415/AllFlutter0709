@@ -6,6 +6,7 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_image_file_store.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:flutter/material.dart';
@@ -94,6 +95,10 @@ class ChatMessageDeliveryService {
       conversationId: conversationId,
       sourcePath: imageFile.path,
     );
+    final persistedFile = await ChatImageFileStore.persist(
+      sourceFile: imageFile,
+      filename: filename,
+    );
     final message = ConversationMessage(
       msgId: 0,
       clientMessageId: _nextClientMessageId(),
@@ -113,7 +118,7 @@ class ChatMessageDeliveryService {
       }),
       isSender: true,
       isRead: true,
-      localFilePath: imageFile.path,
+      localFilePath: persistedFile.path,
       otherUserType: peerUserType,
     );
     return _savePendingMessage(account.userId, message);

@@ -256,8 +256,12 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
     }
   }
 
-  void _onEditTap() {
-    // 编辑资料本轮仅占位。
+  Future<void> _onEditTap() async {
+    if (!context.ensureLoggedIn()) return;
+    await context.push(AppRoutes.meProfileEdit);
+    if (!mounted) return;
+    _applySystemUiOverlayStyle();
+    await _loadProfile();
   }
 
   Future<void> _onMoreTap(BuildContext anchorContext) async {

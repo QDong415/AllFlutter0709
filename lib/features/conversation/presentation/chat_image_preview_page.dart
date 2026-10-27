@@ -41,8 +41,9 @@ class _ChatImagePreviewPageState extends State<ChatImagePreviewPage> {
   }
 
   ImageProvider<Object> _imageProviderOf(ImageMessage item) {
-    if (item.imagePath != null) {
-      return FileImage(File(item.imagePath!));
+    final imagePath = item.imagePath;
+    if (imagePath != null && File(imagePath).existsSync()) {
+      return FileImage(File(imagePath));
     }
     return CachedNetworkImageProvider(item.imageUrl!);
   }

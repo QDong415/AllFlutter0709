@@ -26,11 +26,12 @@ class ChatImageBubble extends StatelessWidget {
     final scale = math.min(maxSide / rawW, maxHeight / rawH);
     final width = math.max(55.0, rawW * scale);
     final height = math.max(55.0, rawH * scale);
-
-    final imageWidget = item.imagePath != null
-        ? Image.file(File(item.imagePath!), fit: BoxFit.cover)
+    final imagePath = item.imagePath;
+    final imageFile = imagePath == null ? null : File(imagePath);
+    final imageWidget = imageFile != null && imageFile.existsSync()
+        ? Image.file(imageFile, fit: BoxFit.cover)
         : CachedNetworkImage(
-            imageUrl: item.imageUrl!,
+            imageUrl: item.imageUrl ?? '',
             fit: BoxFit.cover,
             placeholder: (_, _) => const ColoredBox(
               color: Color(0xFFF1F1F1),

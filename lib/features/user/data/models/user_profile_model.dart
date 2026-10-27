@@ -18,6 +18,8 @@ class UserProfileModel {
     required this.follow,
     this.userType = UserType.human,
     this.remark = '',
+    this.isBanned = false,
+    this.banExpireTime = 0,
   });
 
   final String userId;
@@ -41,6 +43,25 @@ class UserProfileModel {
 
   /// 我给对方设置的备注。个人主页标题不用它，只给设置弹框和聊天显示名。
   final String remark;
+
+  /// 当前是否处于系统禁言状态。
+  final bool isBanned;
+
+  /// 系统禁言的具体解除时间戳；0 表示永久。
+  final int banExpireTime;
+
+  /// 系统禁言展示文案。
+  String get banLabel {
+    if (!isBanned) return '';
+    if (banExpireTime <= 0) return '永久禁言';
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(
+      banExpireTime * 1000,
+      isUtc: true,
+    ).add(const Duration(hours: 8));
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    return '禁言至 ${dateTime.year}-$month-$day';
+  }
 
   /// 性别文案；0 或未知返回 null。
   String? get genderLabel {
@@ -85,6 +106,8 @@ class UserProfileModel {
     int? follow,
     int? userType,
     String? remark,
+    bool? isBanned,
+    int? banExpireTime,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -102,6 +125,8 @@ class UserProfileModel {
       follow: follow ?? this.follow,
       userType: userType ?? this.userType,
       remark: remark ?? this.remark,
+      isBanned: isBanned ?? this.isBanned,
+      banExpireTime: banExpireTime ?? this.banExpireTime,
     );
   }
 
@@ -122,6 +147,8 @@ class UserProfileModel {
       follow: _readInt(json['follow']),
       userType: UserType.parse(json['user_type']),
       remark: _readString(json['remark']),
+      isBanned: _readInt(json['is_banned']) == 1,
+      banExpireTime: _readInt(json['expire_time']),
     );
   }
 

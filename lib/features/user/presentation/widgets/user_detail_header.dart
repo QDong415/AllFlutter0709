@@ -1,6 +1,7 @@
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_ban_label.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_action_buttons.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_cover.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_tags.dart';
@@ -46,6 +47,7 @@ class UserDetailHeader extends StatelessWidget {
     final intro = profileModel.intro.trim().isEmpty
         ? '尚未填写个人介绍'
         : profileModel.intro;
+    final banLabel = profileModel.banLabel.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,6 +216,11 @@ class UserDetailHeader extends StatelessWidget {
                   ),
                 ),
               ),
+              if (banLabel.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  child: UserDetailBanLabel(label: banLabel),
+                ),
               UserDetailTags(profileModel: profileModel),
             ],
           ),
