@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:all_flutter0709/app/app.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +16,7 @@ Future<void> main() async {
   await LiquidGlassWidgets.initialize();
   final preferences = await SharedPreferences.getInstance();
   await HttpClient.instance.prepare(preferences);
+  AppConfig.instance.initialize(preferences);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   AppSystemUi.apply(AppSystemUi.overlayStyle);
   runApp(
@@ -25,4 +29,5 @@ Future<void> main() async {
       ),
     ),
   );
+  unawaited(AppConfig.instance.refresh());
 }

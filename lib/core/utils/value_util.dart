@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/core/network/app_env.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
 
 class ValueUtil {
   const ValueUtil._();
@@ -9,7 +9,7 @@ class ValueUtil {
 
     final original = value.startsWith('http')
         ? value
-        : '${AppEnv.qiniuBaseUrl}$value';
+        : '${AppConfig.instance.ossHttp}$value';
 
     return _stripImageProcessQuery(original);
   }
@@ -44,7 +44,7 @@ class ValueUtil {
     }
 
     final buffer = StringBuffer()
-      ..write(AppEnv.qiniuBaseUrl)
+      ..write(AppConfig.instance.ossHttp)
       ..write(value);
 
     if (keepOriginal) {
