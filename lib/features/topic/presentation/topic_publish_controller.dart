@@ -4,19 +4,24 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_upload_result.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:qiniu_flutter_sdk/qiniu_flutter_sdk.dart';
+import 'package:video_player/video_player.dart';
 
 /// 发布动态全局控制器。
 final topicPublishControllerProvider = Provider<TopicPublishController>((ref) {
   final controller = TopicPublishController(
-    qiniuUploadService: ref.watch(qiniuUploadServiceProvider),
+    cloudStorageService: ref.watch(cloudStorageServiceProvider),
     topicRepository: const TopicRepository(),
   );
   ref.onDispose(controller.dispose);
@@ -29,19 +34,20 @@ enum TopicPublishPhase { idle, uploading, failed }
 /// 对齐 Android `HomeManager`：提交页立刻关闭，列表顶栏展示上传 / 失败重试。
 class TopicPublishController extends ChangeNotifier {
   TopicPublishController({
-    required QiniuUploadService qiniuUploadService,
+    required CloudStorageService cloudStorageService,
     required TopicRepository topicRepository,
-  }) : _qiniuUploadService = qiniuUploadService,
+  }) : _cloudStorageService = cloudStorageService,
        _topicRepository = topicRepository;
 
-  /// 七牛全部传完后的进度上限；`/topic/submit` 成功才到 1。
+  /// 媒体全部传完后的进度上限；`/topic/submit` 成功才到 1。
   static const Duration _successHideDelay = Duration(milliseconds: 400);
 
-  final QiniuUploadService _qiniuUploadService;
+  final CloudStorageService _cloudStorageService;
   final TopicRepository _topicRepository;
   final Random _random = Random();
   final _TopicUploadProgress _uploadProgress = _TopicUploadProgress();
   final List<PutController> _putControllerList = <PutController>[];
+  final List<CancelToken> _s3CancelTokens = <CancelToken>[];
 
   TopicPublishPhase _phase = TopicPublishPhase.idle;
   double _progress = 0;
@@ -56,7 +62,7 @@ class TopicPublishController extends ChangeNotifier {
 
   TopicPublishPhase get phase => _phase;
 
-  /// 0~1，七牛阶段最高 [_TopicUploadProgress.progressCap]。
+  /// 0~1，上传阶段最高 [_TopicUploadProgress.progressCap]。
   double get progress => _progress;
 
   String get statusText => _statusText;
@@ -69,7 +75,9 @@ class TopicPublishController extends ChangeNotifier {
 
   bool get isBusy => _phase == TopicPublishPhase.uploading;
 
-  bool get canRetry => _phase == TopicPublishPhase.failed;
+  bool get isFailed => _phase == TopicPublishPhase.failed;
+
+  bool get canRetry => isFailed;
 
   bool get shouldRefreshList => _shouldRefreshList;
 
@@ -97,8 +105,11 @@ class TopicPublishController extends ChangeNotifier {
     await _runPublish(paramsMap, persistedList);
   }
 
-  /// 失败后按上次文案 / 媒体重试（会重新上传七牛）。
+  /// 失败后按上次文案 / 媒体重试（会重新上传）。
   Future<bool> retry() async {
+    if (!canRetry) {
+      return false;
+    }
     final paramsMap = _lastParamsMap;
     final mediaList = _lastMediaList;
     if (paramsMap == null) {
@@ -117,7 +128,7 @@ class TopicPublishController extends ChangeNotifier {
   void cancel() {
     _cancelled = true;
     _uploadProgress.stop();
-    _cancelPutControllers();
+    _cancelUploads();
     hide();
   }
 
@@ -140,7 +151,7 @@ class TopicPublishController extends ChangeNotifier {
     List<TopicSubmitMediaModel> mediaList,
   ) async {
     _cancelled = false;
-    _cancelPutControllers();
+    _cancelUploads();
     _phase = TopicPublishPhase.uploading;
     _progress = 0;
     _statusText = mediaList.isEmpty ? '正在发布' : '正在上传';
@@ -190,7 +201,7 @@ class TopicPublishController extends ChangeNotifier {
       debugPrint('[TopicPublish] 发布失败: $error');
       debugPrint('$stackTrace');
       _uploadProgress.stop();
-      if (_cancelled || _disposed) {
+      if (error is CloudStorageUploadCancelled || _cancelled || _disposed) {
         return;
       }
       _phase = TopicPublishPhase.failed;
@@ -204,14 +215,18 @@ class TopicPublishController extends ChangeNotifier {
     TopicSubmitMediaModel mediaModel,
   ) async {
     debugPrint('[TopicPublish] 开始上传视频 ${mediaModel.file.path}');
-    final token = await _qiniuUploadService.fetchUploadToken(
-      api: QiniuUploadService.topicVideoTokenApi,
-      queryParameters: const <String, dynamic>{
-        'callback': 'videotopiccompress',
-      },
-    );
-    if (_cancelled) {
-      return;
+    final useS3 = AppConfig.instance.cloudStorage == CloudStorage.s3;
+    String? token;
+    if (!useS3) {
+      token = await _cloudStorageService.fetchQiniuUploadToken(
+        api: QiniuUploadService.topicVideoTokenApi,
+        queryParameters: const <String, dynamic>{
+          'callback': 'videotopiccompress',
+        },
+      );
+      if (_cancelled) {
+        return;
+      }
     }
 
     final result = await _uploadInSlot(
@@ -225,10 +240,17 @@ class TopicPublishController extends ChangeNotifier {
       return;
     }
 
+    var rawWidth = result.widthText;
+    var rawHeight = result.heightText;
+    if (useS3 || !result.hasSize) {
+      final localSize = await _readVideoSize(mediaModel.file);
+      if (localSize != null) {
+        rawWidth = '${localSize.$1}';
+        rawHeight = '${localSize.$2}';
+      }
+    }
     final rotate = result.rawData['rotate']?.toString() ?? '';
-    final isRotate = rotate == '90' || rotate == '270';
-    final rawWidth = result.widthText;
-    final rawHeight = result.heightText;
+    final isRotate = !useS3 && (rotate == '90' || rotate == '270');
     paramsMap['videourl'] = result.key;
     paramsMap['width'] = isRotate ? rawHeight : rawWidth;
     paramsMap['height'] = isRotate ? rawWidth : rawHeight;
@@ -244,9 +266,12 @@ class TopicPublishController extends ChangeNotifier {
     List<TopicSubmitMediaModel> mediaList,
   ) async {
     debugPrint('[TopicPublish] 开始上传图片 count=${mediaList.length}');
-    final token = await _qiniuUploadService.fetchUploadToken();
-    if (_cancelled) {
-      return;
+    String? token;
+    if (AppConfig.instance.cloudStorage != CloudStorage.s3) {
+      token = await _cloudStorageService.fetchQiniuUploadToken();
+      if (_cancelled) {
+        return;
+      }
     }
 
     try {
@@ -281,14 +306,14 @@ class TopicPublishController extends ChangeNotifier {
       );
     } catch (_) {
       _uploadProgress.stop();
-      _cancelPutControllers();
+      _cancelUploads();
       rethrow;
     }
   }
 
-  Future<QiniuUploadResult> _uploadInSlot({
+  Future<CloudStorageUploadResult> _uploadInSlot({
     required File file,
-    required String token,
+    String? token,
     required int keyIndex,
     required int slotIndex,
     required int slotTotal,
@@ -334,7 +359,8 @@ class TopicPublishController extends ChangeNotifier {
   }) {
     return <String, dynamic>{
       'content': content,
-      'callback': 'videotopiccompress',
+      if (AppConfig.instance.cloudStorage != CloudStorage.s3)
+        'callback': 'videotopiccompress',
       if (atUserIds.isNotEmpty) 'atuserids': atUserIds,
     };
   }
@@ -351,26 +377,45 @@ class TopicPublishController extends ChangeNotifier {
     return error.toString().replaceFirst(RegExp(r'^Exception: '), '');
   }
 
-  Future<QiniuUploadResult> _uploadSingle({
+  Future<CloudStorageUploadResult> _uploadSingle({
     required File file,
-    required String token,
+    String? token,
     required int keyIndex,
   }) {
-    final putController = PutController();
-    _putControllerList.add(putController);
-    return _qiniuUploadService.uploadFileResult(
+    final useS3 = AppConfig.instance.cloudStorage == CloudStorage.s3;
+    PutController? putController;
+    CancelToken? cancelToken;
+    if (useS3) {
+      cancelToken = CancelToken();
+      _s3CancelTokens.add(cancelToken);
+    } else {
+      putController = PutController();
+      _putControllerList.add(putController);
+    }
+    return _cloudStorageService.uploadFileResult(
       file: file,
       key: _buildObjectKey(file.path, keyIndex),
       token: token,
       putController: putController,
+      cancelToken: cancelToken,
+      onProgress: useS3
+          ? (percent) =>
+                _uploadProgress.updateFilePercent(percent, _onSlotProgress)
+          : null,
     );
   }
 
-  void _cancelPutControllers() {
+  void _cancelUploads() {
     for (final controller in _putControllerList) {
       controller.cancel();
     }
     _putControllerList.clear();
+    for (final token in _s3CancelTokens) {
+      if (!token.isCancelled) {
+        token.cancel('cancelled');
+      }
+    }
+    _s3CancelTokens.clear();
   }
 
   /// 提交页马上关闭，先把相册临时文件拷到本地，避免上传时路径失效。
@@ -416,6 +461,22 @@ class TopicPublishController extends ChangeNotifier {
     );
   }
 
+  Future<(int, int)?> _readVideoSize(File file) async {
+    final controller = VideoPlayerController.file(file);
+    try {
+      await controller.initialize();
+      final size = controller.value.size;
+      if (size.width <= 0 || size.height <= 0) {
+        return null;
+      }
+      return (size.width.round(), size.height.round());
+    } catch (_) {
+      return null;
+    } finally {
+      await controller.dispose();
+    }
+  }
+
   Future<(int, int)?> _readImageSize(File file) async {
     try {
       final bytes = await file.readAsBytes();
@@ -450,8 +511,9 @@ class TopicPublishController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _cancelled = true;
     _uploadProgress.stop();
-    _putControllerList.clear();
+    _cancelUploads();
     super.dispose();
   }
 }
@@ -499,6 +561,13 @@ class _TopicUploadProgress {
     stop();
     onProgress(_slotProgress(1));
     debugPrint('[TopicPublish] 完成上传 ${_index + 1}/$_total');
+  }
+
+  void updateFilePercent(
+    double filePercent,
+    void Function(double progress) onProgress,
+  ) {
+    onProgress(_slotProgress(filePercent.clamp(0.0, _inFlightCap)));
   }
 
   void stop() {

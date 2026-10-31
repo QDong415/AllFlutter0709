@@ -3,45 +3,45 @@ import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 图片上传目标。
-enum OssUpload {
+/// 对象存储上传目标。
+enum CloudStorage {
   /// 上传到七牛。
   qiniu(0),
 
-  /// 上传到亚马逊。
-  aws(1);
+  /// 上传到亚马逊 S3。
+  s3(1);
 
-  const OssUpload(this.value);
+  const CloudStorage(this.value);
 
   /// 服务端下发的枚举值。
   final int value;
 
   /// 把服务端或缓存里的值转成上传目标；无法识别时返回空。
-  static OssUpload? fromValue(Object? rawValue) {
-    return _ossEnumFromValue(OssUpload.values, rawValue, (item) => item.value);
+  static CloudStorage? fromValue(Object? rawValue) {
+    return _enumFromValue(CloudStorage.values, rawValue, (item) => item.value);
   }
 }
 
 /// 图片缩略图 URL 拼接规则。
-enum OssThumbStyle {
+enum CloudStorageThumbStyle {
   /// 七牛 `imageView2`。
   qiniu(0),
 
-  /// 阿里云 CDN `image_process`。
+  /// 阿里云 CDN `image_process`（不是阿里云 OSS）。
   aliyun(1),
 
   /// CloudFront 图片处理（`width` / `height`）。
   cloudfront(2);
 
-  const OssThumbStyle(this.value);
+  const CloudStorageThumbStyle(this.value);
 
   /// 服务端下发的枚举值。
   final int value;
 
   /// 把服务端或缓存里的值转成缩略图规则；无法识别时返回空。
-  static OssThumbStyle? fromValue(Object? rawValue) {
-    return _ossEnumFromValue(
-      OssThumbStyle.values,
+  static CloudStorageThumbStyle? fromValue(Object? rawValue) {
+    return _enumFromValue(
+      CloudStorageThumbStyle.values,
       rawValue,
       (item) => item.value,
     );
@@ -54,12 +54,12 @@ enum OssThumbStyle {
     required bool thumbnail,
   }) {
     switch (this) {
-      case OssThumbStyle.qiniu:
+      case CloudStorageThumbStyle.qiniu:
         if (thumbnail) {
           return '?imageView2/1/w/$limitPx/h/$limitPx';
         }
         return '?imageView2/${max ? 3 : 2}/w/$limitPx/h/$limitPx';
-      case OssThumbStyle.aliyun:
+      case CloudStorageThumbStyle.aliyun:
         if (thumbnail) {
           return '?image_process=crop,w_$limitPx,h_$limitPx,g_center';
         }
@@ -67,7 +67,7 @@ enum OssThumbStyle {
           return '?image_process=resize,s_$limitPx';
         }
         return '?image_process=resize,l_$limitPx';
-      case OssThumbStyle.cloudfront:
+      case CloudStorageThumbStyle.cloudfront:
         if (thumbnail) {
           return '?width=$limitPx&height=$limitPx&fit=cover';
         }
@@ -79,7 +79,7 @@ enum OssThumbStyle {
   }
 }
 
-T? _ossEnumFromValue<T>(
+T? _enumFromValue<T>(
   Iterable<T> values,
   Object? rawValue,
   int Function(T item) readValue,
@@ -103,38 +103,48 @@ class AppConfig {
 
   static final AppConfig instance = AppConfig._();
 
-  static const _ossHttpCacheKey = 'app_config_oss_http';
-  static const _ossUploadCacheKey = 'app_config_oss_upload';
-  static const _ossThumbStyleCacheKey = 'app_config_oss_thumb_style';
+  static const _httpCacheKey = 'app_config_cloud_storage_http';
+  static const _storageCacheKey = 'app_config_cloud_storage';
+  static const _thumbStyleCacheKey = 'app_config_cloud_storage_thumb_style';
 
   SharedPreferences? _preferences;
-  String? _cachedOssHttp;
-  OssUpload? _cachedOssUpload;
-  OssThumbStyle? _cachedOssThumbStyle;
+  String? _cachedHttp;
+  CloudStorage? _cachedStorage;
+  CloudStorageThumbStyle? _cachedThumbStyle;
 
-  /// 文件访问前缀：优先服务端缓存，其次使用本地环境默认值。
-  String get ossHttp => _cachedOssHttp ?? AppEnv.qiniuBaseUrl;
+  /// 文件访问前缀，跟服务端 `oss_http`。
+  String get cloudStorageHttp => _cachedHttp ?? AppEnv.qiniuBaseUrl;
 
-  /// 图片上传目标：优先服务端缓存，缺省为七牛。
-  OssUpload get ossUpload => _cachedOssUpload ?? OssUpload.qiniu;
+  /// 上传目标，跟服务端 `oss_upload`。
+  CloudStorage get cloudStorage => _cachedStorage ?? CloudStorage.qiniu;
 
-  /// 缩略图拼接规则：优先服务端缓存，缺省为七牛。
-  OssThumbStyle get ossThumbStyle =>
-      _cachedOssThumbStyle ?? OssThumbStyle.qiniu;
+  /// 缩略图拼接规则，跟服务端 `oss_thumb_style`。
+  CloudStorageThumbStyle get cloudStorageThumbStyle =>
+      _cachedThumbStyle ?? CloudStorageThumbStyle.qiniu;
 
   /// 在 App 启动前恢复本地配置，不执行网络请求。
   void initialize(SharedPreferences preferences) {
     _preferences = preferences;
-    _cachedOssHttp = _normalizeOssHttp(preferences.getString(_ossHttpCacheKey));
-    _cachedOssUpload = OssUpload.fromValue(
-      preferences.getInt(_ossUploadCacheKey),
+    _cachedHttp = _normalizeHttp(
+      preferences.getString(_httpCacheKey) ??
+          preferences.getString('app_config_oss_http'),
     );
-    _cachedOssThumbStyle = OssThumbStyle.fromValue(
-      preferences.getInt(_ossThumbStyleCacheKey),
+    _cachedStorage = CloudStorage.fromValue(
+      preferences.getInt(_storageCacheKey) ??
+          preferences.getInt('app_config_oss_upload'),
     );
+    _cachedThumbStyle = CloudStorageThumbStyle.fromValue(
+      preferences.getInt(_thumbStyleCacheKey) ??
+          preferences.getInt('app_config_oss_thumb_style'),
+    );
+    // 以前设置页可选上传目标，本地覆盖作废，一律跟服务端。
+    preferences.remove('app_config_cloud_storage_override');
+    preferences.remove('app_config_oss_upload_override');
   }
 
   /// 从服务端刷新配置；失败或返回空值时保留当前配置。
+  ///
+  /// 仍读 `oss_http` / `oss_upload` / `oss_thumb_style`，兼容线上旧包和现网接口。
   Future<void> refresh() async {
     final preferences = _preferences;
     if (preferences == null) {
@@ -150,29 +160,31 @@ class AppConfig {
         return;
       }
 
-      final ossHttp = _normalizeOssHttp(data['oss_http']?.toString());
-      if (ossHttp != null) {
-        _cachedOssHttp = ossHttp;
-        await preferences.setString(_ossHttpCacheKey, ossHttp);
+      final http = _normalizeHttp(data['oss_http']?.toString());
+      if (http != null) {
+        _cachedHttp = http;
+        await preferences.setString(_httpCacheKey, http);
       }
 
-      final ossUpload = OssUpload.fromValue(data['oss_upload']);
-      if (ossUpload != null) {
-        _cachedOssUpload = ossUpload;
-        await preferences.setInt(_ossUploadCacheKey, ossUpload.value);
+      final storage = CloudStorage.fromValue(data['oss_upload']);
+      if (storage != null) {
+        _cachedStorage = storage;
+        await preferences.setInt(_storageCacheKey, storage.value);
       }
 
-      final ossThumbStyle = OssThumbStyle.fromValue(data['oss_thumb_style']);
-      if (ossThumbStyle != null) {
-        _cachedOssThumbStyle = ossThumbStyle;
-        await preferences.setInt(_ossThumbStyleCacheKey, ossThumbStyle.value);
+      final thumbStyle = CloudStorageThumbStyle.fromValue(
+        data['oss_thumb_style'],
+      );
+      if (thumbStyle != null) {
+        _cachedThumbStyle = thumbStyle;
+        await preferences.setInt(_thumbStyleCacheKey, thumbStyle.value);
       }
     } catch (error) {
       debugPrint('[AppConfig] 刷新配置失败，继续使用本地配置: $error');
     }
   }
 
-  String? _normalizeOssHttp(String? value) {
+  String? _normalizeHttp(String? value) {
     final trimmedValue = value?.trim() ?? '';
     if (trimmedValue.isEmpty) {
       return null;

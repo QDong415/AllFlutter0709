@@ -4,7 +4,7 @@ import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
-import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_message_sync_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_message_sender.dart';
@@ -24,7 +24,7 @@ final chatLocalDataSourceProvider = Provider<ChatLocalDataSource>((ref) {
 final conversationRepositoryProvider = Provider<ConversationRepository>((ref) {
   return ConversationRepository(
     localDataSource: ref.watch(chatLocalDataSourceProvider),
-    qiniuUploadService: ref.watch(qiniuUploadServiceProvider),
+    cloudStorageService: ref.watch(cloudStorageServiceProvider),
   );
 });
 
@@ -32,12 +32,12 @@ final conversationRepositoryProvider = Provider<ConversationRepository>((ref) {
 class ConversationRepository {
   ConversationRepository({
     required ChatLocalDataSource localDataSource,
-    required QiniuUploadService qiniuUploadService,
+    required CloudStorageService cloudStorageService,
   }) : _localDataSource = localDataSource,
        _voiceService = ChatVoiceService(localDataSource: localDataSource),
        _messageDeliveryService = ChatMessageDeliveryService(
          localDataSource: localDataSource,
-         qiniuUploadService: qiniuUploadService,
+         cloudStorageService: cloudStorageService,
        ) {
     _messageSyncService = ChatMessageSyncService(
       localDataSource: localDataSource,
@@ -179,7 +179,7 @@ class ConversationRepository {
     );
   }
 
-  /// 上传语音到七牛并调用 `/api/chat/send`。
+  /// 上传语音并调用 `/api/chat/send`。
   Future<ConversationMessage> sendPendingVoiceMessage({
     required AccountModel account,
     required ConversationMessage message,

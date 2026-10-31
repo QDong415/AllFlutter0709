@@ -1,47 +1,10 @@
 import 'dart:io';
 
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_upload_result.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qiniu_flutter_sdk/qiniu_flutter_sdk.dart';
-
-/// 七牛云上传服务 Provider。
-final qiniuUploadServiceProvider = Provider<QiniuUploadService>((ref) {
-  return QiniuUploadService();
-});
-
-/// 七牛上传成功结果（含自定义 returnBody）。
-class QiniuUploadResult {
-  const QiniuUploadResult({required this.key, required this.rawData});
-
-  /// 实际上传的对象名。
-  final String key;
-
-  /// 七牛 returnBody / 默认响应 JSON。
-  final Map<String, dynamic> rawData;
-
-  String get widthText => rawData['width']?.toString().trim() ?? '';
-
-  String get heightText => rawData['height']?.toString().trim() ?? '';
-
-  bool get hasSize => widthText.isNotEmpty && heightText.isNotEmpty;
-
-  /// 对齐 Android 发动态 `photoarray`：只要 filename / width / height。
-  Map<String, String> toTopicPhotoJson({(int, int)? fallbackSize}) {
-    var width = widthText;
-    var height = heightText;
-    if (!hasSize && fallbackSize != null) {
-      width = '${fallbackSize.$1}';
-      height = '${fallbackSize.$2}';
-    }
-    return <String, String>{
-      'filename': key,
-      'width': width,
-      'height': height,
-    };
-  }
-}
 
 /// 七牛云文件上传服务。
 ///
@@ -75,7 +38,7 @@ class QiniuUploadService {
   ///
   /// [onProgress] 来自 Dio `onSendProgress`。表单直传时往往会一次跳到 1.0，
   /// 发动态进度条不要直接拿它当真实上传进度。
-  Future<QiniuUploadResult> uploadFileResult({
+  Future<CloudStorageUploadResult> uploadFileResult({
     required File file,
     required String key,
     String tokenApi = uploadTokenApi,
@@ -133,7 +96,7 @@ class QiniuUploadService {
         '[QiniuUpload] 上传成功 key=$uploadedKey hash=${response.hash} '
         'raw=$rawData',
       );
-      return QiniuUploadResult(key: uploadedKey, rawData: rawData);
+      return CloudStorageUploadResult(key: uploadedKey, rawData: rawData);
     } catch (error, stackTrace) {
       debugPrint('[QiniuUpload] 上传失败: $error');
       debugPrint('[QiniuUpload] $stackTrace');

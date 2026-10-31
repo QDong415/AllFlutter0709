@@ -62,7 +62,7 @@ class TopicSubmitProgressBar extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 16,
-                            color: controller.canRetry
+                            color: controller.isFailed
                                 ? Colors.red
                                 : const Color(0xFF5B5B5B),
                           ),
@@ -83,7 +83,7 @@ class TopicSubmitProgressBar extends StatelessWidget {
               ),
               LinearProgressIndicator(
                 minHeight: 2,
-                value: controller.canRetry ? 0 : controller.progress,
+                value: controller.isFailed ? 0 : controller.progress,
                 backgroundColor: const Color(0xFFEDEDED),
                 color: AppColors.link,
               ),

@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_video_preview_page.dart';
@@ -336,16 +337,25 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       }
     }
 
-    final coverPicture = widget.coverPicture;
+    final coverPicture = AppConfig.instance.cloudStorage == CloudStorage.s3
+        ? null
+        : widget.coverPicture;
     final controller = _controller;
     final initialized =
         !_isPreviewOpen && (controller?.value.isInitialized ?? false);
+    final videoSize = initialized ? controller?.value.size : null;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = TopicPictureGrid.resolveSinglePictureSize(
-          width: coverPicture?.width,
-          height: coverPicture?.height,
+          width: coverPicture?.width ??
+              (videoSize != null && videoSize.width > 0
+                  ? videoSize.width.round()
+                  : null),
+          height: coverPicture?.height ??
+              (videoSize != null && videoSize.height > 0
+                  ? videoSize.height.round()
+                  : null),
           maxWidth: constraints.maxWidth,
         );
 

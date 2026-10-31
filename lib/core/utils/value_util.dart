@@ -3,14 +3,14 @@ import 'package:all_flutter0709/core/config/app_config.dart';
 class ValueUtil {
   const ValueUtil._();
 
-  /// 拼原图地址：已是 http(s) 则原样返回，否则加上 oss 前缀。
+  /// 拼原图地址：已是 http(s) 则原样返回，否则加上当前存储前缀。
   static String? getOriginalImageUrl(String? filename) {
     final value = filename?.trim() ?? '';
     if (value.isEmpty) return null;
     if (value.startsWith('http')) {
       return value;
     }
-    return '${AppConfig.instance.ossHttp}$value';
+    return '${AppConfig.instance.cloudStorageHttp}$value';
   }
 
   /// 相对时间，对齐 Android `getTimeStringFromNow`：一天内显示 HH:mm，否则 yyyy-MM-dd。
@@ -30,7 +30,8 @@ class ValueUtil {
     return '$hour:$minute';
   }
 
-  /// 按当前 `OssThumbStyle` 拼文件访问地址；GIF 和 keepOriginal 不加缩略图参数。
+  /// 按当前 `CloudStorageThumbStyle` 拼文件访问地址；GIF 和 keepOriginal 不加缩略图参数。
+  /// 方法名沿用旧包，实际前缀是 [AppConfig.cloudStorageHttp]，不限于七牛。
   static String? getQiniuUrlByFileName(
     String? filename, {
     int limitPx = 240,
@@ -44,7 +45,7 @@ class ValueUtil {
     }
 
     final buffer = StringBuffer()
-      ..write(AppConfig.instance.ossHttp)
+      ..write(AppConfig.instance.cloudStorageHttp)
       ..write(value);
 
     if (keepOriginal) {
@@ -53,7 +54,7 @@ class ValueUtil {
 
     if (!value.toLowerCase().endsWith('.gif')) {
       buffer.write(
-        AppConfig.instance.ossThumbStyle.query(
+        AppConfig.instance.cloudStorageThumbStyle.query(
           limitPx: limitPx,
           max: max,
           thumbnail: thumbnail,

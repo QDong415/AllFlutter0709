@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
-import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/auth/presentation/helpers/signup_avatar_helper.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +32,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
 
   SignupAvatarHelper get _helper {
     return _avatarHelper ??= SignupAvatarHelper(
-      qiniuUploadService: ref.read(qiniuUploadServiceProvider),
+      cloudStorageService: ref.read(cloudStorageServiceProvider),
     );
   }
 

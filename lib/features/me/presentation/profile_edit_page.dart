@@ -1,6 +1,6 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
-import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/auth/presentation/helpers/signup_avatar_helper.dart';
 import 'package:all_flutter0709/features/me/presentation/helpers/me_account_helper.dart';
@@ -47,7 +47,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
 
   Future<void> _changeAvatar() async {
     final helper = SignupAvatarHelper(
-      qiniuUploadService: ref.read(qiniuUploadServiceProvider),
+      cloudStorageService: ref.read(cloudStorageServiceProvider),
     );
     final file = await helper.pickAndCropAvatar(context);
     if (file == null) {

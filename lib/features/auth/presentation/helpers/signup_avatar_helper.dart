@@ -1,22 +1,22 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-/// 注册头像：选图、1:1 裁剪、上传七牛。
+/// 注册头像：选图、1:1 裁剪、上传到当前对象存储。
 class SignupAvatarHelper {
   SignupAvatarHelper({
-    required QiniuUploadService qiniuUploadService,
+    required CloudStorageService cloudStorageService,
     ImagePicker? imagePicker,
-  }) : _qiniuUploadService = qiniuUploadService,
+  }) : _cloudStorageService = cloudStorageService,
        _imagePicker = imagePicker ?? ImagePicker();
 
-  final QiniuUploadService _qiniuUploadService;
+  final CloudStorageService _cloudStorageService;
   final ImagePicker _imagePicker;
   final Random _random = Random();
 
@@ -71,9 +71,9 @@ class SignupAvatarHelper {
     return File(croppedFile.path);
   }
 
-  /// 上传头像到七牛，返回服务端可用的 filename。
+  /// 上传头像，返回服务端可用的 filename。
   Future<String> uploadAvatar(File file) {
-    return _qiniuUploadService.uploadFile(file: file, key: _buildAvatarKey());
+    return _cloudStorageService.uploadFile(file: file, key: _buildAvatarKey());
   }
 
   /// 头像文件名：`user-{yyyyMMddHHmmss}-{0~9999}`。

@@ -5,7 +5,7 @@ import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
-import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
+import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_image_file_store.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
@@ -20,16 +20,16 @@ import 'package:path/path.dart' as path;
 class ChatMessageDeliveryService {
   ChatMessageDeliveryService({
     required ChatLocalDataSource localDataSource,
-    required QiniuUploadService qiniuUploadService,
+    required CloudStorageService cloudStorageService,
   }) : _localDataSource = localDataSource,
-       _qiniuUploadService = qiniuUploadService;
+       _cloudStorageService = cloudStorageService;
 
   static const _chatTypeSingle = 1;
   static const _messageSendApi = '/api/chat/send';
   static const _messageRecallApi = '/api/chat/recall';
 
   final ChatLocalDataSource _localDataSource;
-  final QiniuUploadService _qiniuUploadService;
+  final CloudStorageService _cloudStorageService;
   int _lastClientMessageMillis = 0;
   int _clientMessageSeq = 0;
 
@@ -311,7 +311,7 @@ class ChatMessageDeliveryService {
     // SDK 的进度回调是同步接口，数据库写入改为串行队列；上传结束后等待队列
     // 清空，避免较早的低进度写入晚于 100%，把最终进度覆盖回去。
     var progressWrite = Future<void>.value();
-    await _qiniuUploadService.uploadFile(
+    await _cloudStorageService.uploadFile(
       file: File(message.localFilePath),
       key: message.filename,
       onProgress: (percent) {
