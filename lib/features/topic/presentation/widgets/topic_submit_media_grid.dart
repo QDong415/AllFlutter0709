@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
 import 'package:flutter/material.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// 发布页九宫格：已选媒体 + 添加按钮，一行最多 3 张。
 class TopicSubmitMediaGrid extends StatelessWidget {
@@ -97,7 +98,7 @@ class _MediaTile extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.file(mediaModel.file, fit: BoxFit.cover),
+                    _MediaCover(mediaModel: mediaModel),
                     if (mediaModel.isVideo)
                       const ColoredBox(
                         color: Color(0x33000000),
@@ -149,6 +150,30 @@ class _MediaTile extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// 九宫格封面。视频走相册缩略图，对齐 Android `Glide.load(path)`。
+class _MediaCover extends StatelessWidget {
+  const _MediaCover({required this.mediaModel});
+
+  final TopicSubmitMediaModel mediaModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = mediaModel.asset;
+    if (mediaModel.isVideo && asset != null) {
+      return AssetEntityImage(
+        asset,
+        isOriginal: false,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF333333)),
+      );
+    }
+    if (mediaModel.isVideo) {
+      return const ColoredBox(color: Color(0xFF333333));
+    }
+    return Image.file(mediaModel.file, fit: BoxFit.cover);
   }
 }
 

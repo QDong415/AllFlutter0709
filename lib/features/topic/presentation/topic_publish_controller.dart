@@ -17,6 +17,7 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:qiniu_flutter_sdk/qiniu_flutter_sdk.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// 发布动态全局控制器。
 final topicPublishControllerProvider = Provider<TopicPublishController>((ref) {
@@ -54,6 +55,7 @@ class TopicPublishController extends ChangeNotifier {
   String _statusText = '';
   File? _coverFile;
   bool _coverIsVideo = false;
+  AssetEntity? _coverAsset;
   bool _shouldRefreshList = false;
   bool _cancelled = false;
   bool _disposed = false;
@@ -70,6 +72,9 @@ class TopicPublishController extends ChangeNotifier {
   File? get coverFile => _coverFile;
 
   bool get coverIsVideo => _coverIsVideo;
+
+  /// 上传条封面用的相册资源。
+  AssetEntity? get coverAsset => _coverAsset;
 
   bool get isVisible => _phase != TopicPublishPhase.idle;
 
@@ -143,6 +148,7 @@ class TopicPublishController extends ChangeNotifier {
     _statusText = '';
     _coverFile = null;
     _coverIsVideo = false;
+    _coverAsset = null;
     _notify();
   }
 
@@ -157,6 +163,7 @@ class TopicPublishController extends ChangeNotifier {
     _statusText = mediaList.isEmpty ? '正在发布' : '正在上传';
     _coverFile = mediaList.isEmpty ? null : mediaList.first.file;
     _coverIsVideo = mediaList.isNotEmpty && mediaList.first.isVideo;
+    _coverAsset = mediaList.isEmpty ? null : mediaList.first.asset;
     _shouldRefreshList = false;
     _notify();
 
@@ -458,6 +465,7 @@ class TopicPublishController extends ChangeNotifier {
       file: dest,
       isVideo: mediaModel.isVideo,
       duration: mediaModel.duration,
+      asset: mediaModel.asset,
     );
   }
 

@@ -80,6 +80,7 @@ class TopicMediaPickHelper {
       file: file,
       isVideo: true,
       duration: Duration(seconds: asset.duration),
+      asset: asset,
     );
   }
 

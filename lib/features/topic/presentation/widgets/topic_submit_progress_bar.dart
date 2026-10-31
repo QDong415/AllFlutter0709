@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_publish_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// 动态列表顶部的发布进度条，对齐 Android `uploading_ll`。
 class TopicSubmitProgressBar extends StatelessWidget {
@@ -35,21 +34,7 @@ class TopicSubmitProgressBar extends StatelessWidget {
                           child: SizedBox(
                             width: 36,
                             height: 36,
-                            child: controller.coverIsVideo
-                                ? const ColoredBox(
-                                    color: Color(0xFF333333),
-                                    child: Icon(
-                                      Icons.play_arrow,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  )
-                                : Image.file(
-                                    File(controller.coverFile!.path),
-                                    width: 36,
-                                    height: 36,
-                                    fit: BoxFit.cover,
-                                  ),
+                            child: _UploadCover(controller: controller),
                           ),
                         ),
                       ),
@@ -93,5 +78,36 @@ class TopicSubmitProgressBar extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// 上传条封面。视频用相册缩略图，对齐 Android `Glide.load(path)`。
+class _UploadCover extends StatelessWidget {
+  const _UploadCover({required this.controller});
+
+  final TopicPublishController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = controller.coverAsset;
+    if (controller.coverIsVideo && asset != null) {
+      return AssetEntityImage(
+        asset,
+        isOriginal: false,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF333333)),
+      );
+    }
+    if (controller.coverIsVideo) {
+      return const ColoredBox(
+        color: Color(0xFF333333),
+        child: Icon(Icons.play_arrow, color: Colors.white, size: 20),
+      );
+    }
+    final file = controller.coverFile;
+    if (file == null) {
+      return const SizedBox.shrink();
+    }
+    return Image.file(file, fit: BoxFit.cover);
   }
 }

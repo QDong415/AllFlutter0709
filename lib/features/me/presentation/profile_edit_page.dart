@@ -110,6 +110,35 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     await _save(<String, String>{'age': '$selected'});
   }
 
+  Future<void> _pickGender(int currentGender) async {
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('男'),
+                selected: currentGender == 1,
+                onTap: () => Navigator.pop(context, 1),
+              ),
+              ListTile(
+                title: const Text('女'),
+                selected: currentGender == 2,
+                onTap: () => Navigator.pop(context, 2),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected == null || selected == currentGender) {
+      return;
+    }
+    await _save(<String, String>{'gender': '$selected'});
+  }
+
   Future<void> _pickCity() async {
     List<CityNodeModel> provinceList;
     try {
@@ -188,7 +217,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 value: age == 0 ? '' : '$age岁',
                 onTap: () => _pickAge(age),
               ),
-              _EditRow(label: '性别', value: genderText),
+              _EditRow(
+                label: '性别',
+                value: genderText,
+                onTap: () => _pickGender(account?.gender ?? 0),
+              ),
               _EditRow(
                 label: '城市',
                 value: account?.cityName ?? '',
