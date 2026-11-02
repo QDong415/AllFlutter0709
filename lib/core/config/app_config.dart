@@ -119,14 +119,14 @@ class AppConfig {
   int? _cachedImageUploadMaxMemoryMb;
 
   /// 文件访问前缀，跟服务端 `oss_http`。
-  String get cloudStorageHttp => _cachedHttp ?? AppEnv.cloudFrontBaseUrl;
+  String get cloudStorageHttp => _cachedHttp ?? AppEnv.qiniuBaseUrl;
 
   /// 上传目标，跟服务端 `oss_upload`。
-  CloudStorage get cloudStorage => _cachedStorage ?? CloudStorage.s3;
+  CloudStorage get cloudStorage => _cachedStorage ?? CloudStorage.qiniu;
 
   /// 缩略图拼接规则，跟服务端 `oss_thumb_style`。
   CloudStorageThumbStyle get cloudStorageThumbStyle =>
-      _cachedThumbStyle ?? CloudStorageThumbStyle.cloudfront;
+      _cachedThumbStyle ?? CloudStorageThumbStyle.qiniu;
 
   /// 发图压缩上限，单位 MB。跟服务端 `image_upload_max_memory`。`<= 0` 不压缩。
   int get imageUploadMaxMemoryMb =>
