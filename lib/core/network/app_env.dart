@@ -7,9 +7,9 @@ abstract final class AppEnv {
   static String get apiBaseUrl {
     switch (current) {
       case AppEnvironment.test:
-        return 'http://api.itopic.com.cn';
+        return 'http://121.41.220.174';
       case AppEnvironment.production:
-        return 'http://api.itopic.com.cn';
+        return 'http://121.41.220.174';
     }
   }
 
@@ -29,9 +29,9 @@ abstract final class AppEnv {
   static String get siteBaseUrl {
     switch (current) {
       case AppEnvironment.test:
-        return 'https://api.itopic.com.cn';
+        return 'http://121.41.220.174';
       case AppEnvironment.production:
-        return 'https://api.itopic.com.cn';
+        return 'http://121.41.220.174';
     }
   }
 
