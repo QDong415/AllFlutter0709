@@ -31,6 +31,11 @@ class AlbumImagePickHelper {
       return null;
     }
     final asset = assetList.first;
-    return await asset.originFile ?? await asset.file;
+    final origin = await asset.originFile;
+    final lower = origin?.path.toLowerCase() ?? '';
+    if (lower.endsWith('.heic') || lower.endsWith('.heif')) {
+      return await asset.file ?? origin;
+    }
+    return origin ?? await asset.file;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_upload_result.dart';
+import 'package:all_flutter0709/core/cloud_storage/image_upload_limiter.dart';
 import 'package:all_flutter0709/core/cloud_storage/s3_upload_service.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
@@ -51,11 +52,16 @@ class CloudStorageService {
     PutController? putController,
     CancelToken? cancelToken,
     void Function(double percent)? onProgress,
-  }) {
+  }) async {
     if (AppConfig.instance.cloudStorage == CloudStorage.s3) {
-      return _s3.uploadFileResult(
+      final prepared = await ImageUploadLimiter.prepare(
         file: file,
         key: key,
+        maxMb: AppConfig.instance.imageUploadMaxMemoryMb,
+      );
+      return _s3.uploadFileResult(
+        file: prepared.file,
+        key: prepared.key,
         cancelToken: cancelToken,
         onProgress: onProgress,
       );

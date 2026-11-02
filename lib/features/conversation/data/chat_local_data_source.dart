@@ -261,6 +261,23 @@ class ChatLocalDataSource {
     );
   }
 
+  Future<void> updateMessageFilename({
+    required String userId,
+    required int clientMessageId,
+    required String filename,
+  }) async {
+    if (clientMessageId <= 0 || filename.isEmpty) {
+      return;
+    }
+    final db = await database;
+    await db.update(
+      _chatTable,
+      {'filename': filename},
+      where: 'userid = ? AND client_messageid = ?',
+      whereArgs: [userId, clientMessageId],
+    );
+  }
+
   Future<void> updateMessageStatus(
     String userId,
     int clientMessageId,

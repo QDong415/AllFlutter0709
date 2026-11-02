@@ -48,7 +48,7 @@ class TopicMediaPickHelper {
 
     final mediaList = <TopicSubmitMediaModel>[];
     for (final asset in assetList.take(remainCount)) {
-      final file = await _fileOf(asset);
+      final file = await _imageFileOf(asset);
       if (file == null) {
         continue;
       }
@@ -72,7 +72,7 @@ class TopicMediaPickHelper {
       return null;
     }
     final asset = assetList.first;
-    final file = await _fileOf(asset);
+    final file = await _videoFileOf(asset);
     if (file == null) {
       return null;
     }
@@ -96,7 +96,21 @@ class TopicMediaPickHelper {
     );
   }
 
-  Future<File?> _fileOf(AssetEntity asset) async {
+  /// HEIC 原图 CloudFront 处理不了。这种图改要系统导出的 JPEG，其它格式仍用原文件。
+  Future<File?> _imageFileOf(AssetEntity asset) async {
+    final origin = await asset.originFile;
+    if (_isHeic(origin?.path)) {
+      return await asset.file ?? origin;
+    }
+    return origin ?? await asset.file;
+  }
+
+  Future<File?> _videoFileOf(AssetEntity asset) async {
     return await asset.originFile ?? await asset.file;
+  }
+
+  bool _isHeic(String? path) {
+    final lower = path?.toLowerCase() ?? '';
+    return lower.endsWith('.heic') || lower.endsWith('.heif');
   }
 }

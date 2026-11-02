@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_image_file_store.dart';
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
 import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
@@ -161,7 +162,8 @@ class ConversationController extends ChangeNotifier {
         account.userId,
         conversationId,
       );
-      _messageStore.setState(conversationId, AsyncValue.data(messages));
+      final withImages = await ChatImageFileStore.withCurrentFiles(messages);
+      _messageStore.setState(conversationId, AsyncValue.data(withImages));
     } catch (error, stackTrace) {
       if (!hasPreviousData) {
         _messageStore.setState(
