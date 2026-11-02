@@ -10,9 +10,32 @@ void main() {
 
     AppConfig.instance.initialize(preferences);
 
-    expect(AppConfig.instance.cloudStorageHttp, AppEnv.qiniuBaseUrl);
-    expect(AppConfig.instance.cloudStorage, CloudStorage.qiniu);
-    expect(AppConfig.instance.cloudStorageThumbStyle, CloudStorageThumbStyle.qiniu);
+    expect(AppConfig.instance.cloudStorageHttp, AppEnv.cloudFrontBaseUrl);
+    expect(AppConfig.instance.cloudStorage, CloudStorage.s3);
+    expect(
+      AppConfig.instance.cloudStorageThumbStyle,
+      CloudStorageThumbStyle.cloudfront,
+    );
+    expect(
+      AppConfig.instance.imageUploadMaxMemoryMb,
+      AppConfig.defaultImageUploadMaxMemoryMb,
+    );
+  });
+
+  test('发图上限跟缓存，0 表示不压缩', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'app_config_image_upload_max_memory': 0,
+    });
+    final unlimited = await SharedPreferences.getInstance();
+    AppConfig.instance.initialize(unlimited);
+    expect(AppConfig.instance.imageUploadMaxMemoryMb, 0);
+
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'app_config_image_upload_max_memory': 8,
+    });
+    final limited = await SharedPreferences.getInstance();
+    AppConfig.instance.initialize(limited);
+    expect(AppConfig.instance.imageUploadMaxMemoryMb, 8);
   });
 
   test('优先使用缓存并自动补齐末尾斜杠', () async {
@@ -45,10 +68,10 @@ void main() {
 
     AppConfig.instance.initialize(preferences);
 
-    expect(AppConfig.instance.cloudStorageHttp, AppEnv.qiniuBaseUrl);
+    expect(AppConfig.instance.cloudStorageHttp, AppEnv.cloudFrontBaseUrl);
   });
 
-  test('缓存上传目标，未知值回退到七牛', () async {
+  test('缓存上传目标，未知值回退到 S3', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       'app_config_cloud_storage': CloudStorage.s3.value,
     });
@@ -61,10 +84,10 @@ void main() {
     });
     final invalidPreferences = await SharedPreferences.getInstance();
     AppConfig.instance.initialize(invalidPreferences);
-    expect(AppConfig.instance.cloudStorage, CloudStorage.qiniu);
+    expect(AppConfig.instance.cloudStorage, CloudStorage.s3);
   });
 
-  test('缓存缩略图规则，未知值回退到七牛', () async {
+  test('缓存缩略图规则，未知值回退到 CloudFront', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       'app_config_cloud_storage_thumb_style': CloudStorageThumbStyle.aliyun.value,
     });
@@ -93,7 +116,7 @@ void main() {
     AppConfig.instance.initialize(invalidPreferences);
     expect(
       AppConfig.instance.cloudStorageThumbStyle,
-      CloudStorageThumbStyle.qiniu,
+      CloudStorageThumbStyle.cloudfront,
     );
   });
 

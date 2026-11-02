@@ -67,6 +67,7 @@ dependencies:
   http_parser: ^4.1.2
   qiniu_flutter_sdk: ^0.6.1
   image_cropper: ^12.2.1
+  flutter_image_compress: ^2.4.0
   inview_notifier_list: ^4.1.0
   liquid_glass_widgets: ^0.29.2
   just_audio: ^0.10.6

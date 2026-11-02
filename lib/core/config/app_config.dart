@@ -106,21 +106,31 @@ class AppConfig {
   static const _httpCacheKey = 'app_config_cloud_storage_http';
   static const _storageCacheKey = 'app_config_cloud_storage';
   static const _thumbStyleCacheKey = 'app_config_cloud_storage_thumb_style';
+  static const _imageUploadMaxMemoryCacheKey =
+      'app_config_image_upload_max_memory';
+
+  /// 没拉到配置时的发图上限，单位 MB。
+  static const defaultImageUploadMaxMemoryMb = 6;
 
   SharedPreferences? _preferences;
   String? _cachedHttp;
   CloudStorage? _cachedStorage;
   CloudStorageThumbStyle? _cachedThumbStyle;
+  int? _cachedImageUploadMaxMemoryMb;
 
   /// 文件访问前缀，跟服务端 `oss_http`。
-  String get cloudStorageHttp => _cachedHttp ?? AppEnv.qiniuBaseUrl;
+  String get cloudStorageHttp => _cachedHttp ?? AppEnv.cloudFrontBaseUrl;
 
   /// 上传目标，跟服务端 `oss_upload`。
-  CloudStorage get cloudStorage => _cachedStorage ?? CloudStorage.qiniu;
+  CloudStorage get cloudStorage => _cachedStorage ?? CloudStorage.s3;
 
   /// 缩略图拼接规则，跟服务端 `oss_thumb_style`。
   CloudStorageThumbStyle get cloudStorageThumbStyle =>
-      _cachedThumbStyle ?? CloudStorageThumbStyle.qiniu;
+      _cachedThumbStyle ?? CloudStorageThumbStyle.cloudfront;
+
+  /// 发图压缩上限，单位 MB。跟服务端 `image_upload_max_memory`。`<= 0` 不压缩。
+  int get imageUploadMaxMemoryMb =>
+      _cachedImageUploadMaxMemoryMb ?? defaultImageUploadMaxMemoryMb;
 
   /// 在 App 启动前恢复本地配置，不执行网络请求。
   void initialize(SharedPreferences preferences) {
@@ -137,6 +147,9 @@ class AppConfig {
       preferences.getInt(_thumbStyleCacheKey) ??
           preferences.getInt('app_config_oss_thumb_style'),
     );
+    _cachedImageUploadMaxMemoryMb = preferences.getInt(
+      _imageUploadMaxMemoryCacheKey,
+    );
     // 以前设置页可选上传目标，本地覆盖作废，一律跟服务端。
     preferences.remove('app_config_cloud_storage_override');
     preferences.remove('app_config_oss_upload_override');
@@ -144,7 +157,7 @@ class AppConfig {
 
   /// 从服务端刷新配置；失败或返回空值时保留当前配置。
   ///
-  /// 仍读 `oss_http` / `oss_upload` / `oss_thumb_style`，兼容线上旧包和现网接口。
+  /// 仍读 `oss_http` / `oss_upload` / `oss_thumb_style` / `image_upload_max_memory`。
   Future<void> refresh() async {
     final preferences = _preferences;
     if (preferences == null) {
@@ -179,9 +192,23 @@ class AppConfig {
         _cachedThumbStyle = thumbStyle;
         await preferences.setInt(_thumbStyleCacheKey, thumbStyle.value);
       }
+
+      final maxMemoryMb = _readInt(data['image_upload_max_memory']);
+      if (maxMemoryMb != null) {
+        _cachedImageUploadMaxMemoryMb = maxMemoryMb;
+        await preferences.setInt(_imageUploadMaxMemoryCacheKey, maxMemoryMb);
+      }
     } catch (error) {
       debugPrint('[AppConfig] 刷新配置失败，继续使用本地配置: $error');
     }
+  }
+
+  int? _readInt(Object? rawValue) {
+    return switch (rawValue) {
+      final num number => number.toInt(),
+      final String text => int.tryParse(text.trim()),
+      _ => null,
+    };
   }
 
   String? _normalizeHttp(String? value) {

@@ -28,8 +28,18 @@ class ChatImageBubble extends StatelessWidget {
     final height = math.max(55.0, rawH * scale);
     final imagePath = item.imagePath;
     final imageFile = imagePath == null ? null : File(imagePath);
-    final imageWidget = imageFile != null && imageFile.existsSync()
-        ? Image.file(imageFile, fit: BoxFit.cover)
+    final useLocal = imageFile != null && imageFile.existsSync();
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth = (width * dpr).round().clamp(1, 4096);
+    final cacheHeight = (height * dpr).round().clamp(1, 4096);
+    final imageWidget = useLocal
+        ? Image.file(
+            imageFile,
+            fit: BoxFit.cover,
+            cacheWidth: cacheWidth,
+            cacheHeight: cacheHeight,
+            filterQuality: FilterQuality.low,
+          )
         : CachedNetworkImage(
             imageUrl: item.imageUrl ?? '',
             fit: BoxFit.cover,

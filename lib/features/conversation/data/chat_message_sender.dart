@@ -230,7 +230,7 @@ class ChatMessageDeliveryService {
       final length = exists ? await file.length() : -1;
       ChatSendLog.d('本地$logName exists=$exists bytes=$length');
 
-      await _uploadAttachment(
+      final uploadedKey = await _uploadAttachment(
         userId: account.userId,
         message: message,
         onProgress: onProgress,
@@ -240,11 +240,35 @@ class ChatMessageDeliveryService {
         message.clientMessageId,
         100,
       );
+      var sending = uploadedKey == message.filename
+          ? message
+          : message.copyWith(filename: uploadedKey);
+      if (sending.filename != message.filename) {
+        await _localDataSource.updateMessageFilename(
+          userId: account.userId,
+          clientMessageId: message.clientMessageId,
+          filename: sending.filename,
+        );
+        if (message.isImage) {
+          final localPath = await ChatImageFileStore.renameLocalCopy(
+            oldFilename: message.filename,
+            newFilename: sending.filename,
+          );
+          if (localPath != null) {
+            await _localDataSource.updateLocalFilePath(
+              userId: account.userId,
+              localFilePath: localPath,
+              clientMessageId: message.clientMessageId,
+            );
+            sending = sending.copyWith(localFilePath: localPath);
+          }
+        }
+      }
 
-      final msgId = await _sendChatMessage(account: account, message: message);
+      final msgId = await _sendChatMessage(account: account, message: sending);
       await _markSent(account.userId, message.clientMessageId, msgId);
       ChatSendLog.d('$logName chat/send 成功 msgid=$msgId');
-      return message.copyWith(
+      return sending.copyWith(
         msgId: msgId,
         status: ConversationMessageStatus.sent,
         uploadProgress: 100,
@@ -303,7 +327,7 @@ class ChatMessageDeliveryService {
     return result.data ?? 0;
   }
 
-  Future<void> _uploadAttachment({
+  Future<String> _uploadAttachment({
     required String userId,
     required ConversationMessage message,
     ValueChanged<int>? onProgress,
@@ -311,7 +335,7 @@ class ChatMessageDeliveryService {
     // SDK 的进度回调是同步接口，数据库写入改为串行队列；上传结束后等待队列
     // 清空，避免较早的低进度写入晚于 100%，把最终进度覆盖回去。
     var progressWrite = Future<void>.value();
-    await _cloudStorageService.uploadFile(
+    final uploadedKey = await _cloudStorageService.uploadFile(
       file: File(message.localFilePath),
       key: message.filename,
       onProgress: (percent) {
@@ -327,6 +351,7 @@ class ChatMessageDeliveryService {
       },
     );
     await progressWrite;
+    return uploadedKey;
   }
 
   Future<void> _markSent(String userId, int clientMessageId, int msgId) {
