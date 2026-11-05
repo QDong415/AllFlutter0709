@@ -44,14 +44,18 @@ class TopicRepository {
   }
 
   /// 拉取动态列表。
+  ///
+  /// [firstId] 只在加载更多时传。取值是第一页里第一条普通动态（sort 为 0）的 tid。
   Future<TopicPageResult> getTopicList({
     required int page,
+    String? firstId,
     Map<String, dynamic>? customParameters,
   }) async {
     final queryParameters = <String, dynamic>{
       'page': page,
       'showpraises': '1',
       'showcomments': '1',
+      if (firstId != null && firstId.isNotEmpty) 'firstid': firstId,
     };
 
     if (customParameters != null) {
