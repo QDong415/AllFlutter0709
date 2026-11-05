@@ -17,6 +17,8 @@ import 'package:all_flutter0709/features/home/presentation/main_tab_scaffold.dar
 import 'package:all_flutter0709/features/me/presentation/about_page.dart';
 import 'package:all_flutter0709/features/me/presentation/blacklist_page.dart';
 import 'package:all_flutter0709/features/me/presentation/change_password_page.dart';
+import 'package:all_flutter0709/features/me/presentation/charge_page.dart';
+import 'package:all_flutter0709/features/me/presentation/charm_withdraw_page.dart';
 import 'package:all_flutter0709/features/me/presentation/friendship_list_page.dart';
 import 'package:all_flutter0709/features/me/presentation/me_page.dart';
 import 'package:all_flutter0709/features/me/presentation/mine_topic_list_page.dart';
@@ -26,6 +28,7 @@ import 'package:all_flutter0709/features/me/presentation/profile_text_edit_page.
 import 'package:all_flutter0709/features/me/presentation/search_page.dart';
 import 'package:all_flutter0709/features/me/presentation/search_result_page.dart';
 import 'package:all_flutter0709/features/me/presentation/settings_page.dart';
+import 'package:all_flutter0709/features/me/presentation/vip_page.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_detail_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_page.dart';
@@ -304,6 +307,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                           : '';
                       return SearchResultPage(keyword: keyword);
                     },
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'vip',
+                    builder: (context, state) => const VipPage(),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'charge',
+                    builder: (context, state) =>
+                        ChargePage(forVip: state.extra == true),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'charm-withdraw',
+                    builder: (context, state) => const CharmWithdrawPage(),
                   ),
                   GoRoute(
                     parentNavigatorKey: _rootNavigatorKey,

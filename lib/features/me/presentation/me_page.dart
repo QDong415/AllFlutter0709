@@ -179,6 +179,25 @@ class _MePageState extends ConsumerState<MePage> {
                 MeMenuSection(
                   itemList: [
                     MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_mission.png',
+                      title: 'Vip会员',
+                      onTap: () => _open(AppRoutes.meVip),
+                    ),
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_crash.png',
+                      title: '充值金币',
+                      onTap: () => _open(AppRoutes.meCharge),
+                    ),
+                    MeMenuItem(
+                      iconAsset: 'assets/icons/me/mine_icon_mybuy.png',
+                      title: '魅力提现',
+                      onTap: () => _open(AppRoutes.meCharmWithdraw),
+                    ),
+                  ],
+                ),
+                MeMenuSection(
+                  itemList: [
+                    MeMenuItem(
                       iconAsset: 'assets/icons/me/mine_icon_setting.png',
                       title: '设置',
                       onTap: () => context.push(AppRoutes.meSettings),

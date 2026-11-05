@@ -25,6 +25,9 @@ abstract final class AppRoutes {
   static const meNearby = '/me/nearby';
   static const meSearch = '/me/search';
   static const meSearchResult = '/me/search-result';
+  static const meVip = '/me/vip';
+  static const meCharge = '/me/charge';
+  static const meCharmWithdraw = '/me/charm-withdraw';
   static const meSettings = '/me/settings';
   static const mePassword = '/me/password';
   static const meAbout = '/me/about';

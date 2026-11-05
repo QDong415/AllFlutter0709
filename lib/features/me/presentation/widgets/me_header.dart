@@ -109,10 +109,9 @@ class MeHeader extends StatelessWidget {
                       ),
                       const SizedBox(width: 28),
                       _WalletChip(
-                        iconAsset: 'assets/icons/gift/gift_gold_image.png',
+                        iconAsset: 'assets/icons/gift/charm_icon.png',
                         label: '魅力',
                         value: charm,
-                        tintGold: false,
                       ),
                     ],
                   ),
@@ -173,13 +172,11 @@ class _WalletChip extends StatelessWidget {
     required this.iconAsset,
     required this.label,
     required this.value,
-    this.tintGold = true,
   });
 
   final String iconAsset;
   final String label;
   final int value;
-  final bool tintGold;
 
   @override
   Widget build(BuildContext context) {
@@ -190,8 +187,6 @@ class _WalletChip extends StatelessWidget {
           iconAsset,
           width: 18,
           height: 18,
-          color: tintGold ? null : const Color(0xFFFF6B9D),
-          colorBlendMode: tintGold ? null : BlendMode.srcIn,
         ),
         const SizedBox(width: 6),
         Text(
