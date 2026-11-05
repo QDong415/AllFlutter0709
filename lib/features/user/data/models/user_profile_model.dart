@@ -20,6 +20,8 @@ class UserProfileModel {
     this.remark = '',
     this.isBanned = false,
     this.banExpireTime = 0,
+    this.coin = 0,
+    this.charm = 0,
   });
 
   final String userId;
@@ -49,6 +51,12 @@ class UserProfileModel {
 
   /// 系统禁言的具体解除时间戳；0 表示永久。
   final int banExpireTime;
+
+  /// 金币。只有看自己的资料时用于更新本地余额。
+  final int coin;
+
+  /// 魅力值。收礼累计。
+  final int charm;
 
   /// 系统禁言展示文案。
   String get banLabel {
@@ -108,6 +116,8 @@ class UserProfileModel {
     String? remark,
     bool? isBanned,
     int? banExpireTime,
+    int? coin,
+    int? charm,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -127,6 +137,8 @@ class UserProfileModel {
       remark: remark ?? this.remark,
       isBanned: isBanned ?? this.isBanned,
       banExpireTime: banExpireTime ?? this.banExpireTime,
+      coin: coin ?? this.coin,
+      charm: charm ?? this.charm,
     );
   }
 
@@ -149,6 +161,8 @@ class UserProfileModel {
       remark: _readString(json['remark']),
       isBanned: _readInt(json['is_banned']) == 1,
       banExpireTime: _readInt(json['expire_time']),
+      coin: _readInt(json['coin']),
+      charm: _readInt(json['charm']),
     );
   }
 

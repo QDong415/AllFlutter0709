@@ -23,6 +23,8 @@ class AccountModel {
     required this.follow,
     this.slience = 0,
     this.userType = UserType.human,
+    this.coin = 0,
+    this.charm = 0,
   });
 
   final String userId;
@@ -50,6 +52,12 @@ class AccountModel {
   /// 账号类型：0 真人 / 1 AI。
   final int userType;
 
+  /// 当前金币。送礼扣这个。
+  final int coin;
+
+  /// 魅力值。收礼累计。
+  final int charm;
+
   bool get isValid => userId.trim().isNotEmpty;
 
   /// 是否为 AI 账号。
@@ -76,6 +84,8 @@ class AccountModel {
     int? follow,
     int? slience,
     int? userType,
+    int? coin,
+    int? charm,
   }) {
     return AccountModel(
       userId: userId ?? this.userId,
@@ -98,6 +108,8 @@ class AccountModel {
       follow: follow ?? this.follow,
       slience: slience ?? this.slience,
       userType: userType ?? this.userType,
+      coin: coin ?? this.coin,
+      charm: charm ?? this.charm,
     );
   }
 
@@ -123,6 +135,8 @@ class AccountModel {
       'follow': follow,
       'slience': slience,
       'user_type': userType,
+      'coin': coin,
+      'charm': charm,
     };
   }
 
@@ -148,6 +162,8 @@ class AccountModel {
       follow: _readInt(json['follow']),
       slience: _readInt(json['slience']),
       userType: UserType.parse(json['user_type']),
+      coin: _readInt(json['coin']),
+      charm: _readInt(json['charm']),
     );
   }
 

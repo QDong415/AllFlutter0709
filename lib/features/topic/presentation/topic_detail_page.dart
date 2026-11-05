@@ -2,6 +2,10 @@ import 'dart:async';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/features/gift/presentation/gift_send_animation.dart';
+import 'package:all_flutter0709/features/gift/presentation/gift_sheet.dart';
+import 'package:all_flutter0709/features/gift/presentation/topic_received_gift_strip.dart';
 import 'package:all_flutter0709/features/common/widget/round_icon_label_chip.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_section.dart';
@@ -42,6 +46,8 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
   bool _isLoading = true;
   bool _isLiking = false;
   String? _errorText;
+  final GlobalKey<TopicReceivedGiftStripState> _giftStripKey =
+      GlobalKey<TopicReceivedGiftStripState>();
   StreamSubscription<Tid>? _deletedTidSubscription;
   StreamSubscription<TopicLikeEvent>? _topicLikeSubscription;
 
@@ -106,6 +112,44 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
         _errorText = error.toString().replaceFirst('Exception: ', '');
       });
     }
+  }
+
+  Future<void> _sendGift(TopicModel topicModel) async {
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    final toUserId = topicModel.userId.trim();
+    final feedId = topicModel.tid.trim();
+    if (toUserId.isEmpty || feedId.isEmpty) {
+      AppToast.show(context, '暂时不能给这条动态送礼');
+      return;
+    }
+    final selfId = ref.read(accountProvider)?.userId;
+    if (selfId != null && selfId == toUserId) {
+      AppToast.show(context, '不能给自己送礼');
+      return;
+    }
+    await showGiftSheet(
+      context,
+      toUserId: toUserId,
+      type: 1,
+      feedId: feedId,
+      onCombo: (giftModel, count) {
+        if (!mounted) {
+          return;
+        }
+        unawaited(
+          playGiftSendAnimation(
+            context,
+            pictureUrl: giftModel.pictureUrl,
+            count: count,
+          ),
+        );
+      },
+      onSent: (result) {
+        _giftStripKey.currentState?.onGiftSent(result);
+      },
+    );
   }
 
   Future<void> _toggleLike() async {
@@ -246,17 +290,29 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
             _topicModel = topicModel.copyWith(commentCount: count);
           });
         },
-        header: _TopicDetailHeader(
-          topic: topicModel,
-          isLoadingDetail: _isLoading,
-          onLikeTap: _toggleLike,
-          onDeleteTap: _deleteTopic,
-          onReportTap: _reportTopic,
-          onRefreshTap: _errorText == null
-              ? null
-              : () {
-                  unawaited(_fetchDetail(showLoading: false));
-                },
+        header: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _TopicDetailHeader(
+              topic: topicModel,
+              isLoadingDetail: _isLoading,
+              onLikeTap: _toggleLike,
+              onGiftTap: () {
+                unawaited(_sendGift(topicModel));
+              },
+              onDeleteTap: _deleteTopic,
+              onReportTap: _reportTopic,
+              onRefreshTap: _errorText == null
+                  ? null
+                  : () {
+                      unawaited(_fetchDetail(showLoading: false));
+                    },
+            ),
+            TopicReceivedGiftStrip(
+              key: _giftStripKey,
+              feedId: topicModel.tid,
+            ),
+          ],
         ),
       );
     }
@@ -268,6 +324,7 @@ class _TopicDetailHeader extends StatelessWidget {
     required this.topic,
     required this.isLoadingDetail,
     required this.onLikeTap,
+    required this.onGiftTap,
     this.onDeleteTap,
     this.onReportTap,
     this.onRefreshTap,
@@ -276,6 +333,7 @@ class _TopicDetailHeader extends StatelessWidget {
   final TopicModel topic;
   final bool isLoadingDetail;
   final Future<void> Function() onLikeTap;
+  final VoidCallback onGiftTap;
   final VoidCallback? onDeleteTap;
   final VoidCallback? onReportTap;
   final VoidCallback? onRefreshTap;
@@ -416,6 +474,14 @@ class _TopicDetailHeader extends StatelessWidget {
                 label: topic.commentCount > 0
                     ? '评论 ${topic.commentCount}'
                     : '评论',
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: onGiftTap,
+                child: const RoundIconLabelChip(
+                  icon: Icons.card_giftcard,
+                  label: '送礼',
+                ),
               ),
               const SizedBox(width: 10),
               RoundIconLabelChip(

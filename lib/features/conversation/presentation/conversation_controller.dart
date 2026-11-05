@@ -397,6 +397,34 @@ class ConversationController extends ChangeNotifier {
     );
   }
 
+  /// 发送礼物聊天消息。调用前 gift/send 已经成功。
+  Future<void> sendGiftMessage({
+    required String conversationId,
+    required int giftId,
+    required String title,
+    required String picture,
+    required int count,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      throw Exception('请先登录');
+    }
+    await _sendCoordinator.sendGift(
+      account: account,
+      conversationId: conversationId,
+      giftId: giftId,
+      title: title,
+      picture: picture,
+      count: count,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+  }
+
   /// 发送语音：先落本地 pending，再上传七牛并 `/api/chat/send`。
   Future<void> sendVoiceMessage({
     required String conversationId,

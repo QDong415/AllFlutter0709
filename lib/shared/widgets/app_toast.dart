@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/features/gift/data/gift_list_errors.dart';
 import 'package:flutter/material.dart';
 
 /// 屏幕中间的短提示，淡入淡出并轻微缩放。
@@ -12,6 +13,10 @@ class AppToast {
   static void show(BuildContext context, String message) {
     final text = message.replaceFirst('Exception: ', '').trim();
     if (text.isEmpty || !context.mounted) {
+      return;
+    }
+    // hidegift：由礼物区 / 列表页内联展示，不要弹 Toast。
+    if (isGiftListHiddenError(text)) {
       return;
     }
 

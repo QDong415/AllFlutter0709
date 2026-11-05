@@ -141,6 +141,9 @@ class ChatBubbleMenuHelper {
   }
 
   bool _canRecallMessage(MessageItem item) {
+    if (item is GiftMessage) {
+      return false;
+    }
     if (!item.isRight || item.deliveryStatus != MessageDeliveryStatus.sent) {
       return false;
     }
@@ -165,6 +168,8 @@ class ChatBubbleMenuHelper {
       TextMessage(:final text) => text,
       ImageMessage() => '[图片]',
       VoiceMessage() => '[语音消息]',
+      GiftMessage(:final title, :final count) =>
+        count > 1 ? '[礼物]$title x$count' : '[礼物]$title',
     };
   }
 }

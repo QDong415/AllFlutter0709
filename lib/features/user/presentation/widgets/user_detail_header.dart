@@ -124,42 +124,36 @@ class UserDetailHeader extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                '${profileModel.followCount}',
-                                style: const TextStyle(
-                                  fontSize: 21,
-                                  color: Color(0xFF222222),
-                                  fontWeight: FontWeight.w500,
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics(),
+                            ),
+                            child: Row(
+                              children: [
+                                _ProfileStatItem(
+                                  value: '${profileModel.followCount}',
+                                  label: '关注',
                                 ),
-                              ),
-                              const SizedBox(width: 5),
-                              const Text(
-                                '关注',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF888888),
+                                const _ProfileStatGap(),
+                                _ProfileStatItem(
+                                  value: '${profileModel.fansCount}',
+                                  label: '粉丝',
                                 ),
-                              ),
-                              const SizedBox(width: 23),
-                              Text(
-                                '${profileModel.fansCount}',
-                                style: const TextStyle(
-                                  fontSize: 21,
-                                  color: Color(0xFF222222),
-                                  fontWeight: FontWeight.w500,
+                                const _ProfileStatGap(),
+                                _ProfileStatItem(
+                                  value: '${profileModel.charm}',
+                                  label: '魅力',
                                 ),
-                              ),
-                              const SizedBox(width: 5),
-                              const Text(
-                                '粉丝',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF888888),
-                                ),
-                              ),
-                            ],
+                                if (isSelf) ...[
+                                  const _ProfileStatGap(),
+                                  _ProfileStatItem(
+                                    value: '${profileModel.coin}',
+                                    label: '金币',
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 12),
                           UserDetailActionButtons(
@@ -224,6 +218,42 @@ class UserDetailHeader extends StatelessWidget {
               UserDetailTags(profileModel: profileModel),
             ],
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileStatGap extends StatelessWidget {
+  const _ProfileStatGap();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(width: 23);
+}
+
+class _ProfileStatItem extends StatelessWidget {
+  const _ProfileStatItem({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 21,
+            color: Color(0xFF222222),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF888888)),
         ),
       ],
     );

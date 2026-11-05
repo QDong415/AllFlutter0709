@@ -7,6 +7,9 @@ enum ConversationMessageType {
   text(1),
   image(2),
   voice(3),
+
+  /// 礼物。金币扣减在 gift/send，这条消息只负责展示。
+  gift(4),
   callAudio(10),
   callVideo(11),
 
@@ -122,6 +125,53 @@ class ConversationMessage {
       ValueUtil.getQiniuUrlByFileName(otherPhoto, keepOriginal: true) ?? '';
 
   bool get isImage => messageType == ConversationMessageType.image;
+
+  /// 礼物图文件名。优先 extend.picture，其次 filename。
+  String get giftPicture {
+    if (messageType != ConversationMessageType.gift) {
+      return '';
+    }
+    final picture = _extendJsonMap()?['picture']?.toString().trim() ?? '';
+    if (picture.isNotEmpty) {
+      return picture;
+    }
+    return filename;
+  }
+
+  /// 礼物名称。
+  String get giftTitle {
+    if (messageType != ConversationMessageType.gift) {
+      return '';
+    }
+    final title = _extendJsonMap()?['title']?.toString().trim() ?? '';
+    if (title.isNotEmpty) {
+      return title;
+    }
+    var text = content.replaceFirst('[礼物]', '').trim();
+    final match = RegExp(r'^(.+?)\s+x(\d+)$').firstMatch(text);
+    if (match != null) {
+      text = match.group(1)!.trim();
+    }
+    return text;
+  }
+
+  /// 本次送出数量。
+  int get giftCount {
+    if (messageType != ConversationMessageType.gift) {
+      return 0;
+    }
+    final raw = _extendJsonMap()?['count'];
+    final fromJson = raw is int ? raw : int.tryParse(raw?.toString() ?? '');
+    if (fromJson != null && fromJson > 0) {
+      return fromJson;
+    }
+    // Buddy 把数量直接放在 extend，例如 "1"。
+    final plain = int.tryParse(extend.trim());
+    if (plain != null && plain > 0) {
+      return plain;
+    }
+    return 1;
+  }
 
   String? get imageUrl => isImage
       ? ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true)
@@ -245,6 +295,8 @@ class ConversationMessage {
         return '[图片消息]';
       case ConversationMessageType.voice:
         return '[语音消息]';
+      case ConversationMessageType.gift:
+        return content.isEmpty ? '[礼物]' : content;
       case ConversationMessageType.callAudio:
         return '[语音通话]';
       case ConversationMessageType.callVideo:

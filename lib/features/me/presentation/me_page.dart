@@ -58,6 +58,8 @@ class _MePageState extends ConsumerState<MePage> {
               fansCount: profile.fansCount,
               followCount: profile.followCount,
               topicCount: profile.topicCount,
+              coin: profile.coin,
+              charm: profile.charm,
             ),
           );
     } catch (_) {}
@@ -113,6 +115,9 @@ class _MePageState extends ConsumerState<MePage> {
                   avatar: account?.avatar ?? '',
                   fansCount: account?.fansCount ?? 0,
                   followCount: account?.followCount ?? 0,
+                  coin: loggedIn ? account.coin : 0,
+                  charm: loggedIn ? account.charm : 0,
+                  showWallet: loggedIn,
                   onProfileTap: () => _open(AppRoutes.meProfileEdit),
                   onFansTap: () => _open(
                     AppRoutes.meFriendship,

@@ -41,8 +41,13 @@ class MainTabScaffold extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(conversationControllerProvider);
+    final shellIndex = navigationShell.currentIndex;
+    final isRankTab = shellIndex == MainTabItem.rank.index;
+    final systemOverlay = isRankTab
+        ? AppSystemUi.overlayStyleWithStatusBarIcons(darkIcons: true)
+        : AppSystemUi.overlayStyle;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppSystemUi.overlayStyle,
+      value: systemOverlay,
       child: GlassScaffold(
         backgroundColor: AppColors.bodyBackground,
         statusBarStyle: GlassStatusBarStyle.none,
@@ -147,7 +152,7 @@ class MainTabScaffold extends ConsumerWidget {
 /// 主 Tab 项。
 enum MainTabItem {
   topic(label: '动态', kind: MainTabIconKind.topic),
-  ai(label: 'AI', kind: MainTabIconKind.ai),
+  rank(label: '榜单', kind: MainTabIconKind.rank),
   conversation(label: '聊天', kind: MainTabIconKind.conversation),
   me(label: '我的', kind: MainTabIconKind.me);
 

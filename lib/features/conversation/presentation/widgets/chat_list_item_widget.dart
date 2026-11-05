@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_gift_bubble.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_image_bubble.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_row.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_text_bubble.dart';
@@ -41,6 +42,14 @@ class ChatListItemWidget extends StatelessWidget {
           item: voiceItem,
           isPlaying: playingMessageId == voiceItem.id,
           isSelected: selectedMessageId == voiceItem.id,
+        ),
+      ),
+      final GiftMessage giftItem => ChatMessageRow(
+        item: giftItem,
+        actions: actions,
+        bubble: ChatGiftBubble(
+          item: giftItem,
+          isSelected: selectedMessageId == giftItem.id,
         ),
       ),
       final ImageMessage imageItem => ChatMessageRow(

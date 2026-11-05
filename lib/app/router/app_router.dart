@@ -1,7 +1,8 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
-import 'package:all_flutter0709/features/ai/presentation/ai_character_page.dart';
 import 'package:all_flutter0709/features/ai/presentation/ai_creation_page.dart';
+import 'package:all_flutter0709/features/gift/presentation/gift_sender_page.dart';
+import 'package:all_flutter0709/features/gift/presentation/rank_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
 import 'package:all_flutter0709/features/auth/presentation/password_login_page.dart';
@@ -100,6 +101,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.aiCreate,
+        builder: (context, state) => const AiCreationPage(),
+      ),
+      GoRoute(
+        path: '/ai',
+        redirect: (context, state) => '${AppRoutes.topic}?feedTab=ai',
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        path: AppRoutes.giftSenders,
+        builder: (context, state) {
+          final query = state.uri.queryParameters;
+          final typeRaw = query['type'];
+          return GiftSenderPage(
+            toUserId: query['to_userid'],
+            feedId: query['feedid'],
+            type: typeRaw == null ? null : int.tryParse(typeRaw),
+          );
+        },
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
         path: AppRoutes.warningReport,
         builder: (context, state) {
           final extra = state.extra;
@@ -132,8 +155,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.topic,
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: TopicPage()),
+                pageBuilder: (context, state) => NoTransitionPage(
+                  child: TopicPage(
+                    initialFeedTab: state.uri.queryParameters['feedTab'],
+                  ),
+                ),
                 routes: [
                   GoRoute(
                     parentNavigatorKey: _rootNavigatorKey,
@@ -163,16 +189,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: AppRoutes.ai,
+                path: AppRoutes.rank,
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: AiCharacterPage()),
-                routes: [
-                  GoRoute(
-                    parentNavigatorKey: _rootNavigatorKey,
-                    path: AppRoutes.aiCreate,
-                    builder: (context, state) => const AiCreationPage(),
-                  ),
-                ],
+                    const NoTransitionPage(child: RankPage()),
               ),
             ],
           ),

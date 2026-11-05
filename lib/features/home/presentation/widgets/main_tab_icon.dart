@@ -5,8 +5,8 @@ enum MainTabIconKind {
   /// 动态
   topic,
 
-  /// AI 伙伴
-  ai,
+  /// 榜单
+  rank,
 
   /// 聊天
   conversation,
@@ -66,8 +66,8 @@ class _MainTabIconPainter extends CustomPainter {
     switch (kind) {
       case MainTabIconKind.topic:
         _paintTopic(canvas, paint);
-      case MainTabIconKind.ai:
-        _paintAi(canvas, paint);
+      case MainTabIconKind.rank:
+        _paintRank(canvas, paint);
       case MainTabIconKind.conversation:
         _paintConversation(canvas, paint);
       case MainTabIconKind.me:
@@ -101,47 +101,19 @@ class _MainTabIconPainter extends CustomPainter {
     );
   }
 
-  void _paintAi(Canvas canvas, Paint paint) {
-    final head = Path()
-      ..addRRect(
-        RRect.fromLTRBR(4.2, 6.2, 19.8, 19.8, const Radius.circular(4.2)),
-      );
-    final antenna = Path()
-      ..moveTo(12, 6.2)
-      ..lineTo(12, 3.8);
-    if (filled) {
-      canvas.drawPath(head, paint);
-      final detailPaint = Paint()
-        ..color = const Color(0xFFFFFFFF)
-        ..strokeWidth = _strokeWidth
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke
-        ..isAntiAlias = true;
-      canvas.drawLine(
-        const Offset(8.8, 11.6),
-        const Offset(8.8, 13.2),
-        detailPaint,
-      );
-      canvas.drawLine(
-        const Offset(15.2, 11.6),
-        const Offset(15.2, 13.2),
-        detailPaint,
-      );
-      canvas.drawLine(
-        const Offset(9.2, 16.1),
-        const Offset(14.8, 16.1),
-        detailPaint,
-      );
-      canvas.drawPath(antenna, paint..style = PaintingStyle.stroke);
-      canvas.drawCircle(const Offset(12, 3.8), 0.8, paint);
-      return;
-    }
-    canvas.drawPath(head, paint);
-    canvas.drawPath(antenna, paint);
-    canvas.drawCircle(const Offset(12, 3.8), 0.8, paint);
-    canvas.drawLine(const Offset(8.8, 11.6), const Offset(8.8, 13.2), paint);
-    canvas.drawLine(const Offset(15.2, 11.6), const Offset(15.2, 13.2), paint);
-    canvas.drawLine(const Offset(9.2, 16.1), const Offset(14.8, 16.1), paint);
+  void _paintRank(Canvas canvas, Paint paint) {
+    canvas.drawRRect(
+      RRect.fromLTRBR(3.8, 12.4, 9.0, 20.2, const Radius.circular(1.2)),
+      paint,
+    );
+    canvas.drawRRect(
+      RRect.fromLTRBR(9.6, 3.8, 14.4, 20.2, const Radius.circular(1.2)),
+      paint,
+    );
+    canvas.drawRRect(
+      RRect.fromLTRBR(15.0, 8.4, 20.2, 20.2, const Radius.circular(1.2)),
+      paint,
+    );
   }
 
   void _paintConversation(Canvas canvas, Paint paint) {

@@ -12,6 +12,9 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_bubble_menu_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_image_preview_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
+import 'package:all_flutter0709/features/gift/data/gift_model.dart';
+import 'package:all_flutter0709/features/gift/presentation/gift_send_animation.dart';
+import 'package:all_flutter0709/features/gift/presentation/gift_sheet.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_scroll_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_send_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_play_helper.dart';
@@ -254,6 +257,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
       case VoiceMessage():
         unawaited(_playVoice(message));
       case TextMessage():
+      case GiftMessage():
         break;
     }
   }
@@ -364,6 +368,63 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         setState(() {
           _isSubmitting = false;
         });
+      }
+    }
+  }
+
+  Future<void> _sendGift() async {
+    if (_isSubmitting) {
+      return;
+    }
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    final selfId = ref.read(accountProvider)?.userId;
+    if (selfId != null && selfId == widget.chatId) {
+      AppToast.show(context, '不能给自己送礼');
+      return;
+    }
+    _panelHelper.hidePanel();
+    await showGiftSheet(
+      context,
+      toUserId: widget.chatId,
+      type: 4,
+      onCombo: (giftModel, count) {
+        if (!mounted) {
+          return;
+        }
+        unawaited(
+          playGiftSendAnimation(
+            context,
+            pictureUrl: giftModel.pictureUrl,
+            count: count,
+          ),
+        );
+      },
+      onSent: (result) {
+        unawaited(_sendGiftChatMessage(result));
+      },
+    );
+  }
+
+  Future<void> _sendGiftChatMessage(GiftSendResult result) async {
+    try {
+      await ref.read(conversationControllerProvider).sendGiftMessage(
+        conversationId: widget.chatId,
+        giftId: result.giftModel.giftId,
+        title: result.giftModel.title,
+        picture: result.giftModel.picture,
+        count: result.count,
+        peerName: _peerName,
+        peerAvatar: _peerAvatar,
+        peerUserType: _peerUserType,
+      );
+      if (mounted) {
+        _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+      }
+    } catch (error) {
+      if (mounted) {
+        _showSnackBar('礼物已送出，消息发送失败');
       }
     }
   }
@@ -613,6 +674,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                   },
                   onSendImage: () {
                     unawaited(_sendImage());
+                  },
+                  onSendGift: () {
+                    unawaited(_sendGift());
                   },
                   onEmojiTap: _insertEmoji,
                   onEmojiDelete: _deleteEmoji,

@@ -179,6 +179,42 @@ class ConversationRepository {
     );
   }
 
+  /// 创建礼物聊天消息。调用前应已完成 gift/send。
+  Future<ConversationMessage> createPendingGiftMessage({
+    required AccountModel account,
+    required String conversationId,
+    required int giftId,
+    required String title,
+    required String picture,
+    required int count,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) {
+    return _messageDeliveryService.createPendingGiftMessage(
+      account: account,
+      conversationId: conversationId,
+      giftId: giftId,
+      title: title,
+      picture: picture,
+      count: count,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+  }
+
+  /// 把礼物消息发到 `/api/chat/send`。
+  Future<ConversationMessage> sendPendingGiftMessage({
+    required AccountModel account,
+    required ConversationMessage message,
+  }) {
+    return _messageDeliveryService.sendPendingTextMessage(
+      account: account,
+      message: message,
+    );
+  }
+
   /// 上传语音并调用 `/api/chat/send`。
   Future<ConversationMessage> sendPendingVoiceMessage({
     required AccountModel account,

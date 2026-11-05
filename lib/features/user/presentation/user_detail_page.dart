@@ -8,6 +8,7 @@ import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
+import 'package:all_flutter0709/features/gift/presentation/received_gift_section.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_list_base_state.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
@@ -28,7 +29,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
-/// 用户个人主页：资料 Header + 该用户动态列表。
+/// 用户个人主页：资料 Header、收到的礼物，然后是该用户动态列表。
 class UserDetailPage extends StatefulWidget {
   const UserDetailPage({
     super.key,
@@ -54,6 +55,8 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   late UserProfileModel _profileModel;
   bool _isFollowLoading = false;
+  final GlobalKey<ReceivedGiftSectionState> _giftSectionKey =
+      GlobalKey<ReceivedGiftSectionState>();
   bool _isBlocking = false;
   double _collapseProgress = 0;
   double _stretchOffset = 0;
@@ -111,16 +114,24 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   /// 复用基类 [buildTopicListView] 的 header 钩子。
   @override
   Widget? buildListHeader() {
-    return UserDetailHeader(
-      profileModel: _profileModel,
-      coverHeight: _coverHeight(context),
-      stretchOffset: _stretchOffset,
-      isSelf: _isSelf,
-      isFollowLoading: _isFollowLoading,
-      onAvatarTap: _onAvatarTap,
-      onChatTap: _onChatTap,
-      onFollowTap: _onFollowTap,
-      onEditTap: _onEditTap,
+    return Column(
+      children: [
+        UserDetailHeader(
+          profileModel: _profileModel,
+          coverHeight: _coverHeight(context),
+          stretchOffset: _stretchOffset,
+          isSelf: _isSelf,
+          isFollowLoading: _isFollowLoading,
+          onAvatarTap: _onAvatarTap,
+          onChatTap: _onChatTap,
+          onFollowTap: _onFollowTap,
+          onEditTap: _onEditTap,
+        ),
+        ReceivedGiftSection(
+          key: _giftSectionKey,
+          userId: widget.userId,
+        ),
+      ],
     );
   }
 
@@ -133,10 +144,9 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
       final container = ProviderScope.containerOf(context);
       final myId = container.read(accountProvider)?.userId.trim() ?? '';
       if (myId.isNotEmpty && myId != profile.userId) {
-        container.read(userRemarkStoreProvider).put(
-          toUserId: profile.userId,
-          remark: profile.remark,
-        );
+        container
+            .read(userRemarkStoreProvider)
+            .put(toUserId: profile.userId, remark: profile.remark);
       }
       setState(() {
         _profileModel = profile;
@@ -148,6 +158,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   }
 
   Future<void> _onRefresh() async {
+    _giftSectionKey.currentState?.reloadSilently();
     await Future.wait([_loadProfile(), onRefreshList()]);
   }
 
@@ -304,11 +315,9 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
       if (!mounted) {
         return;
       }
-      ProviderScope.containerOf(context).read(userRemarkStoreProvider).put(
-        toUserId: widget.userId,
-        remark: next,
-        localEdit: true,
-      );
+      ProviderScope.containerOf(context)
+          .read(userRemarkStoreProvider)
+          .put(toUserId: widget.userId, remark: next, localEdit: true);
       setState(() {
         _profileModel = _profileModel.copyWith(remark: next);
       });

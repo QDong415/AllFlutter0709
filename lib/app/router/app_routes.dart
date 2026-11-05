@@ -8,8 +8,9 @@ abstract final class AppRoutes {
   static const topicDetail = 'detail/:tid';
   static const topicSubmit = 'submit';
   static const topicUserSelect = 'user-select';
-  static const ai = '/ai';
-  static const aiCreate = 'create';
+  static const rank = '/rank';
+  static const aiCreate = '/ai/create';
+  static const giftSenders = '/gift/senders';
   static const video = '/video';
   static const videoDetail = 'detail/:videoId';
   static const conversation = '/conversation';

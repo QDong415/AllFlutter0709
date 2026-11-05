@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/ai/data/ai_character_repository.dart';
@@ -12,13 +11,12 @@ import 'package:all_flutter0709/features/ai/presentation/widgets/ai_character_sk
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
-import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// AI 角色发现页：支持搜索、筛选、分页以及进入主页或聊天。
+/// AI 角色列表：作为首页第四个 Tab，与匹配页一样嵌在 [TopicPage] 的 TabBarView 里。
 class AiCharacterPage extends StatefulWidget {
   const AiCharacterPage({super.key});
 
@@ -143,9 +141,7 @@ class _AiCharacterPageState extends State<AiCharacterPage> {
 
   Future<void> _openCreation() async {
     if (!context.ensureLoggedIn()) return;
-    final created = await context.push<bool>(
-      '${AppRoutes.ai}/${AppRoutes.aiCreate}',
-    );
+    final created = await context.push<bool>(AppRoutes.aiCreate);
     if (!mounted || created != true) return;
     setState(() {
       _selectedFilter = AiCharacterFilter.female;
@@ -194,28 +190,24 @@ class _AiCharacterPageState extends State<AiCharacterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const CommonAppBar(title: 'AI 伙伴'),
-      backgroundColor: AppColors.bodyBackground,
-      body: Column(
-        children: [
-          AiCharacterFilterBar(
-            selectedFilter: _selectedFilter,
-            searchController: _searchController,
-            onFilterChanged: _onFilterChanged,
-            onSearchChanged: _onSearchChanged,
-            onCreateTap: _openCreation,
+    return Column(
+      children: [
+        AiCharacterFilterBar(
+          selectedFilter: _selectedFilter,
+          searchController: _searchController,
+          onFilterChanged: _onFilterChanged,
+          onSearchChanged: _onSearchChanged,
+          onCreateTap: _openCreation,
+        ),
+        Expanded(
+          child: EasyRefresh(
+            header: const ClassicHeader(showMessage: false, showText: false),
+            onRefresh: () => _requestList(isRefresh: true),
+            onLoad: _hasMore ? () => _requestList(isRefresh: false) : null,
+            child: _buildContent(),
           ),
-          Expanded(
-            child: EasyRefresh(
-              header: const ClassicHeader(showMessage: false, showText: false),
-              onRefresh: () => _requestList(isRefresh: true),
-              onLoad: _hasMore ? () => _requestList(isRefresh: false) : null,
-              child: _buildContent(),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

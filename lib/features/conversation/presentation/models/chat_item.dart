@@ -110,6 +110,26 @@ final class VoiceMessage extends MessageItem {
   }
 }
 
+/// 礼物气泡。
+final class GiftMessage extends MessageItem {
+  const GiftMessage({
+    required super.id,
+    required super.msgId,
+    required super.clientMessageId,
+    required super.direction,
+    required super.avatarUrl,
+    required super.createTimeSeconds,
+    super.deliveryStatus,
+    required this.title,
+    required this.pictureUrl,
+    required this.count,
+  });
+
+  final String title;
+  final String pictureUrl;
+  final int count;
+}
+
 /// 图片气泡。
 final class ImageMessage extends MessageItem {
   const ImageMessage({

@@ -2,6 +2,7 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/network/page_data.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
+import 'package:all_flutter0709/features/user/data/models/user_extend_model.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 
 /// 用户主页相关网络请求。
@@ -79,6 +80,60 @@ class UserRepository {
     }
 
     return followStatus;
+  }
+
+  /// 隐私开关（Android `account/extend` 或 `user/extend`）。
+  Future<UserExtendModel> fetchUserExtend() async {
+    final response = await HttpClient.instance.get('/api/account/extend');
+    final json = response.data;
+    if (json is! Map<String, dynamic>) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<UserExtendModel>.fromJson(
+      json,
+      (dataJson) => UserExtendModel.fromJson(
+        dataJson is Map<String, dynamic>
+            ? dataJson
+            : Map<String, dynamic>.from(dataJson as Map),
+      ),
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '加载失败' : result.message);
+    }
+    return result.data ?? const UserExtendModel();
+  }
+
+  /// 更新单项隐私开关（Android 逐项 `submitextend`）。
+  Future<void> submitUserExtend({
+    bool? hideGift,
+    bool? hideFans,
+    bool? hideFollow,
+  }) async {
+    final data = <String, dynamic>{};
+    if (hideGift != null) {
+      data['hidegift'] = hideGift ? '1' : '0';
+    }
+    if (hideFans != null) {
+      data['hidefans'] = hideFans ? '1' : '0';
+    }
+    if (hideFollow != null) {
+      data['hidefollow'] = hideFollow ? '1' : '0';
+    }
+    if (data.isEmpty) {
+      return;
+    }
+    final response = await HttpClient.instance.post(
+      '/api/account/submitextend',
+      data: data,
+    );
+    final json = response.data;
+    if (json is! Map<String, dynamic>) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<void>.fromJson(json);
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '保存失败' : result.message);
+    }
   }
 
   /// 提交意见或举报（Android `version/opinion_send`）。

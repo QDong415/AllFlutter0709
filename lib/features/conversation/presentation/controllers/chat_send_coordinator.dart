@@ -109,6 +109,45 @@ class ChatSendCoordinator {
     }
   }
 
+  /// 写入并发送礼物聊天消息。金币已在 gift/send 扣除。
+  Future<void> sendGift({
+    required AccountModel account,
+    required String conversationId,
+    required int giftId,
+    required String title,
+    required String picture,
+    required int count,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) async {
+    final message = await _repository.createPendingGiftMessage(
+      account: account,
+      conversationId: conversationId,
+      giftId: giftId,
+      title: title,
+      picture: picture,
+      count: count,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+    _messageStore.append(conversationId, message);
+    await _refreshConversations();
+    try {
+      final sentMessage = await _repository.sendPendingGiftMessage(
+        account: account,
+        message: message,
+      );
+      _messageStore.replace(conversationId, sentMessage);
+    } catch (_) {
+      _markFailed(conversationId, message.clientMessageId);
+      rethrow;
+    } finally {
+      await _refreshConversations();
+    }
+  }
+
   /// 创建、上传并发送语音消息。
   Future<void> sendVoice({
     required AccountModel account,

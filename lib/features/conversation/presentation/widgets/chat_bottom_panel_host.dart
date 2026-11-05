@@ -12,6 +12,7 @@ class ChatBottomPanelHost extends StatelessWidget {
     required this.inputFocusNode,
     required this.onPanelTypeChange,
     required this.onSendImage,
+    required this.onSendGift,
     required this.onEmojiTap,
     required this.onEmojiDelete,
   });
@@ -21,6 +22,7 @@ class ChatBottomPanelHost extends StatelessWidget {
   final void Function(ChatBottomPanelType panelType, ChatPanelType? data)
   onPanelTypeChange;
   final VoidCallback onSendImage;
+  final VoidCallback onSendGift;
   final ValueChanged<String> onEmojiTap;
   final VoidCallback onEmojiDelete;
 
@@ -49,7 +51,10 @@ class ChatBottomPanelHost extends StatelessWidget {
             return SizedBox(
               width: double.infinity,
               height: height,
-              child: ChatFuncPanel(onSendImage: onSendImage),
+              child: ChatFuncPanel(
+                onSendImage: onSendImage,
+                onSendGift: onSendGift,
+              ),
             );
           case ChatPanelType.none:
           case ChatPanelType.keyboard:

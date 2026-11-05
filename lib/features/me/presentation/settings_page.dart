@@ -3,6 +3,7 @@ import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/me/presentation/helpers/me_account_helper.dart';
+import 'package:all_flutter0709/features/user/data/models/user_extend_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
@@ -14,7 +15,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
-/// 系统设置。不含夜间模式，也不含隐藏礼物 / 粉丝 / 关注。
+/// 系统设置。对齐 Android `MineSystemActivity`（不含夜间模式）。
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -25,6 +26,92 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   final UserRepository _userRepository = const UserRepository();
   bool _checking = false;
+  UserExtendModel? _extend;
+  bool _extendLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadExtend());
+  }
+
+  Future<void> _loadExtend() async {
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    setState(() => _extendLoading = true);
+    try {
+      final extend = await _userRepository.fetchUserExtend();
+      if (mounted) {
+        setState(() {
+          _extend = extend;
+          _extendLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _extend = const UserExtendModel();
+          _extendLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _setHideFlag({
+    required String field,
+    required bool hide,
+    required UserExtendModel Function(UserExtendModel, bool) apply,
+  }) async {
+    final previous = _extend ?? const UserExtendModel();
+    setState(() => _extend = apply(previous, hide));
+    try {
+      await _userRepository.submitUserExtend(
+        hideGift: field == 'hidegift' ? hide : null,
+        hideFans: field == 'hidefans' ? hide : null,
+        hideFollow: field == 'hidefollow' ? hide : null,
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _extend = previous);
+        AppToast.show(context, '$error');
+      }
+    }
+  }
+
+  Future<void> _pickHideOption({
+    required String field,
+    required bool currentHide,
+    required UserExtendModel Function(UserExtendModel, bool) apply,
+  }) async {
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    final value = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('不隐藏'),
+              onTap: () => Navigator.pop(context, false),
+            ),
+            ListTile(
+              title: const Text('隐藏'),
+              onTap: () => Navigator.pop(context, true),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (value == null || value == currentHide) {
+      return;
+    }
+    await _setHideFlag(field: field, hide: value, apply: apply);
+  }
+
+  String _hideLabel(bool hide) => hide ? '隐藏' : '不隐藏';
 
   Future<void> _setSlience(int value) async {
     final current = ref.read(accountProvider);
@@ -206,6 +293,41 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               context.push(AppRoutes.mePassword);
             },
           ),
+          if (account != null) ...[
+            _SettingTile(
+              title: '隐藏礼物',
+              trailing: _extendLoading
+                  ? '…'
+                  : _hideLabel(_extend?.hideGift ?? false),
+              onTap: () => _pickHideOption(
+                field: 'hidegift',
+                currentHide: _extend?.hideGift ?? false,
+                apply: (model, hide) => model.copyWith(hideGift: hide),
+              ),
+            ),
+            _SettingTile(
+              title: '隐藏粉丝',
+              trailing: _extendLoading
+                  ? '…'
+                  : _hideLabel(_extend?.hideFans ?? false),
+              onTap: () => _pickHideOption(
+                field: 'hidefans',
+                currentHide: _extend?.hideFans ?? false,
+                apply: (model, hide) => model.copyWith(hideFans: hide),
+              ),
+            ),
+            _SettingTile(
+              title: '隐藏关注',
+              trailing: _extendLoading
+                  ? '…'
+                  : _hideLabel(_extend?.hideFollow ?? false),
+              onTap: () => _pickHideOption(
+                field: 'hidefollow',
+                currentHide: _extend?.hideFollow ?? false,
+                apply: (model, hide) => model.copyWith(hideFollow: hide),
+              ),
+            ),
+          ],
           _SettingTile(
             title: '关于我们',
             onTap: () => context.push(AppRoutes.meAbout),

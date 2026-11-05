@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:all_flutter0709/core/utils/value_util.dart';
+import 'package:all_flutter0709/features/gift/data/gift_model.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:intl/intl.dart';
@@ -68,6 +69,19 @@ ChatItem _mapMessage(
         imagePath: hasLocalFile ? localPath : null,
         imageWidth: imageSize['width']!.toDouble(),
         imageHeight: imageSize['height']!.toDouble(),
+      );
+    case ConversationMessageType.gift:
+      return GiftMessage(
+        id: message.itemId,
+        msgId: message.msgId,
+        clientMessageId: message.clientMessageId,
+        direction: direction,
+        avatarUrl: avatarUrl,
+        createTimeSeconds: message.createTimeSeconds,
+        deliveryStatus: deliveryStatus,
+        title: message.giftTitle.isEmpty ? '礼物' : message.giftTitle,
+        pictureUrl: giftPictureUrl(message.giftPicture),
+        count: message.giftCount,
       );
     case ConversationMessageType.voice:
       return VoiceMessage(

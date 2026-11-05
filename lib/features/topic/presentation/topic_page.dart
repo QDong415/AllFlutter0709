@@ -1,6 +1,7 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/features/ai/presentation/ai_character_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_gender.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_feed_list_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/user_match_list_page.dart';
@@ -10,9 +11,14 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// 动态 Tab 首页：性别筛选 + 最新/关注/匹配 + 发布入口。
+/// 动态 Tab 首页：性别筛选 + 最新/关注/匹配/AI + 发布入口。
+///
+/// 四个子页共用同一顶栏，可横滑切换；离开 feed 列表 Tab 时暂停视频 ticker。
 class TopicPage extends StatefulWidget {
-  const TopicPage({super.key});
+  const TopicPage({super.key, this.initialFeedTab});
+
+  /// 例如 `/topic?feedTab=ai` 或旧链 `/ai` 重定向。
+  final String? initialFeedTab;
 
   @override
   State<TopicPage> createState() => _TopicPageState();
@@ -22,15 +28,34 @@ class _TopicPageState extends State<TopicPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   int _gender = TopicGender.unlimited;
+  int _tabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    if (widget.initialFeedTab == 'ai') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _tabController.index = 3;
+        setState(() => _tabIndex = 3);
+      });
+    }
+  }
+
+  void _onTabChanged() {
+    if (_tabController.index == _tabIndex) {
+      return;
+    }
+    setState(() => _tabIndex = _tabController.index);
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -47,6 +72,7 @@ class _TopicPageState extends State<TopicPage>
     final controller = context.providerContainer.read(
       topicPublishControllerProvider,
     );
+    final feedTickerEnabled = _tabIndex < 3;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
@@ -70,12 +96,25 @@ class _TopicPageState extends State<TopicPage>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    TopicFeedListPage(
-                      gender: _gender,
-                      listenPublishSuccess: true,
+                    TickerMode(
+                      enabled: feedTickerEnabled && _tabIndex == 0,
+                      child: TopicFeedListPage(
+                        gender: _gender,
+                        listenPublishSuccess: true,
+                      ),
                     ),
-                    TopicFeedListPage(gender: _gender, onlyFollow: true),
-                    UserMatchListPage(gender: _gender),
+                    TickerMode(
+                      enabled: feedTickerEnabled && _tabIndex == 1,
+                      child: TopicFeedListPage(
+                        gender: _gender,
+                        onlyFollow: true,
+                      ),
+                    ),
+                    TickerMode(
+                      enabled: feedTickerEnabled && _tabIndex == 2,
+                      child: UserMatchListPage(gender: _gender),
+                    ),
+                    const AiCharacterPage(),
                   ],
                 ),
               ),

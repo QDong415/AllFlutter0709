@@ -174,6 +174,45 @@ class ChatMessageDeliveryService {
     return _savePendingMessage(account.userId, message);
   }
 
+  /// 创建礼物消息。扣金币由 gift/send 完成，这里只写入聊天记录。
+  Future<ConversationMessage> createPendingGiftMessage({
+    required AccountModel account,
+    required String conversationId,
+    required int giftId,
+    required String title,
+    required String picture,
+    required int count,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) async {
+    final content = count > 1 ? '[礼物]$title x$count' : '[礼物]$title';
+    final message = ConversationMessage(
+      msgId: 0,
+      clientMessageId: _nextClientMessageId(),
+      conversationId: conversationId,
+      otherUserId: conversationId,
+      otherName: peerName,
+      otherPhoto: peerAvatar,
+      content: content,
+      createTimeSeconds: _nowSeconds(),
+      status: ConversationMessageStatus.sending,
+      type: _chatTypeSingle,
+      messageType: ConversationMessageType.gift,
+      filename: picture,
+      extend: jsonEncode({
+        'giftid': '$giftId',
+        'title': title,
+        'picture': picture,
+        'count': '$count',
+      }),
+      isSender: true,
+      isRead: true,
+      otherUserType: peerUserType,
+    );
+    return _savePendingMessage(account.userId, message);
+  }
+
   /// 上传并发送语音，过程中回传上传进度。
   Future<ConversationMessage> sendPendingVoiceMessage({
     required AccountModel account,

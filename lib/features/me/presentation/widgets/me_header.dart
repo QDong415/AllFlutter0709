@@ -12,12 +12,18 @@ class MeHeader extends StatelessWidget {
     required this.onProfileTap,
     required this.onFansTap,
     required this.onFollowTap,
+    this.coin = 0,
+    this.charm = 0,
+    this.showWallet = false,
   });
 
   final String name;
   final String avatar;
   final int fansCount;
   final int followCount;
+  final int coin;
+  final int charm;
+  final bool showWallet;
   final VoidCallback onProfileTap;
   final VoidCallback onFansTap;
   final VoidCallback onFollowTap;
@@ -91,6 +97,26 @@ class MeHeader extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (showWallet) ...[
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _WalletChip(
+                        iconAsset: 'assets/icons/gift/gift_gold_image.png',
+                        label: '金币',
+                        value: coin,
+                      ),
+                      const SizedBox(width: 28),
+                      _WalletChip(
+                        iconAsset: 'assets/icons/gift/gift_gold_image.png',
+                        label: '魅力',
+                        value: charm,
+                        tintGold: false,
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -138,6 +164,50 @@ class MeHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WalletChip extends StatelessWidget {
+  const _WalletChip({
+    required this.iconAsset,
+    required this.label,
+    required this.value,
+    this.tintGold = true,
+  });
+
+  final String iconAsset;
+  final String label;
+  final int value;
+  final bool tintGold;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Image.asset(
+          iconAsset,
+          width: 18,
+          height: 18,
+          color: tintGold ? null : const Color(0xFFFF6B9D),
+          colorBlendMode: tintGold ? null : BlendMode.srcIn,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF919191)),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$value',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF5B5B5B),
+          ),
+        ),
+      ],
     );
   }
 }

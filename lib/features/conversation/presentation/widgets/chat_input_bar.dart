@@ -182,9 +182,14 @@ class ChatInputBar extends StatelessWidget {
 
 /// “+” 扩展面板内容，背景色对齐 q_input_extend_bg。
 class ChatFuncPanel extends StatelessWidget {
-  const ChatFuncPanel({super.key, required this.onSendImage});
+  const ChatFuncPanel({
+    super.key,
+    required this.onSendImage,
+    required this.onSendGift,
+  });
 
   final VoidCallback onSendImage;
+  final VoidCallback onSendGift;
 
   @override
   Widget build(BuildContext context) {
@@ -194,10 +199,20 @@ class ChatFuncPanel extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
         child: Align(
           alignment: Alignment.topLeft,
-          child: _PanelActionButton(
-            asset: ChatInputAssets.morePic,
-            label: '图片',
-            onTap: onSendImage,
+          child: Row(
+            children: [
+              _PanelActionButton(
+                asset: ChatInputAssets.morePic,
+                label: '图片',
+                onTap: onSendImage,
+              ),
+              const SizedBox(width: 22),
+              _PanelActionButton(
+                icon: Icons.card_giftcard,
+                label: '礼物',
+                onTap: onSendGift,
+              ),
+            ],
           ),
         ),
       ),
@@ -453,12 +468,14 @@ class _TextInputField extends StatelessWidget {
 
 class _PanelActionButton extends StatelessWidget {
   const _PanelActionButton({
-    required this.asset,
+    this.asset,
+    this.icon,
     required this.label,
     required this.onTap,
-  });
+  }) : assert(asset != null || icon != null);
 
-  final String asset;
+  final String? asset;
+  final IconData? icon;
   final String label;
   final VoidCallback onTap;
 
@@ -477,12 +494,14 @@ class _PanelActionButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: Image.asset(
-              asset,
-              width: 36,
-              height: 36,
-              fit: BoxFit.contain,
-            ),
+            child: asset != null
+                ? Image.asset(
+                    asset!,
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
+                  )
+                : Icon(icon, size: 30, color: const Color(0xFFE85D75)),
           ),
           const SizedBox(height: 8),
           Text(
