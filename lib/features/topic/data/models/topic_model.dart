@@ -176,6 +176,7 @@ class TopicModel {
     this.avatar,
     this.videoUrl,
     this.userType = UserType.human,
+    this.sort = 0,
   });
 
   final String tid;
@@ -194,6 +195,9 @@ class TopicModel {
 
   /// 发布者账号类型：0 真人 / 1 AI。
   final int userType;
+
+  /// 置顶权重。0 是普通动态，大于 0 为置顶。
+  final int sort;
 
   /// 是否为 AI 账号。
   bool get isAi => UserType.isAi(userType);
@@ -223,6 +227,7 @@ class TopicModel {
         keepOriginal: true,
       ),
       userType: UserType.parse(json['user_type']),
+      sort: _TopicJsonParser.parseInt(json['sort']),
     );
   }
 
@@ -241,6 +246,7 @@ class TopicModel {
     String? avatar,
     String? videoUrl,
     int? userType,
+    int? sort,
   }) {
     return TopicModel(
       tid: tid ?? this.tid,
@@ -257,6 +263,7 @@ class TopicModel {
       avatar: avatar ?? this.avatar,
       videoUrl: videoUrl ?? this.videoUrl,
       userType: userType ?? this.userType,
+      sort: sort ?? this.sort,
     );
   }
 

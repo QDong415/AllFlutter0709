@@ -37,6 +37,9 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   int _nextPage = 1;
   bool _hasMore = true;
   PageState _pageState = PageState.loading;
+
+  /// 第一页里第一条普通动态的 tid。只在加载更多时传给接口。
+  String? _listAnchorTid;
   StreamSubscription<Tid>? _deletedTidSubscription;
   StreamSubscription<TopicLikeEvent>? _topicLikeSubscription;
 
@@ -104,8 +107,10 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
     final requestPage = isRefresh ? 1 : _nextPage;
 
     try {
+      // 下拉刷新对齐 Android requireFirstPageDate：不带 firstid。
       final TopicPageResult result = await topicRepository.getTopicList(
         page: requestPage,
+        firstId: isRefresh ? null : _listAnchorTid,
         customParameters: customParameters(),
       );
 
@@ -117,6 +122,11 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
             ..clear()
             ..addAll(result.items);
           _nextPage = 2;
+          for (final topicModel in result.items) {
+            if (topicModel.sort != 0 || topicModel.tid.isEmpty) continue;
+            _listAnchorTid = topicModel.tid;
+            break;
+          }
         } else {
           _topics.addAll(result.items);
           _nextPage++;
