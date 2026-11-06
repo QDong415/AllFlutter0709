@@ -43,13 +43,14 @@ class ChatSendHelper {
   }
 
   /// 发送文本消息（带上对方昵称/头像/身份类型写入本地）。
-  Future<void> sendText({
+  Future<String?> sendText({
     required ConversationController controller,
     required String conversationId,
     required String text,
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) {
     return controller.sendTextMessage(
       conversationId: conversationId,
@@ -57,11 +58,12 @@ class ChatSendHelper {
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      peerGender: peerGender,
     );
   }
 
   /// 发送图片消息（带上对方昵称/头像/身份类型写入本地）。
-  Future<void> sendImage({
+  Future<String?> sendImage({
     required ConversationController controller,
     required String conversationId,
     required File imageFile,
@@ -69,6 +71,7 @@ class ChatSendHelper {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) {
     return controller.sendImageMessage(
       conversationId: conversationId,
@@ -77,11 +80,12 @@ class ChatSendHelper {
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      peerGender: peerGender,
     );
   }
 
   /// 发送语音消息（对齐 Android filename + extend.duration/hadplay）。
-  Future<void> sendVoice({
+  Future<String?> sendVoice({
     required ConversationController controller,
     required String conversationId,
     required File audioFile,
@@ -90,6 +94,7 @@ class ChatSendHelper {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) {
     return controller.sendVoiceMessage(
       conversationId: conversationId,
@@ -99,6 +104,7 @@ class ChatSendHelper {
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      peerGender: peerGender,
     );
   }
 }

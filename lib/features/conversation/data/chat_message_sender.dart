@@ -2,11 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:all_flutter0709/core/account/account.dart';
+import 'package:all_flutter0709/core/account/user_type.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
+import 'package:all_flutter0709/core/vip/vip_chat_limit_exception.dart';
+import 'package:all_flutter0709/core/vip/vip_chat_send_policy.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_image_file_store.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_daily_send_store.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +26,10 @@ class ChatMessageDeliveryService {
   ChatMessageDeliveryService({
     required ChatLocalDataSource localDataSource,
     required CloudStorageService cloudStorageService,
+    required ChatDailySendStore dailySendStore,
   }) : _localDataSource = localDataSource,
-       _cloudStorageService = cloudStorageService;
+       _cloudStorageService = cloudStorageService,
+       _dailySendStore = dailySendStore;
 
   static const _chatTypeSingle = 1;
   static const _messageSendApi = '/api/chat/send';
@@ -30,6 +37,7 @@ class ChatMessageDeliveryService {
 
   final ChatLocalDataSource _localDataSource;
   final CloudStorageService _cloudStorageService;
+  final ChatDailySendStore _dailySendStore;
   int _lastClientMessageMillis = 0;
   int _clientMessageSeq = 0;
 
@@ -64,16 +72,29 @@ class ChatMessageDeliveryService {
   }
 
   /// 发送待处理文本消息，并返回可直接更新界面的已发送消息。
-  Future<ConversationMessage> sendPendingTextMessage({
+  ///
+  /// [vipTipMessage] 在允许发送时可能带有 Buddy 条数提示文案。
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingTextMessage({
     required AccountModel account,
     required ConversationMessage message,
+    int peerGender = 0,
   }) async {
     try {
+      final vipTip = await _assertVipAllowsServerSend(
+        account: account,
+        message: message,
+        peerGender: peerGender,
+      );
       final msgId = await _sendChatMessage(account: account, message: message);
       await _markSent(account.userId, message.clientMessageId, msgId);
-      return message.copyWith(
-        msgId: msgId,
-        status: ConversationMessageStatus.sent,
+      await _recordCountableSend(account, message);
+      return (
+        message: message.copyWith(
+          msgId: msgId,
+          status: ConversationMessageStatus.sent,
+        ),
+        vipTipMessage: vipTip,
       );
     } catch (_) {
       await _markFailed(account.userId, message.clientMessageId);
@@ -125,14 +146,17 @@ class ChatMessageDeliveryService {
   }
 
   /// 上传并发送图片，过程中回传上传进度。
-  Future<ConversationMessage> sendPendingImageMessage({
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingImageMessage({
     required AccountModel account,
     required ConversationMessage message,
+    int peerGender = 0,
     ValueChanged<int>? onProgress,
   }) {
     return _sendPendingAttachmentMessage(
       account: account,
       message: message,
+      peerGender: peerGender,
       logName: '图片',
       onProgress: onProgress,
     );
@@ -214,14 +238,17 @@ class ChatMessageDeliveryService {
   }
 
   /// 上传并发送语音，过程中回传上传进度。
-  Future<ConversationMessage> sendPendingVoiceMessage({
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingVoiceMessage({
     required AccountModel account,
     required ConversationMessage message,
+    int peerGender = 0,
     ValueChanged<int>? onProgress,
   }) {
     return _sendPendingAttachmentMessage(
       account: account,
       message: message,
+      peerGender: peerGender,
       logName: '语音',
       onProgress: onProgress,
     );
@@ -252,9 +279,11 @@ class ChatMessageDeliveryService {
     );
   }
 
-  Future<ConversationMessage> _sendPendingAttachmentMessage({
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  _sendPendingAttachmentMessage({
     required AccountModel account,
     required ConversationMessage message,
+    required int peerGender,
     required String logName,
     ValueChanged<int>? onProgress,
   }) async {
@@ -264,6 +293,11 @@ class ChatMessageDeliveryService {
       'extend=${message.extend}',
     );
     try {
+      final vipTip = await _assertVipAllowsServerSend(
+        account: account,
+        message: message,
+        peerGender: peerGender,
+      );
       final file = File(message.localFilePath);
       final exists = await file.exists();
       final length = exists ? await file.length() : -1;
@@ -306,11 +340,15 @@ class ChatMessageDeliveryService {
 
       final msgId = await _sendChatMessage(account: account, message: sending);
       await _markSent(account.userId, message.clientMessageId, msgId);
+      await _recordCountableSend(account, sending);
       ChatSendLog.d('$logName chat/send 成功 msgid=$msgId');
-      return sending.copyWith(
-        msgId: msgId,
-        status: ConversationMessageStatus.sent,
-        uploadProgress: 100,
+      return (
+        message: sending.copyWith(
+          msgId: msgId,
+          status: ConversationMessageStatus.sent,
+          uploadProgress: 100,
+        ),
+        vipTipMessage: vipTip,
       );
     } catch (error, stackTrace) {
       ChatSendLog.d('发$logName失败: $error');
@@ -318,6 +356,42 @@ class ChatMessageDeliveryService {
       await _markFailed(account.userId, message.clientMessageId);
       rethrow;
     }
+  }
+
+  Future<String?> _assertVipAllowsServerSend({
+    required AccountModel account,
+    required ConversationMessage message,
+    required int peerGender,
+  }) async {
+    final sentCount = _dailySendStore.todaySendCount(account.userId);
+    final evaluation = VipChatSendPolicy.evaluateAfterLocalInsert(
+      account: account,
+      message: message,
+      peerGender: peerGender,
+      sentCount: sentCount,
+      config: AppConfig.instance,
+    );
+    if (!evaluation.allowServerSend) {
+      throw VipChatLimitException(evaluation.tipMessage ?? '发送受限');
+    }
+    return evaluation.tipMessage;
+  }
+
+  /// 文本和语音成功发给服务器后 +1。图片、礼物、AI 不占这条额度。
+  Future<void> _recordCountableSend(
+    AccountModel account,
+    ConversationMessage message,
+  ) async {
+    if (UserType.isAi(message.otherUserType)) {
+      return;
+    }
+    final countable =
+        message.messageType == ConversationMessageType.text ||
+        message.messageType == ConversationMessageType.voice;
+    if (!countable) {
+      return;
+    }
+    await _dailySendStore.recordSend(account.userId);
   }
 
   Future<ConversationMessage> _savePendingMessage(

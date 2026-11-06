@@ -196,6 +196,7 @@ class AccountRepository {
     required String code,
     required String name,
     required String password,
+    required int gender,
     String avatar = '',
   }) async {
     final response = await HttpClient.instance.post(
@@ -205,6 +206,7 @@ class AccountRepository {
         'code': code,
         'name': name,
         'password': password,
+        'gender': gender,
         'avatar': avatar,
       },
     );

@@ -1,3 +1,5 @@
+import 'package:all_flutter0709/core/utils/money_util.dart';
+
 /// 充值说明页需要的金币和小秘书。
 class ChargeGuideModel {
   const ChargeGuideModel({
@@ -22,29 +24,48 @@ class ChargeGuideModel {
   }
 }
 
-/// 会员说明页的价格和当前会员标记。价格单位是元。
+/// 会员说明页的价格和当前会员标记。
+///
+/// 服务端 `monthprice` / `seasonprice` / `yearprice` 单位为分；展示用 [monthPriceYuan] 等。
 class VipOfferModel {
   const VipOfferModel({
-    required this.monthPrice,
-    required this.seasonPrice,
-    required this.yearPrice,
+    required this.monthPriceCents,
+    required this.seasonPriceCents,
+    required this.yearPriceCents,
     required this.vip,
     required this.vipTime,
   });
 
-  final int monthPrice;
-  final int seasonPrice;
-  final int yearPrice;
+  static const defaultMonthPriceCents = 3000;
+  static const defaultSeasonPriceCents = 8000;
+  static const defaultYearPriceCents = 24000;
+
+  final int monthPriceCents;
+  final int seasonPriceCents;
+  final int yearPriceCents;
   final int vip;
 
   /// 到期时间戳，秒。没有 vip_time 列时为 0。
   final int vipTime;
 
+  int get monthPriceYuan => MoneyUtil.centsToYuanInt(monthPriceCents);
+  int get seasonPriceYuan => MoneyUtil.centsToYuanInt(seasonPriceCents);
+  int get yearPriceYuan => MoneyUtil.centsToYuanInt(yearPriceCents);
+
   factory VipOfferModel.fromJson(Map<String, dynamic> json) {
     return VipOfferModel(
-      monthPrice: _readInt(json['monthprice'], fallback: 30),
-      seasonPrice: _readInt(json['seasonprice'], fallback: 80),
-      yearPrice: _readInt(json['yearprice'], fallback: 240),
+      monthPriceCents: _readInt(
+        json['monthprice'],
+        fallback: defaultMonthPriceCents,
+      ),
+      seasonPriceCents: _readInt(
+        json['seasonprice'],
+        fallback: defaultSeasonPriceCents,
+      ),
+      yearPriceCents: _readInt(
+        json['yearprice'],
+        fallback: defaultYearPriceCents,
+      ),
       vip: _readInt(json['vip']),
       vipTime: _readInt(json['vip_time']),
     );

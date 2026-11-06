@@ -22,6 +22,7 @@ class UserProfileModel {
     this.banExpireTime = 0,
     this.coin = 0,
     this.charm = 0,
+    this.vip = 0,
   });
 
   final String userId;
@@ -57,6 +58,9 @@ class UserProfileModel {
 
   /// 魅力值。收礼累计。
   final int charm;
+
+  /// 会员：0 普通 / 1 VIP / 2 SVIP。
+  final int vip;
 
   /// 系统禁言展示文案。
   String get banLabel {
@@ -95,6 +99,14 @@ class UserProfileModel {
   /// 是否为 AI 账号。
   bool get isAi => UserType.isAi(userType);
 
+  /// 服务端对隐藏关注/粉丝返回 -1，主页展示为 *。
+  static const int hiddenSocialCount = -1;
+
+  String get followCountText =>
+      followCount < 0 ? '*' : '$followCount';
+
+  String get fansCountText => fansCount < 0 ? '*' : '$fansCount';
+
   /// 是否有任意资料标签。
   bool get hasAnyTag => isAi || hasGender || hasAge || hasCity;
 
@@ -118,6 +130,7 @@ class UserProfileModel {
     int? banExpireTime,
     int? coin,
     int? charm,
+    int? vip,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -139,6 +152,7 @@ class UserProfileModel {
       banExpireTime: banExpireTime ?? this.banExpireTime,
       coin: coin ?? this.coin,
       charm: charm ?? this.charm,
+      vip: vip ?? this.vip,
     );
   }
 
@@ -163,6 +177,7 @@ class UserProfileModel {
       banExpireTime: _readInt(json['expire_time']),
       coin: _readInt(json['coin']),
       charm: _readInt(json['charm']),
+      vip: _readInt(json['vip']),
     );
   }
 

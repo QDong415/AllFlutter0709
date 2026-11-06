@@ -25,6 +25,8 @@ class AccountModel {
     this.userType = UserType.human,
     this.coin = 0,
     this.charm = 0,
+    this.vip = 0,
+    this.vipTime = 0,
   });
 
   final String userId;
@@ -58,6 +60,12 @@ class AccountModel {
   /// 魅力值。收礼累计。
   final int charm;
 
+  /// 会员：0 普通 / 1 VIP / 2 SVIP。
+  final int vip;
+
+  /// 会员到期时间戳，秒。0 或已过期都按非会员（对齐 Buddy `vip_time`）。
+  final int vipTime;
+
   bool get isValid => userId.trim().isNotEmpty;
 
   /// 是否为 AI 账号。
@@ -86,6 +94,8 @@ class AccountModel {
     int? userType,
     int? coin,
     int? charm,
+    int? vip,
+    int? vipTime,
   }) {
     return AccountModel(
       userId: userId ?? this.userId,
@@ -110,6 +120,8 @@ class AccountModel {
       userType: userType ?? this.userType,
       coin: coin ?? this.coin,
       charm: charm ?? this.charm,
+      vip: vip ?? this.vip,
+      vipTime: vipTime ?? this.vipTime,
     );
   }
 
@@ -137,6 +149,8 @@ class AccountModel {
       'user_type': userType,
       'coin': coin,
       'charm': charm,
+      'vip': vip,
+      'vip_time': vipTime,
     };
   }
 
@@ -164,6 +178,8 @@ class AccountModel {
       userType: UserType.parse(json['user_type']),
       coin: _readInt(json['coin']),
       charm: _readInt(json['charm']),
+      vip: _readInt(json['vip']),
+      vipTime: _readInt(json['vip_time']),
     );
   }
 

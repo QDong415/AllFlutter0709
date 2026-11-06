@@ -5,7 +5,7 @@ import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_b
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_action_buttons.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_cover.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_tags.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/vip_halo_avatar.dart';
 import 'package:flutter/material.dart';
 
 /// 个人主页资料区：封面 + 头像、粉丝/关注、操作按钮、昵称、简介、标签。
@@ -87,33 +87,11 @@ class UserDetailHeader extends StatelessWidget {
                       bottom: 0,
                       child: GestureDetector(
                         onTap: onAvatarTap,
-                        child: Container(
-                          width: _avatarSize,
-                          height: _avatarSize,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: _headerBg, width: 4),
-                            color: const Color(0xFFE8E8E8),
-                          ),
-                          child: ClipOval(
-                            child: avatarUrl.isEmpty
-                                ? Image.asset(
-                                    'assets/icons/user_photo.png',
-                                    fit: BoxFit.cover,
-                                  )
-                                : CachedNetworkImage(
-                                    imageUrl: avatarUrl,
-                                    fit: BoxFit.cover,
-                                    placeholder: (_, _) => Image.asset(
-                                      'assets/icons/user_photo.png',
-                                      fit: BoxFit.cover,
-                                    ),
-                                    errorWidget: (_, _, _) => Image.asset(
-                                      'assets/icons/user_photo.png',
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                          ),
+                        child: VipHaloAvatar(
+                          size: _avatarSize,
+                          borderWidth: avatarUrl.isEmpty ? 0 : 4,
+                          borderColor: _headerBg,
+                          imageUrl: avatarUrl,
                         ),
                       ),
                     ),
@@ -126,18 +104,16 @@ class UserDetailHeader extends StatelessWidget {
                         children: [
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(
-                              parent: AlwaysScrollableScrollPhysics(),
-                            ),
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 _ProfileStatItem(
-                                  value: '${profileModel.followCount}',
+                                  value: profileModel.followCountText,
                                   label: '关注',
                                 ),
                                 const _ProfileStatGap(),
                                 _ProfileStatItem(
-                                  value: '${profileModel.fansCount}',
+                                  value: profileModel.fansCountText,
                                   label: '粉丝',
                                 ),
                                 const _ProfileStatGap(),

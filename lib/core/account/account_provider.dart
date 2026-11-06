@@ -64,6 +64,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
     required String code,
     required String name,
     required String password,
+    required int gender,
     String avatar = '',
   }) async {
     final account = await _repository.register(
@@ -71,6 +72,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
       code: code,
       name: name,
       password: password,
+      gender: gender,
       avatar: avatar,
     );
     await _repository.writeAccountToStorage(account);

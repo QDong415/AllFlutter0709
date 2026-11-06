@@ -8,7 +8,7 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_b
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_more_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/vip_halo_avatar.dart';
 import 'package:flutter/material.dart';
 
 /// 动态列表项点击 / 分享 / 点赞等交互回调。
@@ -72,6 +72,11 @@ class TopicItemWidget extends StatelessWidget {
     final commentCount = topicModel.commentCount > 0
         ? topicModel.commentCount
         : 0;
+    const avatarSize = 40.0;
+    final avatarTop = VipHaloAvatar.avatarOrigin(
+      size: avatarSize,
+      vip: topicModel.vip,
+    ).dy;
 
     return Material(
       color: Colors.white,
@@ -88,56 +93,63 @@ class TopicItemWidget extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   InkWell(
                     customBorder: const CircleBorder(),
                     onTap: () => listener?.onAvatarTap(topicModel),
-                    child: CircleAvatar(
-                      radius: 20,
+                    child: VipHaloAvatar(
+                      size: avatarSize,
+                      vip: topicModel.vip,
+                      gender: topicModel.gender,
                       backgroundColor: Colors.grey.shade300,
-                      backgroundImage: avatarUrl.isNotEmpty
-                          ? CachedNetworkImageProvider(avatarUrl)
-                          : null,
+                      imageUrl: avatarUrl,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                topicModel.userName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF304F84),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: avatarTop),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  topicModel.userName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF304F84),
+                                  ),
                                 ),
                               ),
-                            ),
-                            if (topicModel.isAi) ...[
-                              const SizedBox(width: 6),
-                              const UserAiTag(compact: true),
+                              if (topicModel.isAi) ...[
+                                const SizedBox(width: 6),
+                                const UserAiTag(compact: true),
+                              ],
                             ],
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          topicModel.displayTime,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            topicModel.displayTime,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  TopicMoreButton(
-                    topicModel: topicModel,
-                    onDeleteTap: () => listener?.onDeleteTap(topicModel),
-                    onReportTap: () => listener?.onReportTap(topicModel),
+                  Padding(
+                    padding: EdgeInsets.only(top: avatarTop),
+                    child: TopicMoreButton(
+                      topicModel: topicModel,
+                      onDeleteTap: () => listener?.onDeleteTap(topicModel),
+                      onReportTap: () => listener?.onReportTap(topicModel),
+                    ),
                   ),
                 ],
               ),

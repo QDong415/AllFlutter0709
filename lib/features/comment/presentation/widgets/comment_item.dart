@@ -5,7 +5,7 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_b
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/vip_halo_avatar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -37,6 +37,13 @@ class CommentItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarUrl = comment.avatar ?? '';
     final isAuthor = authorUserId.isNotEmpty && authorUserId == comment.userId;
+    final avatarTopInset = isChild
+        ? 0.0
+        : VipHaloAvatar.avatarOrigin(
+            size: _CommentTree.parentAvatarSize,
+            vip: comment.vip,
+            borderWidth: _CommentTree.parentAvatarBorder,
+          ).dy;
 
     return Builder(
       builder: (itemContext) {
@@ -58,11 +65,15 @@ class CommentItem extends StatelessWidget {
                         displayType: displayType,
                         avatarUrl: avatarUrl,
                         onAvatarTap: onAvatarTap,
+                        vip: comment.vip,
+                        gender: comment.gender,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsets.only(top: isChild ? 12 : 10),
+                          padding: EdgeInsets.only(
+                            top: (isChild ? 12 : 10) + avatarTopInset,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -116,7 +127,9 @@ class CommentItem extends StatelessWidget {
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.only(top: isChild ? 12 : 10),
+                        padding: EdgeInsets.only(
+                          top: (isChild ? 12 : 10) + avatarTopInset,
+                        ),
                         child: _CommentLikeColumn(
                           comment: comment,
                           onTap: onLikeTap,
@@ -215,27 +228,53 @@ class _CommentTree extends StatelessWidget {
     required this.displayType,
     required this.avatarUrl,
     this.onAvatarTap,
+    this.vip = 0,
+    this.gender = 0,
   });
+
+  static const parentAvatarSize = 36.0;
+  static const parentAvatarBorder = 0.6;
 
   final bool isChild;
   final CommentDisplayType displayType;
   final String avatarUrl;
   final VoidCallback? onAvatarTap;
+  final int vip;
+  final int gender;
 
   @override
   Widget build(BuildContext context) {
     if (!isChild) {
+      final extent = VipHaloAvatar.layoutExtent(
+        size: parentAvatarSize,
+        vip: vip,
+        borderWidth: parentAvatarBorder,
+      );
+      final origin = VipHaloAvatar.avatarOrigin(
+        size: parentAvatarSize,
+        vip: vip,
+        borderWidth: parentAvatarBorder,
+      );
+      // 头像中心保持在原来 40 宽列的中线，竖线才接得上子回复。
+      final left = 12 + 20 - (origin.dx + parentAvatarSize / 2);
       return Padding(
-        padding: const EdgeInsets.only(left: 12, top: 10),
+        padding: EdgeInsets.only(left: left, top: 10),
         child: SizedBox(
-          width: 40,
+          width: extent,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               GestureDetector(
                 onTap: onAvatarTap,
                 behavior: HitTestBehavior.opaque,
-                child: _CommentAvatar(size: 36, avatarUrl: avatarUrl),
+                child: VipHaloAvatar(
+                  size: parentAvatarSize,
+                  vip: vip,
+                  gender: gender,
+                  borderWidth: parentAvatarBorder,
+                  borderColor: const Color(0xFFDCDCDC),
+                  imageUrl: avatarUrl,
+                ),
               ),
               if (displayType == CommentDisplayType.fatherCommentContainsChild)
                 Expanded(
@@ -314,14 +353,7 @@ class _CommentAvatar extends StatelessWidget {
         border: Border.all(color: const Color(0xFFDCDCDC), width: 0.6),
       ),
       clipBehavior: Clip.antiAlias,
-      child: avatarUrl.isEmpty
-          ? const Icon(Icons.person, size: 14, color: Color(0xFFB7B7B7))
-          : CachedNetworkImage(
-              imageUrl: avatarUrl,
-              fit: BoxFit.cover,
-              errorWidget: (_, _, _) =>
-                  const Icon(Icons.person, size: 14, color: Color(0xFFB7B7B7)),
-            ),
+      child: VipHaloAvatar.avatarImage(avatarUrl, size: size),
     );
   }
 }

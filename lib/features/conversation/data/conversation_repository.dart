@@ -5,6 +5,7 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_daily_send_store.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_message_sync_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_message_sender.dart';
@@ -25,6 +26,7 @@ final conversationRepositoryProvider = Provider<ConversationRepository>((ref) {
   return ConversationRepository(
     localDataSource: ref.watch(chatLocalDataSourceProvider),
     cloudStorageService: ref.watch(cloudStorageServiceProvider),
+    dailySendStore: ref.watch(chatDailySendStoreProvider),
   );
 });
 
@@ -33,11 +35,13 @@ class ConversationRepository {
   ConversationRepository({
     required ChatLocalDataSource localDataSource,
     required CloudStorageService cloudStorageService,
+    required ChatDailySendStore dailySendStore,
   }) : _localDataSource = localDataSource,
        _voiceService = ChatVoiceService(localDataSource: localDataSource),
        _messageDeliveryService = ChatMessageDeliveryService(
          localDataSource: localDataSource,
          cloudStorageService: cloudStorageService,
+         dailySendStore: dailySendStore,
        ) {
     _messageSyncService = ChatMessageSyncService(
       localDataSource: localDataSource,
@@ -113,13 +117,16 @@ class ConversationRepository {
   }
 
   /// 发送待处理文本消息，并返回可直接更新界面的已发送消息。
-  Future<ConversationMessage> sendPendingTextMessage({
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingTextMessage({
     required AccountModel account,
     required ConversationMessage message,
+    int peerGender = 0,
   }) {
     return _messageDeliveryService.sendPendingTextMessage(
       account: account,
       message: message,
+      peerGender: peerGender,
     );
   }
 
@@ -144,14 +151,17 @@ class ConversationRepository {
   }
 
   /// 上传并发送图片，过程中回传上传进度，成功后返回已发送消息。
-  Future<ConversationMessage> sendPendingImageMessage({
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingImageMessage({
     required AccountModel account,
     required ConversationMessage message,
+    int peerGender = 0,
     ValueChanged<int>? onProgress,
   }) {
     return _messageDeliveryService.sendPendingImageMessage(
       account: account,
       message: message,
+      peerGender: peerGender,
       onProgress: onProgress,
     );
   }
@@ -204,26 +214,32 @@ class ConversationRepository {
     );
   }
 
-  /// 把礼物消息发到 `/api/chat/send`。
-  Future<ConversationMessage> sendPendingGiftMessage({
+  /// 把礼物消息发到 `/api/chat/send`。礼物不拦条数，仍可能带回女对女提示。
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingGiftMessage({
     required AccountModel account,
     required ConversationMessage message,
+    int peerGender = 0,
   }) {
     return _messageDeliveryService.sendPendingTextMessage(
       account: account,
       message: message,
+      peerGender: peerGender,
     );
   }
 
   /// 上传语音并调用 `/api/chat/send`。
-  Future<ConversationMessage> sendPendingVoiceMessage({
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingVoiceMessage({
     required AccountModel account,
     required ConversationMessage message,
+    int peerGender = 0,
     ValueChanged<int>? onProgress,
   }) {
     return _messageDeliveryService.sendPendingVoiceMessage(
       account: account,
       message: message,
+      peerGender: peerGender,
       onProgress: onProgress,
     );
   }

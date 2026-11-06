@@ -26,13 +26,14 @@ class ChatSendCoordinator {
   final Future<void> Function() _refreshConversations;
 
   /// 创建并发送文本消息。
-  Future<void> sendText({
+  Future<String?> sendText({
     required AccountModel account,
     required String conversationId,
     required String text,
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     final message = await _repository.createPendingTextMessage(
       account: account,
@@ -46,11 +47,13 @@ class ChatSendCoordinator {
     await _refreshConversations();
 
     try {
-      final sentMessage = await _repository.sendPendingTextMessage(
+      final outcome = await _repository.sendPendingTextMessage(
         account: account,
         message: message,
+        peerGender: peerGender,
       );
-      _messageStore.replace(conversationId, sentMessage);
+      _messageStore.replace(conversationId, outcome.message);
+      return outcome.vipTipMessage;
     } catch (_) {
       _markFailed(conversationId, message.clientMessageId);
       rethrow;
@@ -60,7 +63,7 @@ class ChatSendCoordinator {
   }
 
   /// 创建、上传并发送图片消息。
-  Future<void> sendImage({
+  Future<String?> sendImage({
     required AccountModel account,
     required String conversationId,
     required File imageFile,
@@ -68,6 +71,7 @@ class ChatSendCoordinator {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     ChatSendLog.d(
       'Controller 发图 conversationId=$conversationId '
@@ -86,9 +90,10 @@ class ChatSendCoordinator {
     await _refreshConversations();
 
     try {
-      final sentMessage = await _repository.sendPendingImageMessage(
+      final outcome = await _repository.sendPendingImageMessage(
         account: account,
         message: message,
+        peerGender: peerGender,
         onProgress: (progress) {
           _messageStore.updateUploadProgress(
             conversationId: conversationId,
@@ -97,8 +102,9 @@ class ChatSendCoordinator {
           );
         },
       );
-      _messageStore.replace(conversationId, sentMessage);
+      _messageStore.replace(conversationId, outcome.message);
       ChatSendLog.d('Controller 发图完成');
+      return outcome.vipTipMessage;
     } catch (error, stackTrace) {
       _markFailed(conversationId, message.clientMessageId);
       ChatSendLog.d('Controller 发图失败: $error');
@@ -110,7 +116,7 @@ class ChatSendCoordinator {
   }
 
   /// 写入并发送礼物聊天消息。金币已在 gift/send 扣除。
-  Future<void> sendGift({
+  Future<String?> sendGift({
     required AccountModel account,
     required String conversationId,
     required int giftId,
@@ -120,6 +126,7 @@ class ChatSendCoordinator {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     final message = await _repository.createPendingGiftMessage(
       account: account,
@@ -135,11 +142,13 @@ class ChatSendCoordinator {
     _messageStore.append(conversationId, message);
     await _refreshConversations();
     try {
-      final sentMessage = await _repository.sendPendingGiftMessage(
+      final outcome = await _repository.sendPendingGiftMessage(
         account: account,
         message: message,
+        peerGender: peerGender,
       );
-      _messageStore.replace(conversationId, sentMessage);
+      _messageStore.replace(conversationId, outcome.message);
+      return outcome.vipTipMessage;
     } catch (_) {
       _markFailed(conversationId, message.clientMessageId);
       rethrow;
@@ -149,7 +158,7 @@ class ChatSendCoordinator {
   }
 
   /// 创建、上传并发送语音消息。
-  Future<void> sendVoice({
+  Future<String?> sendVoice({
     required AccountModel account,
     required String conversationId,
     required File audioFile,
@@ -158,6 +167,7 @@ class ChatSendCoordinator {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     ChatSendLog.d(
       'Controller 发语音 conversationId=$conversationId '
@@ -177,9 +187,10 @@ class ChatSendCoordinator {
     await _refreshConversations();
 
     try {
-      final sentMessage = await _repository.sendPendingVoiceMessage(
+      final outcome = await _repository.sendPendingVoiceMessage(
         account: account,
         message: message,
+        peerGender: peerGender,
         onProgress: (progress) {
           _messageStore.updateUploadProgress(
             conversationId: conversationId,
@@ -188,8 +199,9 @@ class ChatSendCoordinator {
           );
         },
       );
-      _messageStore.replace(conversationId, sentMessage);
+      _messageStore.replace(conversationId, outcome.message);
       ChatSendLog.d('Controller 发语音完成');
+      return outcome.vipTipMessage;
     } catch (error, stackTrace) {
       _markFailed(conversationId, message.clientMessageId);
       ChatSendLog.d('Controller 发语音失败: $error');

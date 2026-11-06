@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/core/utils/money_util.dart';
 import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
@@ -51,9 +52,9 @@ class _VipPageState extends State<VipPage> {
       return;
     }
     final labelList = <String>[
-      '${offer.monthPrice}元/月',
-      '${offer.seasonPrice}元/季',
-      '${offer.yearPrice}元/年',
+      '${offer.monthPriceYuan}元/月',
+      '${offer.seasonPriceYuan}元/季',
+      '${offer.yearPriceYuan}元/年',
     ];
     await showModalBottomSheet<void>(
       context: context,
@@ -107,7 +108,9 @@ class _VipPageState extends State<VipPage> {
             child: Column(
               children: [
                 Text(
-                  _loading ? '…' : '${offer?.monthPrice ?? 30}',
+                  _loading
+                      ? '…'
+                      : '${offer?.monthPriceYuan ?? MoneyUtil.centsToYuanInt(VipOfferModel.defaultMonthPriceCents)}',
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,

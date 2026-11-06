@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/core/account/account_guard.dart';
-import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
+import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
@@ -16,7 +17,10 @@ import 'package:all_flutter0709/features/gift/data/gift_model.dart';
 import 'package:all_flutter0709/features/gift/presentation/gift_send_animation.dart';
 import 'package:all_flutter0709/features/gift/presentation/gift_sheet.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_scroll_helper.dart';
+import 'package:all_flutter0709/core/vip/vip_chat_limit_exception.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_send_helper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/vip_chat_guard.dart';
+import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_play_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_record_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/mappers/chat_item_mapper.dart';
@@ -102,10 +106,15 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
 
   bool _isVoiceMode = false;
   bool _isSubmitting = false;
+  int _peerGender = 0;
+
+  VipChatGuard get _vipChatGuard =>
+      VipChatGuard(appConfig: AppConfig.instance);
 
   @override
   void initState() {
     super.initState();
+    unawaited(_loadPeerGender());
     _scrollHelper = ChatScrollHelper(_scrollController);
     _panelHelper = ChatPanelHelper(
       inputFocusNode: _focusNode,
@@ -335,6 +344,28 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     );
   }
 
+  Future<void> _loadPeerGender() async {
+    if (_peerIsAi) {
+      return;
+    }
+    try {
+      final profile = await const UserRepository().getUserProfile(
+        toUserId: widget.chatId,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() => _peerGender = profile.gender);
+    } catch (_) {}
+  }
+
+  void _showVipTip(String? tip) {
+    if (tip == null || tip.isEmpty || !mounted) {
+      return;
+    }
+    AppToast.show(context, tip);
+  }
+
   Future<void> _sendText() async {
     final text = _textController.text.trim();
     if (text.isEmpty || _isSubmitting) {
@@ -343,24 +374,33 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (!context.ensureLoggedIn()) {
       return;
     }
-
+    final account = ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      await _sendHelper.sendText(
+      final vipTip = await _sendHelper.sendText(
         controller: ref.read(conversationControllerProvider),
         conversationId: widget.chatId,
         text: text,
         peerName: _peerName,
         peerAvatar: _peerAvatar,
         peerUserType: _peerUserType,
+        peerGender: _peerGender,
       );
       _textController.clear();
       // reverse 列表下新消息已在底部；仅 jump 校正，不做动画。
       _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
       _startAiTypingIfNeeded();
+      _showVipTip(vipTip);
+    } on VipChatLimitException catch (error) {
+      if (mounted) {
+        await handleVipChatLimitException(context, error);
+      }
     } catch (error) {
       _showSnackBar(error.toString());
     } finally {
@@ -409,18 +449,22 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
 
   Future<void> _sendGiftChatMessage(GiftSendResult result) async {
     try {
-      await ref.read(conversationControllerProvider).sendGiftMessage(
-        conversationId: widget.chatId,
-        giftId: result.giftModel.giftId,
-        title: result.giftModel.title,
-        picture: result.giftModel.picture,
-        count: result.count,
-        peerName: _peerName,
-        peerAvatar: _peerAvatar,
-        peerUserType: _peerUserType,
-      );
+      final vipTip = await ref
+          .read(conversationControllerProvider)
+          .sendGiftMessage(
+            conversationId: widget.chatId,
+            giftId: result.giftModel.giftId,
+            title: result.giftModel.title,
+            picture: result.giftModel.picture,
+            count: result.count,
+            peerName: _peerName,
+            peerAvatar: _peerAvatar,
+            peerUserType: _peerUserType,
+            peerGender: _peerGender,
+          );
       if (mounted) {
         _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+        _showVipTip(vipTip);
       }
     } catch (error) {
       if (mounted) {
@@ -436,8 +480,26 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (!context.ensureLoggedIn()) {
       return;
     }
+    final account = ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
+    if (!_peerIsAi) {
+      if (!await applyVipSendEvaluation(
+        context,
+        _vipChatGuard.beforePickImage(account),
+      )) {
+        return;
+      }
+    }
 
+    if (!mounted) {
+      return;
+    }
     final imageFile = await _sendHelper.pickImageFile(context);
+    if (!mounted) {
+      return;
+    }
     if (imageFile == null) {
       return;
     }
@@ -450,7 +512,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     _panelHelper.hidePanel();
 
     try {
-      await _sendHelper.sendImage(
+      final vipTip = await _sendHelper.sendImage(
         controller: ref.read(conversationControllerProvider),
         conversationId: widget.chatId,
         imageFile: imageFile,
@@ -458,9 +520,15 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         peerName: _peerName,
         peerAvatar: _peerAvatar,
         peerUserType: _peerUserType,
+        peerGender: _peerGender,
       );
       _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
       _startAiTypingIfNeeded();
+      _showVipTip(vipTip);
+    } on VipChatLimitException catch (error) {
+      if (mounted) {
+        await handleVipChatLimitException(context, error);
+      }
     } catch (error, stackTrace) {
       ChatSendLog.d('页面发图失败: $error');
       ChatSendLog.d('$stackTrace');
@@ -478,6 +546,10 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (!context.ensureLoggedIn()) {
       return;
     }
+    final account = ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
     final audioFile = result.file;
     if (audioFile == null) {
       return;
@@ -487,7 +559,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
       _isSubmitting = true;
     });
     try {
-      await _sendHelper.sendVoice(
+      final vipTip = await _sendHelper.sendVoice(
         controller: ref.read(conversationControllerProvider),
         conversationId: widget.chatId,
         audioFile: audioFile,
@@ -496,8 +568,14 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         peerName: _peerName,
         peerAvatar: _peerAvatar,
         peerUserType: _peerUserType,
+        peerGender: _peerGender,
       );
       _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+      _showVipTip(vipTip);
+    } on VipChatLimitException catch (error) {
+      if (mounted) {
+        await handleVipChatLimitException(context, error);
+      }
     } catch (error, stackTrace) {
       ChatSendLog.d('页面发语音失败: $error');
       ChatSendLog.d('$stackTrace');

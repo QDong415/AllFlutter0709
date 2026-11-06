@@ -48,6 +48,8 @@ class CommentModel {
     required this.children,
     required this.sendState,
     this.userType = UserType.human,
+    this.gender = 0,
+    this.vip = 0,
   });
 
   final String cid;
@@ -71,6 +73,12 @@ class CommentModel {
 
   /// 评论作者账号类型：0 真人 / 1 AI。
   final int userType;
+
+  /// 评论作者性别：1 男 / 2 女。
+  final int gender;
+
+  /// 评论作者会员：0 普通 / 1 VIP / 2 SVIP。
+  final int vip;
 
   /// 是否为 AI 账号。
   bool get isAi => UserType.isAi(userType);
@@ -108,6 +116,8 @@ class CommentModel {
         children: <CommentModel>[],
         sendState: CommentSendState.normal,
         userType: UserType.human,
+        gender: 0,
+        vip: 0,
       );
     }
 
@@ -137,6 +147,8 @@ class CommentModel {
       children: _parseChildren(json['items']),
       sendState: CommentSendState.normal,
       userType: UserType.parse(json['user_type']),
+      gender: _CommentJsonParser.parseInt(json['gender']),
+      vip: _CommentJsonParser.parseInt(json['vip']),
     );
   }
 
@@ -160,6 +172,8 @@ class CommentModel {
     List<CommentModel>? children,
     CommentSendState? sendState,
     int? userType,
+    int? gender,
+    int? vip,
   }) {
     return CommentModel(
       cid: cid ?? this.cid,
@@ -181,6 +195,8 @@ class CommentModel {
       children: children ?? this.children,
       sendState: sendState ?? this.sendState,
       userType: userType ?? this.userType,
+      gender: gender ?? this.gender,
+      vip: vip ?? this.vip,
     );
   }
 
@@ -235,10 +251,7 @@ class CommentPageResult {
 }
 
 class CommentSubmitResult {
-  const CommentSubmitResult({
-    required this.cid,
-    required this.tempId,
-  });
+  const CommentSubmitResult({required this.cid, required this.tempId});
 
   final String cid;
   final String tempId;

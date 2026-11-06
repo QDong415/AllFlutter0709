@@ -353,40 +353,43 @@ class ConversationController extends ChangeNotifier {
     return unread.first.conversationId;
   }
 
-  Future<void> sendTextMessage({
+  Future<String?> sendTextMessage({
     required String conversationId,
     required String text,
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     final account = _ref.read(accountProvider);
     if (account == null) {
       throw Exception('请先登录');
     }
-    await _sendCoordinator.sendText(
+    return _sendCoordinator.sendText(
       account: account,
       conversationId: conversationId,
       text: text,
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      peerGender: peerGender,
     );
   }
 
-  Future<void> sendImageMessage({
+  Future<String?> sendImageMessage({
     required String conversationId,
     required File imageFile,
     required Size imageSize,
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     final account = _ref.read(accountProvider);
     if (account == null) {
       throw Exception('请先登录');
     }
-    await _sendCoordinator.sendImage(
+    return _sendCoordinator.sendImage(
       account: account,
       conversationId: conversationId,
       imageFile: imageFile,
@@ -394,11 +397,12 @@ class ConversationController extends ChangeNotifier {
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      peerGender: peerGender,
     );
   }
 
   /// 发送礼物聊天消息。调用前 gift/send 已经成功。
-  Future<void> sendGiftMessage({
+  Future<String?> sendGiftMessage({
     required String conversationId,
     required int giftId,
     required String title,
@@ -407,12 +411,13 @@ class ConversationController extends ChangeNotifier {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     final account = _ref.read(accountProvider);
     if (account == null) {
       throw Exception('请先登录');
     }
-    await _sendCoordinator.sendGift(
+    return _sendCoordinator.sendGift(
       account: account,
       conversationId: conversationId,
       giftId: giftId,
@@ -422,11 +427,12 @@ class ConversationController extends ChangeNotifier {
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      peerGender: peerGender,
     );
   }
 
   /// 发送语音：先落本地 pending，再上传七牛并 `/api/chat/send`。
-  Future<void> sendVoiceMessage({
+  Future<String?> sendVoiceMessage({
     required String conversationId,
     required File audioFile,
     required String filename,
@@ -434,12 +440,13 @@ class ConversationController extends ChangeNotifier {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    int peerGender = 0,
   }) async {
     final account = _ref.read(accountProvider);
     if (account == null) {
       throw Exception('请先登录');
     }
-    await _sendCoordinator.sendVoice(
+    return _sendCoordinator.sendVoice(
       account: account,
       conversationId: conversationId,
       audioFile: audioFile,
@@ -448,6 +455,7 @@ class ConversationController extends ChangeNotifier {
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      peerGender: peerGender,
     );
   }
 

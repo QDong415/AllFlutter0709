@@ -183,97 +183,97 @@ class ReceivedGiftSectionState extends State<ReceivedGiftSection>
             '收到的礼物',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _gifts.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 8,
-                childAspectRatio: 0.62,
-              ),
-              itemBuilder: (context, index) {
-                final gift = _gifts[index];
-                return Column(
-                  children: [
-                    Expanded(
-                      child: gift.pictureUrl.isEmpty
-                          ? const SizedBox.shrink()
-                          : CachedNetworkImage(
-                              imageUrl: gift.pictureUrl,
-                              fit: BoxFit.contain,
-                              fadeInDuration: const Duration(milliseconds: 220),
-                              fadeOutDuration: const Duration(milliseconds: 120),
-                              placeholder: (_, _) => const ColoredBox(
-                                color: Color(0xFFF3F3F5),
-                              ),
-                              errorWidget: (_, _, _) => const ColoredBox(
-                                color: Color(0xFFF3F3F5),
-                              ),
-                            ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      gift.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF444444),
-                      ),
-                    ),
-                    Text(
-                      'x${gift.totalCount}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF666666),
-                      ),
-                    ),
-                  ],
-                );
-              },
+            shrinkWrap: true,
+            primary: false,
+            // 不写的话会套上整页安全区，大屏上下会多出一大块空白。
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _gifts.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.62,
             ),
+            itemBuilder: (context, index) {
+              final gift = _gifts[index];
+              return Column(
+                children: [
+                  Expanded(
+                    child: gift.pictureUrl.isEmpty
+                        ? const SizedBox.shrink()
+                        : CachedNetworkImage(
+                            imageUrl: gift.pictureUrl,
+                            fit: BoxFit.contain,
+                            fadeInDuration: const Duration(milliseconds: 220),
+                            fadeOutDuration: const Duration(milliseconds: 120),
+                            placeholder: (_, _) => const ColoredBox(
+                              color: Color(0xFFF3F3F5),
+                            ),
+                            errorWidget: (_, _, _) => const ColoredBox(
+                              color: Color(0xFFF3F3F5),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    gift.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF444444),
+                    ),
+                  ),
+                  Text(
+                    'x${gift.totalCount}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
           if (!_loading) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 20),
             InkWell(
               onTap: () => openGiftSenderPage(context, toUserId: widget.userId),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: [
-                    const Text(
-                      '送礼的人',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+              child: Row(
+                children: [
+                  const Text(
+                    '送礼的人',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_senders.isNotEmpty)
+                    SizedBox(
+                      height: 28,
+                      width: _senders.length * 18.0 + 10,
+                      child: Stack(
+                        children: [
+                          for (var i = 0; i < _senders.length; i++)
+                            Positioned(
+                              left: i * 18.0,
+                              child: _SenderAvatar(url: _senders[i].avatarUrl),
+                            ),
+                        ],
                       ),
                     ),
-                    const Spacer(),
-                    if (_senders.isNotEmpty)
-                      SizedBox(
-                        height: 28,
-                        width: _senders.length * 18.0 + 10,
-                        child: Stack(
-                          children: [
-                            for (var i = 0; i < _senders.length; i++)
-                              Positioned(
-                                left: i * 18.0,
-                                child: _SenderAvatar(url: _senders[i].avatarUrl),
-                              ),
-                          ],
-                        ),
-                      ),
-                    const Icon(
-                      Icons.chevron_right,
-                      size: 20,
-                      color: Color(0xFF8B8B90),
-                    ),
-                  ],
-                ),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: Color(0xFF8B8B90),
+                  ),
+                ],
               ),
             ),
           ],

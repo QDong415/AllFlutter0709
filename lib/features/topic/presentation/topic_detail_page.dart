@@ -21,8 +21,8 @@ import 'package:all_flutter0709/features/topic/presentation/widgets/topic_pictur
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/vip_halo_avatar.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -308,10 +308,7 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
                       unawaited(_fetchDetail(showLoading: false));
                     },
             ),
-            TopicReceivedGiftStrip(
-              key: _giftStripKey,
-              feedId: topicModel.tid,
-            ),
+            TopicReceivedGiftStrip(key: _giftStripKey, feedId: topicModel.tid),
           ],
         ),
       );
@@ -343,6 +340,11 @@ class _TopicDetailHeader extends StatelessWidget {
     final avatarUrl = topic.avatar ?? '';
     final content = topic.content?.trim() ?? '';
     final videoUrl = topic.videoUrl?.trim() ?? '';
+    const avatarSize = 44.0;
+    final avatarTop = VipHaloAvatar.avatarOrigin(
+      size: avatarSize,
+      vip: topic.vip,
+    ).dy;
 
     return Container(
       width: double.infinity,
@@ -367,70 +369,78 @@ class _TopicDetailHeader extends StatelessWidget {
                     userType: topic.userType,
                   );
                 },
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: const Color(0xFFE8E8E8),
-                  backgroundImage: avatarUrl.isNotEmpty
-                      ? CachedNetworkImageProvider(avatarUrl)
-                      : null,
+                child: VipHaloAvatar(
+                  size: avatarSize,
+                  vip: topic.vip,
+                  gender: topic.gender,
+                  imageUrl: avatarUrl,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        openUserDetailPage(
-                          context,
-                          userId: topic.userId,
-                          name: topic.userName,
-                          avatar: topic.avatar,
-                          userType: topic.userType,
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              topic.userName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF304F84),
+                child: Padding(
+                  padding: EdgeInsets.only(top: avatarTop),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          openUserDetailPage(
+                            context,
+                            userId: topic.userId,
+                            name: topic.userName,
+                            avatar: topic.avatar,
+                            userType: topic.userType,
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                topic.userName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF304F84),
+                                ),
                               ),
                             ),
-                          ),
-                          if (topic.isAi) ...[
-                            const SizedBox(width: 6),
-                            const UserAiTag(compact: true),
+                            if (topic.isAi) ...[
+                              const SizedBox(width: 6),
+                              const UserAiTag(compact: true),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      topic.displayTime,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF8B8B90),
+                      const SizedBox(height: 6),
+                      Text(
+                        topic.displayTime,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF8B8B90),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               if (onRefreshTap != null)
-                IconButton(
-                  onPressed: onRefreshTap,
-                  icon: const Icon(Icons.refresh_rounded),
-                  color: const Color(0xFF8B8B90),
-                  tooltip: '刷新详情',
+                Padding(
+                  padding: EdgeInsets.only(top: avatarTop),
+                  child: IconButton(
+                    onPressed: onRefreshTap,
+                    icon: const Icon(Icons.refresh_rounded),
+                    color: const Color(0xFF8B8B90),
+                    tooltip: '刷新详情',
+                  ),
                 ),
-              TopicMoreButton(
-                topicModel: topic,
-                onDeleteTap: onDeleteTap,
-                onReportTap: onReportTap,
+              Padding(
+                padding: EdgeInsets.only(top: avatarTop),
+                child: TopicMoreButton(
+                  topicModel: topic,
+                  onDeleteTap: onDeleteTap,
+                  onReportTap: onReportTap,
+                ),
               ),
             ],
           ),

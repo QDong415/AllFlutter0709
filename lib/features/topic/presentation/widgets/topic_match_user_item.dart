@@ -2,7 +2,7 @@ import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/vip_halo_avatar.dart';
 import 'package:flutter/material.dart';
 
 /// 匹配 Tab 用户行，对齐 Android `listitem_expert`。
@@ -30,6 +30,8 @@ class TopicMatchUserItem extends StatelessWidget {
     return AppColors.titleText;
   }
 
+  static const _avatarSize = 66.0;
+
   @override
   Widget build(BuildContext context) {
     final avatarUrl =
@@ -37,6 +39,10 @@ class TopicMatchUserItem extends StatelessWidget {
         '';
     final openTimeText = ValueUtil.getTimeStringFromNow(userModel.openTime);
     final genderLabel = userModel.genderLabel;
+    final avatarTop = VipHaloAvatar.avatarOrigin(
+      size: _avatarSize,
+      vip: userModel.vip,
+    ).dy;
 
     return Material(
       color: Colors.white,
@@ -45,19 +51,21 @@ class TopicMatchUserItem extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 16, 8, 12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 33,
-                backgroundColor: const Color(0xFFE8E8E8),
-                backgroundImage: avatarUrl.isNotEmpty
-                    ? CachedNetworkImageProvider(avatarUrl)
-                    : null,
+              VipHaloAvatar(
+                size: _avatarSize,
+                vip: userModel.vip,
+                gender: userModel.gender,
+                imageUrl: avatarUrl,
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                child: Padding(
+                  padding: EdgeInsets.only(top: avatarTop),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     Row(
                       children: [
                         Flexible(
@@ -132,9 +140,13 @@ class TopicMatchUserItem extends StatelessWidget {
                       ),
                     ],
                   ],
+                  ),
                 ),
               ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+              Padding(
+                padding: EdgeInsets.only(top: avatarTop),
+                child: Icon(Icons.chevron_right, color: Colors.grey.shade400),
+              ),
             ],
           ),
         ),

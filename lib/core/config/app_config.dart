@@ -108,15 +108,45 @@ class AppConfig {
   static const _thumbStyleCacheKey = 'app_config_cloud_storage_thumb_style';
   static const _imageUploadMaxMemoryCacheKey =
       'app_config_image_upload_max_memory';
+  static const _allowTopicSubmitCacheKey = 'app_config_allow_topic_submit';
+  static const _allowTopicCommentCacheKey = 'app_config_allow_topic_comment';
+  static const _allowVideoSubmitCacheKey = 'app_config_allow_video_submit';
+  static const _allowChatFemaleToFemaleCacheKey =
+      'app_config_allow_chat_fetofe';
+  static const _allowChatImageCacheKey = 'app_config_allow_chat_image';
+  static const _allowChatCountCacheKey = 'app_config_allow_chat_count';
+  static const _coinScaleCacheKey = 'app_config_coin_scale';
 
   /// 没拉到配置时的发图上限，单位 MB。
   static const defaultImageUploadMaxMemoryMb = 6;
+
+  /// Buddy 默认：0 表示非会员需 VIP 才能发话题（配合客户端 `shouldBeLimit`）。
+  static const defaultAllowTopicSubmit = 0;
+
+  static const defaultAllowTopicComment = 0;
+  static const defaultAllowVideoSubmit = 0;
+
+  /// 1 允许女对女私聊；0 非会员不可给女性发消息。
+  static const defaultAllowChatFemaleToFemale = 0;
+
+  /// 1 允许非会员发图；0 需 VIP。
+  static const defaultAllowChatImage = 0;
+
+  static const defaultAllowChatCount = 30;
+  static const defaultCoinScale = 10;
 
   SharedPreferences? _preferences;
   String? _cachedHttp;
   CloudStorage? _cachedStorage;
   CloudStorageThumbStyle? _cachedThumbStyle;
   int? _cachedImageUploadMaxMemoryMb;
+  int? _cachedAllowTopicSubmit;
+  int? _cachedAllowTopicComment;
+  int? _cachedAllowVideoSubmit;
+  int? _cachedAllowChatFemaleToFemale;
+  int? _cachedAllowChatImage;
+  int? _cachedAllowChatCount;
+  int? _cachedCoinScale;
 
   /// 文件访问前缀，跟服务端 `oss_http`。
   String get cloudStorageHttp => _cachedHttp ?? AppEnv.cloudFrontBaseUrl;
@@ -131,6 +161,28 @@ class AppConfig {
   /// 发图压缩上限，单位 MB。跟服务端 `image_upload_max_memory`。`<= 0` 不压缩。
   int get imageUploadMaxMemoryMb =>
       _cachedImageUploadMaxMemoryMb ?? defaultImageUploadMaxMemoryMb;
+
+  /// 非会员是否可直接发话题。0 需 VIP（对齐 Buddy）。
+  int get allowTopicSubmit =>
+      _cachedAllowTopicSubmit ?? defaultAllowTopicSubmit;
+
+  int get allowTopicComment =>
+      _cachedAllowTopicComment ?? defaultAllowTopicComment;
+
+  int get allowVideoSubmit =>
+      _cachedAllowVideoSubmit ?? defaultAllowVideoSubmit;
+
+  /// 女用户对女性发私聊。字段名与服务端 `allow_chat_fetofe` 一致。
+  int get allowChatFemaleToFemale =>
+      _cachedAllowChatFemaleToFemale ?? defaultAllowChatFemaleToFemale;
+
+  /// 非会员是否可发聊天图片。0 需 VIP。
+  int get allowChatImage => _cachedAllowChatImage ?? defaultAllowChatImage;
+
+  /// 非会员每日聊天条数上限。
+  int get allowChatCount => _cachedAllowChatCount ?? defaultAllowChatCount;
+
+  int get coinScale => _cachedCoinScale ?? defaultCoinScale;
 
   /// 在 App 启动前恢复本地配置，不执行网络请求。
   void initialize(SharedPreferences preferences) {
@@ -150,6 +202,15 @@ class AppConfig {
     _cachedImageUploadMaxMemoryMb = preferences.getInt(
       _imageUploadMaxMemoryCacheKey,
     );
+    _cachedAllowTopicSubmit = preferences.getInt(_allowTopicSubmitCacheKey);
+    _cachedAllowTopicComment = preferences.getInt(_allowTopicCommentCacheKey);
+    _cachedAllowVideoSubmit = preferences.getInt(_allowVideoSubmitCacheKey);
+    _cachedAllowChatFemaleToFemale = preferences.getInt(
+      _allowChatFemaleToFemaleCacheKey,
+    );
+    _cachedAllowChatImage = preferences.getInt(_allowChatImageCacheKey);
+    _cachedAllowChatCount = preferences.getInt(_allowChatCountCacheKey);
+    _cachedCoinScale = preferences.getInt(_coinScaleCacheKey);
     // 以前设置页可选上传目标，本地覆盖作废，一律跟服务端。
     preferences.remove('app_config_cloud_storage_override');
     preferences.remove('app_config_oss_upload_override');
@@ -198,6 +259,49 @@ class AppConfig {
         _cachedImageUploadMaxMemoryMb = maxMemoryMb;
         await preferences.setInt(_imageUploadMaxMemoryCacheKey, maxMemoryMb);
       }
+
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['allow_topic_submit'],
+        cacheKey: _allowTopicSubmitCacheKey,
+        onCached: (value) => _cachedAllowTopicSubmit = value,
+      );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['allow_topic_comment'],
+        cacheKey: _allowTopicCommentCacheKey,
+        onCached: (value) => _cachedAllowTopicComment = value,
+      );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['allow_video_submit'],
+        cacheKey: _allowVideoSubmitCacheKey,
+        onCached: (value) => _cachedAllowVideoSubmit = value,
+      );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['allow_chat_fetofe'],
+        cacheKey: _allowChatFemaleToFemaleCacheKey,
+        onCached: (value) => _cachedAllowChatFemaleToFemale = value,
+      );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['allow_chat_image'],
+        cacheKey: _allowChatImageCacheKey,
+        onCached: (value) => _cachedAllowChatImage = value,
+      );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['allow_chat_count'],
+        cacheKey: _allowChatCountCacheKey,
+        onCached: (value) => _cachedAllowChatCount = value,
+      );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['coin_scale'],
+        cacheKey: _coinScaleCacheKey,
+        onCached: (value) => _cachedCoinScale = value,
+      );
     } catch (error) {
       debugPrint('[AppConfig] 刷新配置失败，继续使用本地配置: $error');
     }
@@ -209,6 +313,20 @@ class AppConfig {
       final String text => int.tryParse(text.trim()),
       _ => null,
     };
+  }
+
+  Future<void> _cacheIntPreference({
+    required SharedPreferences preferences,
+    required Object? rawValue,
+    required String cacheKey,
+    required void Function(int value) onCached,
+  }) async {
+    final value = _readInt(rawValue);
+    if (value == null) {
+      return;
+    }
+    onCached(value);
+    await preferences.setInt(cacheKey, value);
   }
 
   String? _normalizeHttp(String? value) {

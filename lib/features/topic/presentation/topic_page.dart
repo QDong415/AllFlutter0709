@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/vip/vip_topic_guard.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/vip_chat_guard.dart';
 import 'package:all_flutter0709/features/ai/presentation/ai_character_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_gender.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_feed_list_page.dart';
@@ -60,8 +65,16 @@ class _TopicPageState extends State<TopicPage>
     super.dispose();
   }
 
-  void _onPublishTap() {
+  Future<void> _onPublishTap() async {
     if (!context.ensureLoggedIn()) {
+      return;
+    }
+    final account = context.providerContainer.read(accountProvider);
+    if (account != null && topicPublishRequiresVip(account: account)) {
+      await showVipRequiredDialog(context);
+      return;
+    }
+    if (!mounted) {
       return;
     }
     context.push('${AppRoutes.topic}/${AppRoutes.topicSubmit}');
@@ -85,7 +98,7 @@ class _TopicPageState extends State<TopicPage>
                 _gender = gender;
               });
             },
-            onPublishTap: _onPublishTap,
+            onPublishTap: () => unawaited(_onPublishTap()),
             isPublishBusy: controller.isBusy,
           ),
           backgroundColor: AppColors.bodyBackground,

@@ -177,6 +177,8 @@ class TopicModel {
     this.videoUrl,
     this.userType = UserType.human,
     this.sort = 0,
+    this.gender = 0,
+    this.vip = 0,
   });
 
   final String tid;
@@ -198,6 +200,12 @@ class TopicModel {
 
   /// 置顶权重。0 是普通动态，大于 0 为置顶。
   final int sort;
+
+  /// 发布者性别：1 男 / 2 女。
+  final int gender;
+
+  /// 发布者会员：0 普通 / 1 VIP / 2 SVIP。
+  final int vip;
 
   /// 是否为 AI 账号。
   bool get isAi => UserType.isAi(userType);
@@ -228,6 +236,8 @@ class TopicModel {
       ),
       userType: UserType.parse(json['user_type']),
       sort: _TopicJsonParser.parseInt(json['sort']),
+      gender: _TopicJsonParser.parseInt(json['gender']),
+      vip: _TopicJsonParser.parseInt(json['vip']),
     );
   }
 
@@ -247,6 +257,8 @@ class TopicModel {
     String? videoUrl,
     int? userType,
     int? sort,
+    int? gender,
+    int? vip,
   }) {
     return TopicModel(
       tid: tid ?? this.tid,
@@ -264,6 +276,8 @@ class TopicModel {
       videoUrl: videoUrl ?? this.videoUrl,
       userType: userType ?? this.userType,
       sort: sort ?? this.sort,
+      gender: gender ?? this.gender,
+      vip: vip ?? this.vip,
     );
   }
 

@@ -9,8 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
+import 'package:all_flutter0709/shared/widgets/gender_pick_menu.dart';
 
-/// 注册第二步：头像（可选）+ 昵称。
+/// 注册第二步：头像（可选）+ 昵称 + 性别（必填，对齐 Buddy）。
 class SignupProfilePage extends ConsumerStatefulWidget {
   const SignupProfilePage({super.key, required this.args});
 
@@ -29,6 +30,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
   String? _uploadedAvatarKey;
   bool _isUploadingAvatar = false;
   bool _isSubmitting = false;
+  int _gender = 0;
 
   SignupAvatarHelper get _helper {
     return _avatarHelper ??= SignupAvatarHelper(
@@ -86,6 +88,23 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
     }
   }
 
+  Future<void> _pickGender(BuildContext anchorContext) async {
+    if (_isUploadingAvatar || _isSubmitting) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+    final selected = await showGenderPickMenu(
+      context,
+      anchorContext: anchorContext,
+      currentGender: _gender,
+    );
+    if (selected == null || !mounted) {
+      return;
+    }
+    setState(() => _gender = selected);
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -108,6 +127,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
             code: widget.args.code,
             name: _nameController.text.trim(),
             password: widget.args.password,
+            gender: _gender,
             avatar: _uploadedAvatarKey ?? '',
           );
 
@@ -197,6 +217,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
                       textInputAction: TextInputAction.done,
                       decoration: const InputDecoration(
                         labelText: '昵称',
+                        hintText: '请输入昵称（必填）',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
@@ -204,6 +225,55 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
                           return '请输入昵称';
                         }
                         return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    FormField<int>(
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (_) {
+                        if (_gender != 1 && _gender != 2) {
+                          return '请选择性别';
+                        }
+                        return null;
+                      },
+                      builder: (field) {
+                        final genderLabel = switch (_gender) {
+                          1 => '男',
+                          2 => '女',
+                          _ => null,
+                        };
+                        return Builder(
+                          builder: (anchorContext) => InkWell(
+                            onTap: busy
+                                ? null
+                                : () async {
+                                    await _pickGender(anchorContext);
+                                    field.didChange(_gender);
+                                  },
+                            borderRadius: BorderRadius.circular(4),
+                            child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: '性别',
+                              hintText: '请选择性别（必填）',
+                              border: const OutlineInputBorder(),
+                              errorText: field.errorText,
+                            ),
+                            child: Text(
+                              genderLabel ?? '',
+                              style: genderLabel == null
+                                  ? Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      )
+                                  : null,
+                            ),
+                          ),
+                          ),
+                        );
                       },
                     ),
                     const SizedBox(height: 20),

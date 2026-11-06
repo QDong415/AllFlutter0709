@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
+import 'package:all_flutter0709/core/vip/vip_topic_guard.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/vip_chat_guard.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
@@ -309,6 +311,11 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     final account = context.currentAccount;
     if (account == null) {
       context.ensureLoggedIn();
+      return;
+    }
+
+    if (topicCommentRequiresVip(account: account)) {
+      await showVipRequiredDialog(context);
       return;
     }
 

@@ -21,9 +21,7 @@ class CommentReplyTarget {
 
 /// 评论发送：构造乐观评论 + 提交服务端。不依赖 Riverpod，也不改列表。
 class CommentSendHelper {
-  const CommentSendHelper({
-    this.repository = const CommentRepository(),
-  });
+  const CommentSendHelper({this.repository = const CommentRepository()});
 
   final CommentRepository repository;
 
@@ -43,10 +41,7 @@ class CommentSendHelper {
       parentCid: replyTarget?.parentCid ?? '0',
       userId: account.userId,
       userName: account.name,
-      avatar: ValueUtil.getQiniuUrlByFileName(
-        account.avatar,
-        thumbnail: true,
-      ),
+      avatar: ValueUtil.getQiniuUrlByFileName(account.avatar, thumbnail: true),
       toUserId: replyTarget?.toUserId ?? '',
       toUserName: replyTarget?.toUserName ?? '',
       toAvatar: replyTarget?.toAvatar,
@@ -59,6 +54,8 @@ class CommentSendHelper {
       children: const [],
       sendState: CommentSendState.sending,
       userType: account.userType,
+      gender: account.gender,
+      vip: account.vip,
     );
   }
 
