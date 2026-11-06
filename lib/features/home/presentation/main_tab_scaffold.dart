@@ -1,7 +1,10 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
+import 'package:all_flutter0709/core/account/account.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:all_flutter0709/features/home/presentation/widgets/main_tab_icon.dart';
+import 'package:all_flutter0709/features/mission/presentation/helpers/mission_sign_flow_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,15 +36,46 @@ const _kTabLabelLineHeight = 14.0;
 /// 主 Tab 壳：底部液态玻璃 TabBar（[GlassTabBar]），内容区由 go_router shell 保活。
 ///
 /// 汉字标签叠在玻璃层之上绘制，避免 shader 在胶囊底沿折射文字产生淡黄色散线。
-class MainTabScaffold extends ConsumerWidget {
+class MainTabScaffold extends ConsumerStatefulWidget {
   const MainTabScaffold({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MainTabScaffold> createState() => _MainTabScaffoldState();
+}
+
+class _MainTabScaffoldState extends ConsumerState<MainTabScaffold> {
+  var _signPromptScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleDailySign());
+  }
+
+  void _scheduleDailySign() {
+    if (_signPromptScheduled) {
+      return;
+    }
+    if (ref.read(accountProvider) == null) {
+      return;
+    }
+    _signPromptScheduled = true;
+    MissionSignFlowHelper.tryShowDailySign(context: context, ref: ref);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AccountModel?>(accountProvider, (previous, next) {
+      if (next != null && previous == null) {
+        _signPromptScheduled = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleDailySign());
+      }
+    });
+
     final controller = ref.read(conversationControllerProvider);
-    final shellIndex = navigationShell.currentIndex;
+    final shellIndex = widget.navigationShell.currentIndex;
     final isRankTab = shellIndex == MainTabItem.rank.index;
     final systemOverlay = isRankTab
         ? AppSystemUi.overlayStyleWithStatusBarIcons(darkIcons: true)
@@ -55,12 +89,12 @@ class MainTabScaffold extends ConsumerWidget {
         // 各 Tab 页自带 Material AppBar，顶部不做 glass edge fade。
         topEdgeFade: false,
         bottomEdgeFade: true,
-        body: navigationShell,
+        body: widget.navigationShell,
         bottomBar: ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
             final unreadCount = controller.totalUnreadCount;
-            final selectedIndex = navigationShell.currentIndex;
+            final selectedIndex = widget.navigationShell.currentIndex;
             return Stack(
               clipBehavior: Clip.none,
               alignment: Alignment.bottomCenter,
@@ -91,7 +125,7 @@ class MainTabScaffold extends ConsumerWidget {
                   // 选中图标不要单独放大，否则会相对叠在玻璃外的文字上移。
                   magnification: 1,
                   onTabSelected: (index) {
-                    navigationShell.goBranch(
+                    widget.navigationShell.goBranch(
                       index,
                       initialLocation: index == selectedIndex,
                     );
