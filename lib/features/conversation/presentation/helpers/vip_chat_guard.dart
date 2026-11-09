@@ -14,10 +14,14 @@ class VipChatGuard {
 
   final AppConfig _appConfig;
 
-  VipChatSendEvaluation beforePickImage(AccountModel account) {
+  VipChatSendEvaluation beforePickImage(
+    AccountModel account, {
+    required String peerUserId,
+  }) {
     return VipChatSendPolicy.beforePickImage(
       account: account,
       config: _appConfig,
+      peerUserId: peerUserId,
     );
   }
 }

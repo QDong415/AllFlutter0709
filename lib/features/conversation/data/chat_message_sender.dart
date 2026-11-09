@@ -382,7 +382,8 @@ class ChatMessageDeliveryService {
     AccountModel account,
     ConversationMessage message,
   ) async {
-    if (UserType.isAi(message.otherUserType)) {
+    if (UserType.isAi(message.otherUserType) ||
+        VipChatSendPolicy.isUnlimitedPeer(message.otherUserId)) {
       return;
     }
     final countable =

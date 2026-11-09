@@ -23,6 +23,7 @@ class UserProfileModel {
     this.coin = 0,
     this.charm = 0,
     this.vip = 0,
+    this.vipTime = 0,
   });
 
   final String userId;
@@ -61,6 +62,9 @@ class UserProfileModel {
 
   /// 会员：0 普通 / 1 VIP / 2 SVIP。
   final int vip;
+
+  /// 会员到期时间戳（秒）。客户端门禁与 Buddy `vip_time` 一致。
+  final int vipTime;
 
   /// 系统禁言展示文案。
   String get banLabel {
@@ -131,6 +135,7 @@ class UserProfileModel {
     int? coin,
     int? charm,
     int? vip,
+    int? vipTime,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -153,6 +158,7 @@ class UserProfileModel {
       coin: coin ?? this.coin,
       charm: charm ?? this.charm,
       vip: vip ?? this.vip,
+      vipTime: vipTime ?? this.vipTime,
     );
   }
 
@@ -178,6 +184,7 @@ class UserProfileModel {
       coin: _readInt(json['coin']),
       charm: _readInt(json['charm']),
       vip: _readInt(json['vip']),
+      vipTime: _readInt(json['vip_time']),
     );
   }
 

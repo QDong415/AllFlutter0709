@@ -86,6 +86,20 @@ class AccountNotifier extends Notifier<AccountModel?> {
     state = account;
   }
 
+  /// 已登录时从服务端同步资料（含 `vip` / `vip_time`），失败则保留本地账号。
+  Future<void> refreshMyProfile() async {
+    final current = state;
+    if (current == null) {
+      return;
+    }
+    try {
+      final next = await _repository.refreshMyProfile(current);
+      if (next != null && next.isValid) {
+        await setAccount(next);
+      }
+    } catch (_) {}
+  }
+
   Future<void> updateName(String name) async {
     final current = state;
     if (current == null) {

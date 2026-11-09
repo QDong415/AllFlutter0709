@@ -241,6 +241,38 @@ class AccountRepository {
     );
   }
 
+  /// 拉取当前用户资料并合并进本地账号（对齐 Buddy `refreshMyProfile` / `user/profile`）。
+  Future<AccountModel?> refreshMyProfile(AccountModel current) async {
+    final response = await HttpClient.instance.get(
+      '/api/user/profile',
+      queryParameters: <String, dynamic>{'to_userid': current.userId},
+    );
+    final json = response.data;
+    if (json == null) {
+      return null;
+    }
+    final result = ApiResponse<Map<String, dynamic>>.fromJson(json, (dataJson) {
+      if (dataJson is Map<String, dynamic>) {
+        return dataJson;
+      }
+      if (dataJson is Map) {
+        return Map<String, dynamic>.from(dataJson);
+      }
+      return <String, dynamic>{};
+    });
+    if (!result.success) {
+      return null;
+    }
+    final serverJson = result.data;
+    if (serverJson == null || serverJson.isEmpty) {
+      return null;
+    }
+    return AccountModel.fromJson(<String, dynamic>{
+      ...current.toJson(),
+      ...serverJson,
+    });
+  }
+
   /// 清除本地账号。
   Future<void> clearAccount() {
     return _preferences.remove(_currentAccountStorageKey);

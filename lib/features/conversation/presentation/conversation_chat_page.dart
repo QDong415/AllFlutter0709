@@ -487,7 +487,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (!_peerIsAi) {
       if (!await applyVipSendEvaluation(
         context,
-        _vipChatGuard.beforePickImage(account),
+        _vipChatGuard.beforePickImage(account, peerUserId: widget.chatId),
       )) {
         return;
       }

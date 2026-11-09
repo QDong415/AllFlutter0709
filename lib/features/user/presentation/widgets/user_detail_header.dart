@@ -89,8 +89,6 @@ class UserDetailHeader extends StatelessWidget {
                         onTap: onAvatarTap,
                         child: VipHaloAvatar(
                           size: _avatarSize,
-                          borderWidth: avatarUrl.isEmpty ? 0 : 4,
-                          borderColor: _headerBg,
                           imageUrl: avatarUrl,
                         ),
                       ),

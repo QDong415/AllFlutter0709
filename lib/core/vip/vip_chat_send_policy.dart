@@ -34,6 +34,14 @@ class VipChatSendPolicy {
 
   static const femaleBlockedTip = '非会员限制，不可以给女性发信息';
 
+  /// 客服账号。和这个用户聊天不受会员条数、发图、女对女限制。
+  static const unlimitedPeerUserId = '1';
+
+  /// 对方是客服时，会员限制全部跳过。
+  static bool isUnlimitedPeer(String userId) {
+    return userId.trim() == unlimitedPeerUserId;
+  }
+
   static VipChatSendEvaluation evaluateAfterLocalInsert({
     required AccountModel account,
     required ConversationMessage message,
@@ -41,7 +49,8 @@ class VipChatSendPolicy {
     required int sentCount,
     required AppConfig config,
   }) {
-    if (UserType.isAi(message.otherUserType)) {
+    if (UserType.isAi(message.otherUserType) ||
+        isUnlimitedPeer(message.otherUserId)) {
       return const VipChatSendEvaluation.allow();
     }
 
@@ -89,7 +98,11 @@ class VipChatSendPolicy {
   static VipChatSendEvaluation beforePickImage({
     required AccountModel account,
     required AppConfig config,
+    required String peerUserId,
   }) {
+    if (isUnlimitedPeer(peerUserId)) {
+      return const VipChatSendEvaluation.allow();
+    }
     if (shouldMaleStyleChatBeLimit(account) && config.allowChatImage == 0) {
       return const VipChatSendEvaluation.blockPickImage();
     }

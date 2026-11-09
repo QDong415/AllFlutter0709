@@ -5,6 +5,7 @@ import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/app/theme/app_typography.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/bridge/native_events.dart';
 import 'package:all_flutter0709/core/push/getui_push_service.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,9 @@ class _SocialAppState extends ConsumerState<SocialApp> {
       // 尽早挂上 Native→Flutter 的 MethodCallHandler / EventChannel 订阅
       NativeEvents.instance.start();
       unawaited(ref.read(getuiPushServiceProvider).initialize());
+      if (ref.read(accountProvider) != null) {
+        unawaited(ref.read(accountProvider.notifier).refreshMyProfile());
+      }
     });
   }
 

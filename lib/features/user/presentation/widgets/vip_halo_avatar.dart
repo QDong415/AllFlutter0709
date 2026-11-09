@@ -59,6 +59,25 @@ class VipHaloAvatar extends StatelessWidget {
     return _photoDiameter(size, borderWidth) / _ringInnerDiameter * _assetSize;
   }
 
+  /// 头像和右侧文字的间距。有光环时扣掉圆右侧多出的宽度。
+  static double contentGap({
+    required double size,
+    required int vip,
+    required double gap,
+    double borderWidth = 0,
+  }) {
+    if (!showsHalo(vip)) return gap;
+    final extent = layoutExtent(size: size, vip: vip, borderWidth: borderWidth);
+    final originX = avatarOrigin(
+      size: size,
+      vip: vip,
+      borderWidth: borderWidth,
+    ).dx;
+    final next = gap - (extent - originX - size);
+    if (next < 0) return 0;
+    return next;
+  }
+
   /// 头像左上角相对组件左上角的偏移。无光环时为零。
   static Offset avatarOrigin({
     required double size,

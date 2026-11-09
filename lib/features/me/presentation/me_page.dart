@@ -60,6 +60,8 @@ class _MePageState extends ConsumerState<MePage> {
               topicCount: profile.topicCount,
               coin: profile.coin,
               charm: profile.charm,
+              vip: profile.vip,
+              vipTime: profile.vipTime,
             ),
           );
     } catch (_) {}

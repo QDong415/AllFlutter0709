@@ -68,7 +68,16 @@ class CommentItem extends StatelessWidget {
                         vip: comment.vip,
                         gender: comment.gender,
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: isChild
+                            ? 10
+                            : VipHaloAvatar.contentGap(
+                                size: _CommentTree.parentAvatarSize,
+                                vip: comment.vip,
+                                gap: 10,
+                                borderWidth: _CommentTree.parentAvatarBorder,
+                              ),
+                      ),
                       Expanded(
                         child: Padding(
                           padding: EdgeInsets.only(

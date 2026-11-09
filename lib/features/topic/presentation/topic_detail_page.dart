@@ -376,7 +376,13 @@ class _TopicDetailHeader extends StatelessWidget {
                   imageUrl: avatarUrl,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(
+                width: VipHaloAvatar.contentGap(
+                  size: avatarSize,
+                  vip: topic.vip,
+                  gap: 12,
+                ),
+              ),
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(top: avatarTop),

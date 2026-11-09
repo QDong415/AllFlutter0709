@@ -77,6 +77,11 @@ class TopicItemWidget extends StatelessWidget {
       size: avatarSize,
       vip: topicModel.vip,
     ).dy;
+    final nameGap = VipHaloAvatar.contentGap(
+      size: avatarSize,
+      vip: topicModel.vip,
+      gap: 12,
+    );
 
     return Material(
       color: Colors.white,
@@ -106,7 +111,7 @@ class TopicItemWidget extends StatelessWidget {
                       imageUrl: avatarUrl,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: nameGap),
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.only(top: avatarTop),

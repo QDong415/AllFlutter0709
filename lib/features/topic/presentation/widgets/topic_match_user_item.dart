@@ -39,10 +39,15 @@ class TopicMatchUserItem extends StatelessWidget {
         '';
     final openTimeText = ValueUtil.getTimeStringFromNow(userModel.openTime);
     final genderLabel = userModel.genderLabel;
+    final showsHalo = VipHaloAvatar.showsHalo(userModel.vip);
     final avatarTop = VipHaloAvatar.avatarOrigin(
       size: _avatarSize,
       vip: userModel.vip,
     ).dy;
+    // 光环把头像圆往右挤。普通头像补上同样的左间距，圆才和 SVIP 对齐。
+    final avatarInset = showsHalo
+        ? 0.0
+        : VipHaloAvatar.avatarOrigin(size: _avatarSize, vip: 2).dx;
 
     return Material(
       color: Colors.white,
@@ -53,13 +58,22 @@ class TopicMatchUserItem extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              VipHaloAvatar(
-                size: _avatarSize,
-                vip: userModel.vip,
-                gender: userModel.gender,
-                imageUrl: avatarUrl,
+              Padding(
+                padding: EdgeInsets.only(left: avatarInset),
+                child: VipHaloAvatar(
+                  size: _avatarSize,
+                  vip: userModel.vip,
+                  gender: userModel.gender,
+                  imageUrl: avatarUrl,
+                ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(
+                width: VipHaloAvatar.contentGap(
+                  size: _avatarSize,
+                  vip: userModel.vip,
+                  gap: 12,
+                ),
+              ),
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(top: avatarTop),
