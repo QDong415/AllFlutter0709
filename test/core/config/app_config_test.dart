@@ -11,6 +11,7 @@ void main() {
     AppConfig.instance.initialize(preferences);
 
     expect(AppConfig.instance.cloudStorageHttp, AppEnv.cloudFrontBaseUrl);
+    expect(AppConfig.instance.cloudStorageVideoHttp, AppEnv.s3VideoBaseUrl);
     expect(AppConfig.instance.cloudStorage, CloudStorage.s3);
     expect(
       AppConfig.instance.cloudStorageThumbStyle,
@@ -47,6 +48,17 @@ void main() {
     AppConfig.instance.initialize(preferences);
 
     expect(AppConfig.instance.cloudStorageHttp, 'https://cdn.example.com/');
+  });
+
+  test('视频播放前缀读 oss_video_http 缓存', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'app_config_cloud_storage_video_http': 'http://s3.itopic.com.cn',
+    });
+    final preferences = await SharedPreferences.getInstance();
+
+    AppConfig.instance.initialize(preferences);
+
+    expect(AppConfig.instance.cloudStorageVideoHttp, 'http://s3.itopic.com.cn/');
   });
 
   test('兼容旧缓存键 oss_http', () async {

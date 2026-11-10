@@ -230,9 +230,8 @@ class TopicModel {
       displayTime: _formatTime(_TopicJsonParser.parseInt(json['create_time'])),
       pictures: parsePictures(json['pictures']),
       comments: _parseComments(json['comments']),
-      videoUrl: ValueUtil.getQiniuUrlByFileName(
+      videoUrl: ValueUtil.getVideoUrlByFileName(
         _TopicJsonParser.parseNullableString(json['videourl']),
-        keepOriginal: true,
       ),
       userType: UserType.parse(json['user_type']),
       sort: _TopicJsonParser.parseInt(json['sort']),

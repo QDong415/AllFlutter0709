@@ -13,6 +13,16 @@ class ValueUtil {
     return '${AppConfig.instance.cloudStorageHttp}$value';
   }
 
+  /// 拼视频播放地址：用 [AppConfig.cloudStorageVideoHttp]，避开 DIT 图片域名。
+  static String? getVideoUrlByFileName(String? filename) {
+    final value = filename?.trim() ?? '';
+    if (value.isEmpty) return null;
+    if (value.startsWith('http')) {
+      return value;
+    }
+    return '${AppConfig.instance.cloudStorageVideoHttp}$value';
+  }
+
   /// 相对时间，对齐 Android `getTimeStringFromNow`：一天内显示 HH:mm，否则 yyyy-MM-dd。
   static String getTimeStringFromNow(int timestamp) {
     if (timestamp <= 0) {

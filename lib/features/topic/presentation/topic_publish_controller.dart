@@ -236,12 +236,37 @@ class TopicPublishController extends ChangeNotifier {
       }
     }
 
+    // S3 没有七牛截封面回调，先传本地抽的封面；七牛仍靠 videotopiccompress。
+    CloudStorageUploadResult? coverResult;
+    var slotTotal = 1;
+    var videoSlotIndex = 0;
+    if (useS3) {
+      final coverFile = await _buildVideoCoverFile(mediaModel);
+      if (_cancelled) {
+        return;
+      }
+      if (coverFile != null) {
+        slotTotal = 2;
+        coverResult = await _uploadInSlot(
+          file: coverFile,
+          token: null,
+          keyIndex: 0,
+          slotIndex: 0,
+          slotTotal: slotTotal,
+        );
+        if (_cancelled) {
+          return;
+        }
+        videoSlotIndex = 1;
+      }
+    }
+
     final result = await _uploadInSlot(
       file: mediaModel.file,
       token: token,
-      keyIndex: 0,
-      slotIndex: 0,
-      slotTotal: 1,
+      keyIndex: videoSlotIndex,
+      slotIndex: videoSlotIndex,
+      slotTotal: slotTotal,
     );
     if (_cancelled) {
       return;
@@ -258,14 +283,66 @@ class TopicPublishController extends ChangeNotifier {
     }
     final rotate = result.rawData['rotate']?.toString() ?? '';
     final isRotate = !useS3 && (rotate == '90' || rotate == '270');
+    final width = isRotate ? rawHeight : rawWidth;
+    final height = isRotate ? rawWidth : rawHeight;
     paramsMap['videourl'] = result.key;
-    paramsMap['width'] = isRotate ? rawHeight : rawWidth;
-    paramsMap['height'] = isRotate ? rawWidth : rawHeight;
-    paramsMap.remove('photoarray');
+    paramsMap['width'] = width;
+    paramsMap['height'] = height;
+    if (coverResult != null) {
+      // 列表用 pictures[0] 当封面；宽高用视频尺寸，避免正方形黑底。
+      paramsMap['photoarray'] = jsonEncode(<Map<String, String>>[
+        <String, String>{
+          'filename': coverResult.key,
+          'width': width,
+          'height': height,
+        },
+      ]);
+    } else {
+      paramsMap.remove('photoarray');
+    }
     debugPrint(
       '[TopicPublish] 视频上传完成 key=${result.key} '
-      'w=${paramsMap['width']} h=${paramsMap['height']}',
+      'cover=${coverResult?.key} w=$width h=$height',
     );
+  }
+
+  /// S3 发视频：从相册资源抽 JPEG 封面；失败则返回 null，不阻断发帖。
+  Future<File?> _buildVideoCoverFile(TopicSubmitMediaModel mediaModel) async {
+    try {
+      final asset = mediaModel.asset;
+      List<int>? bytes;
+      if (asset != null) {
+        final edge = _coverThumbnailEdge(asset);
+        bytes = await asset.thumbnailDataWithSize(
+          ThumbnailSize(edge, edge),
+          quality: 85,
+        );
+        bytes ??= await asset.thumbnailData;
+      }
+      if (bytes == null || bytes.isEmpty) {
+        debugPrint('[TopicPublish] 视频封面抽取失败，继续只传视频');
+        return null;
+      }
+      final coverFile = File(
+        '${mediaModel.file.parent.path}/cover_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      await coverFile.writeAsBytes(bytes, flush: true);
+      debugPrint(
+        '[TopicPublish] 视频封面已生成 ${coverFile.path} size=${coverFile.lengthSync()}',
+      );
+      return coverFile;
+    } catch (error) {
+      debugPrint('[TopicPublish] 视频封面抽取异常: $error');
+      return null;
+    }
+  }
+
+  int _coverThumbnailEdge(AssetEntity asset) {
+    final longest = asset.width > asset.height ? asset.width : asset.height;
+    if (longest <= 0) {
+      return 720;
+    }
+    return longest.clamp(360, 1280);
   }
 
   Future<void> _uploadImages(

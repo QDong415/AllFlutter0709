@@ -26,6 +26,9 @@ abstract final class AppEnv {
   static const String cloudFrontBaseUrl =
       'https://d1y2d7egaddq37.cloudfront.net/';
 
+  /// S3 视频播放默认前缀。DIT CloudFront 不支持视频；未拉到配置时走阿里云 CDN。
+  static const String s3VideoBaseUrl = 'http://s3.itopic.com.cn/';
+
   static String get siteBaseUrl {
     switch (current) {
       case AppEnvironment.test:

@@ -18,6 +18,14 @@ final class RecallItem extends ChatItem {
   final String label;
 }
 
+/// 服务端下发的居中 tips，例如 AI 生图扣费提醒。
+final class TipsItem extends ChatItem {
+  const TipsItem({required this.id, required this.label});
+
+  final String id;
+  final String label;
+}
+
 /// 气泡左右方向。
 enum MessageDirection { left, right }
 

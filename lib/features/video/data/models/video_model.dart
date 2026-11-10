@@ -71,9 +71,8 @@ class VideoModel {
     final createTime = _VideoJsonParser.parseInt(json['create_time']);
     return VideoModel(
       videoId: json['videoid']?.toString() ?? '',
-      videoUrl: ValueUtil.getQiniuUrlByFileName(
+      videoUrl: ValueUtil.getVideoUrlByFileName(
         _VideoJsonParser.parseNullableString(json['videourl']),
-        keepOriginal: true,
       ),
       coverUrl: ValueUtil.getQiniuUrlByFileName(
         _VideoJsonParser.parseNullableString(json['cover']),

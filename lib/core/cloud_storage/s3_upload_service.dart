@@ -5,6 +5,7 @@ import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 
 /// 亚马逊 S3：向 PHP 要预签名后 PUT。
 class S3UploadService {
@@ -39,7 +40,8 @@ class S3UploadService {
     if (cancelToken?.isCancelled == true) {
       throw const CloudStorageUploadCancelled();
     }
-    debugPrint('[S3Upload] PUT key=$key size=$fileLength');
+    final contentType = contentTypeForKey(key);
+    debugPrint('[S3Upload] PUT key=$key size=$fileLength type=$contentType');
     try {
       await _dio.putUri(
         Uri.parse(url),
@@ -47,7 +49,7 @@ class S3UploadService {
         cancelToken: cancelToken,
         options: Options(
           headers: <String, dynamic>{Headers.contentLengthHeader: fileLength},
-          contentType: 'application/octet-stream',
+          contentType: contentType,
           responseType: ResponseType.bytes,
           validateStatus: (status) =>
               status != null && status >= 200 && status < 300,
@@ -78,6 +80,31 @@ class S3UploadService {
       );
       final message = HttpClient.instance.describeError(error);
       throw Exception(message.isEmpty ? 'S3 上传失败' : message);
+    }
+  }
+
+  /// 按对象后缀设 Content-Type，便于 CloudFront / 播放器识别视频与图片。
+  static String contentTypeForKey(String key) {
+    switch (p.extension(key).toLowerCase()) {
+      case '.mp4':
+        return 'video/mp4';
+      case '.mov':
+        return 'video/quicktime';
+      case '.m4v':
+        return 'video/x-m4v';
+      case '.webm':
+        return 'video/webm';
+      case '.jpg':
+      case '.jpeg':
+        return 'image/jpeg';
+      case '.png':
+        return 'image/png';
+      case '.webp':
+        return 'image/webp';
+      case '.gif':
+        return 'image/gif';
+      default:
+        return 'application/octet-stream';
     }
   }
 

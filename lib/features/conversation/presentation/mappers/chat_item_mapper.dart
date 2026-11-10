@@ -52,6 +52,11 @@ ChatItem _mapMessage(
   switch (message.messageType) {
     case ConversationMessageType.recall:
       return RecallItem(id: message.itemId, label: message.recallLabel);
+    case ConversationMessageType.tips:
+      return TipsItem(
+        id: message.itemId,
+        label: message.content.isEmpty ? '提醒' : message.content,
+      );
     case ConversationMessageType.image:
       final imageSize = message.imageSize;
       final localPath = message.localFilePath.trim();

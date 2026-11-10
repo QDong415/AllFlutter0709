@@ -1,5 +1,4 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_grid.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_video_preview_page.dart';
@@ -139,6 +138,7 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       _errorText = null;
     });
 
+    debugPrint('[TopicFeedVideo] 开始加载 $url');
     final controller = VideoPlayerController.networkUrl(Uri.parse(url));
     _controller = controller;
 
@@ -157,6 +157,11 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
         return;
       }
 
+      debugPrint(
+        '[TopicFeedVideo] 加载成功 $url '
+        'size=${controller.value.size.width.toInt()}x${controller.value.size.height.toInt()} '
+        'duration=${controller.value.duration.inMilliseconds}ms',
+      );
       setState(() {
         _isInitializing = false;
         _errorText = null;
@@ -164,7 +169,8 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       if (!_isPreviewOpen) {
         _syncPlayState();
       }
-    } catch (_) {
+    } catch (error) {
+      debugPrint('[TopicFeedVideo] 加载失败 $url error=$error');
       await controller.dispose();
       if (_controller == controller) {
         _controller = null;
@@ -337,9 +343,7 @@ class _TopicFeedVideoPlayerState extends State<TopicFeedVideoPlayer> {
       }
     }
 
-    final coverPicture = AppConfig.instance.cloudStorage == CloudStorage.s3
-        ? null
-        : widget.coverPicture;
+    final coverPicture = widget.coverPicture;
     final controller = _controller;
     final initialized =
         !_isPreviewOpen && (controller?.value.isInitialized ?? false);

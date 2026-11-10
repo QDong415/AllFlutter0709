@@ -27,6 +27,7 @@ class ChatListItemWidget extends StatelessWidget {
     return switch (item) {
       final TimeItem timeItem => _CenterLabel(label: timeItem.label),
       final RecallItem recallItem => _CenterLabel(label: recallItem.label),
+      final TipsItem tipsItem => _CenterLabel(label: tipsItem.label),
       final TextMessage textItem => ChatMessageRow(
         item: textItem,
         actions: actions,

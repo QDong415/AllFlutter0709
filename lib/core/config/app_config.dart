@@ -104,6 +104,7 @@ class AppConfig {
   static final AppConfig instance = AppConfig._();
 
   static const _httpCacheKey = 'app_config_cloud_storage_http';
+  static const _videoHttpCacheKey = 'app_config_cloud_storage_video_http';
   static const _storageCacheKey = 'app_config_cloud_storage';
   static const _thumbStyleCacheKey = 'app_config_cloud_storage_thumb_style';
   static const _imageUploadMaxMemoryCacheKey =
@@ -138,6 +139,7 @@ class AppConfig {
 
   SharedPreferences? _preferences;
   String? _cachedHttp;
+  String? _cachedVideoHttp;
   CloudStorage? _cachedStorage;
   CloudStorageThumbStyle? _cachedThumbStyle;
   int? _cachedImageUploadMaxMemoryMb;
@@ -152,6 +154,20 @@ class AppConfig {
 
   /// 文件访问前缀，跟服务端 `oss_http`。
   String get cloudStorageHttp => _cachedHttp ?? AppEnv.cloudFrontBaseUrl;
+
+  /// 视频播放前缀，跟服务端 `oss_video_http`。
+  ///
+  /// S3 时 DIT 域名播不了视频，用阿里云 CDN；七牛或未下发时回退 [cloudStorageHttp]。
+  String get cloudStorageVideoHttp {
+    final cached = _cachedVideoHttp;
+    if (cached != null && cached.isNotEmpty) {
+      return cached;
+    }
+    if (cloudStorage == CloudStorage.s3) {
+      return AppEnv.s3VideoBaseUrl;
+    }
+    return cloudStorageHttp;
+  }
 
   /// 上传目标，跟服务端 `oss_upload`。
   CloudStorage get cloudStorage => _cachedStorage ?? CloudStorage.s3;
@@ -213,6 +229,10 @@ class AppConfig {
       preferences.getString(_httpCacheKey) ??
           preferences.getString('app_config_oss_http'),
     );
+    _cachedVideoHttp = _normalizeHttp(
+      preferences.getString(_videoHttpCacheKey) ??
+          preferences.getString('app_config_oss_video_http'),
+    );
     _cachedStorage = CloudStorage.fromValue(
       preferences.getInt(_storageCacheKey) ??
           preferences.getInt('app_config_oss_upload'),
@@ -242,7 +262,7 @@ class AppConfig {
 
   /// 从服务端刷新配置；失败或返回空值时保留当前配置。
   ///
-  /// 仍读 `oss_http` / `oss_upload` / `oss_thumb_style` / `image_upload_max_memory`。
+  /// 仍读 `oss_http` / `oss_video_http` / `oss_upload` / `oss_thumb_style` 等。
   Future<void> refresh() async {
     final preferences = _preferences;
     if (preferences == null) {
@@ -262,6 +282,12 @@ class AppConfig {
       if (http != null) {
         _cachedHttp = http;
         await preferences.setString(_httpCacheKey, http);
+      }
+
+      final videoHttp = _normalizeHttp(data['oss_video_http']?.toString());
+      if (videoHttp != null) {
+        _cachedVideoHttp = videoHttp;
+        await preferences.setString(_videoHttpCacheKey, videoHttp);
       }
 
       final storage = CloudStorage.fromValue(data['oss_upload']);

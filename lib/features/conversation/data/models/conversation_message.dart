@@ -10,6 +10,9 @@ enum ConversationMessageType {
 
   /// 礼物。金币扣减在 gift/send，这条消息只负责展示。
   gift(4),
+
+  /// 居中灰字 tips，例如 AI 生图扣费提醒。
+  tips(5),
   callAudio(10),
   callVideo(11),
 
@@ -100,6 +103,9 @@ class ConversationMessage {
 
   /// 是否为撤回占位。
   bool get isRecall => messageType == ConversationMessageType.recall;
+
+  /// 是否为居中 tips。
+  bool get isTips => messageType == ConversationMessageType.tips;
 
   /// 撤回提示文案。发送方和接收方不同。
   String get recallLabel => isSender ? '你撤回了一条消息' : '对方撤回了一条消息';
@@ -297,6 +303,8 @@ class ConversationMessage {
         return '[语音消息]';
       case ConversationMessageType.gift:
         return content.isEmpty ? '[礼物]' : content;
+      case ConversationMessageType.tips:
+        return content;
       case ConversationMessageType.callAudio:
         return '[语音通话]';
       case ConversationMessageType.callVideo:
