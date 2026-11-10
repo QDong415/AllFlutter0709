@@ -3,6 +3,8 @@ import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
+import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
 import 'package:all_flutter0709/features/me/presentation/widgets/me_header.dart';
 import 'package:all_flutter0709/features/me/presentation/widgets/me_menu_section.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
@@ -12,6 +14,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// 「我的」页，对齐 Android `MineFragment`。
+///
+/// 先用本地缓存的 `app_reviewing` 渲染；为 true 时隐藏充值会员、充值金币、
+/// 魅力提现。进入后再静默拉服务端，不一致才刷新 UI。
 class MePage extends ConsumerStatefulWidget {
   const MePage({super.key});
 
@@ -21,12 +26,18 @@ class MePage extends ConsumerStatefulWidget {
 
 class _MePageState extends ConsumerState<MePage> {
   final UserRepository _userRepository = const UserRepository();
+  final WalletRepository _walletRepository = const WalletRepository();
   double _titleOpacity = 0;
+  /// 首屏用 SharedPreferences 恢复后的值，避免无网时闪一下充值区。
+  bool _appReviewing = AppConfig.instance.appReviewing;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshCounts());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshCounts();
+      _refreshReviewing();
+    });
   }
 
   Future<void> _refreshCounts() async {
@@ -64,6 +75,20 @@ class _MePageState extends ConsumerState<MePage> {
               vipTime: profile.vipTime,
             ),
           );
+    } catch (_) {}
+  }
+
+  /// 静默刷新审核开关；失败保留本地缓存，仅在与当前 UI 不一致时 setState。
+  Future<void> _refreshReviewing() async {
+    try {
+      final reviewing = await _walletRepository.fetchAppReviewing();
+      if (!mounted) {
+        return;
+      }
+      AppConfig.instance.setAppReviewing(reviewing);
+      if (_appReviewing != reviewing) {
+        setState(() => _appReviewing = reviewing);
+      }
     } catch (_) {}
   }
 
@@ -178,25 +203,26 @@ class _MePageState extends ConsumerState<MePage> {
                     ),
                   ],
                 ),
-                MeMenuSection(
-                  itemList: [
-                    MeMenuItem(
-                      iconAsset: 'assets/icons/me/mine_icon_mission.png',
-                      title: 'Vip会员',
-                      onTap: () => _open(AppRoutes.meVip),
-                    ),
-                    MeMenuItem(
-                      iconAsset: 'assets/icons/me/mine_icon_crash.png',
-                      title: '充值金币',
-                      onTap: () => _open(AppRoutes.meCharge),
-                    ),
-                    MeMenuItem(
-                      iconAsset: 'assets/icons/me/mine_icon_mybuy.png',
-                      title: '魅力提现',
-                      onTap: () => _open(AppRoutes.meCharmWithdraw),
-                    ),
-                  ],
-                ),
+                if (!_appReviewing)
+                  MeMenuSection(
+                    itemList: [
+                      MeMenuItem(
+                        iconAsset: 'assets/icons/me/mine_icon_mission.png',
+                        title: 'Vip会员',
+                        onTap: () => _open(AppRoutes.meVip),
+                      ),
+                      MeMenuItem(
+                        iconAsset: 'assets/icons/me/mine_icon_crash.png',
+                        title: '充值金币',
+                        onTap: () => _open(AppRoutes.meCharge),
+                      ),
+                      MeMenuItem(
+                        iconAsset: 'assets/icons/me/mine_icon_mybuy.png',
+                        title: '魅力提现',
+                        onTap: () => _open(AppRoutes.meCharmWithdraw),
+                      ),
+                    ],
+                  ),
                 MeMenuSection(
                   itemList: [
                     MeMenuItem(

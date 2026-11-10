@@ -116,6 +116,7 @@ class AppConfig {
   static const _allowChatImageCacheKey = 'app_config_allow_chat_image';
   static const _allowChatCountCacheKey = 'app_config_allow_chat_count';
   static const _coinScaleCacheKey = 'app_config_coin_scale';
+  static const _appReviewingCacheKey = 'app_config_app_reviewing';
 
   /// 没拉到配置时的发图上限，单位 MB。
   static const defaultImageUploadMaxMemoryMb = 6;
@@ -147,6 +148,7 @@ class AppConfig {
   int? _cachedAllowChatImage;
   int? _cachedAllowChatCount;
   int? _cachedCoinScale;
+  bool _cachedAppReviewing = false;
 
   /// 文件访问前缀，跟服务端 `oss_http`。
   String get cloudStorageHttp => _cachedHttp ?? AppEnv.cloudFrontBaseUrl;
@@ -184,6 +186,26 @@ class AppConfig {
 
   int get coinScale => _cachedCoinScale ?? defaultCoinScale;
 
+  /// 审核期标记。为 true 时「我的」隐藏充值会员、充值金币、魅力提现。
+  bool get appReviewing => _cachedAppReviewing;
+
+  /// 把 `app_reviewing` 转成是否审核中。`true`、`1`、`"1"` 为审核中，缺省为否。
+  static bool isReviewingValue(Object? rawValue) {
+    return switch (rawValue) {
+      true => true,
+      final num number => number != 0,
+      final String text =>
+        text.trim() == '1' || text.trim().toLowerCase() == 'true',
+      _ => false,
+    };
+  }
+
+  /// 更新审核开关，并写入本地缓存，供下次冷启动先显示。
+  void setAppReviewing(bool reviewing) {
+    _cachedAppReviewing = reviewing;
+    _preferences?.setBool(_appReviewingCacheKey, reviewing);
+  }
+
   /// 在 App 启动前恢复本地配置，不执行网络请求。
   void initialize(SharedPreferences preferences) {
     _preferences = preferences;
@@ -211,6 +233,8 @@ class AppConfig {
     _cachedAllowChatImage = preferences.getInt(_allowChatImageCacheKey);
     _cachedAllowChatCount = preferences.getInt(_allowChatCountCacheKey);
     _cachedCoinScale = preferences.getInt(_coinScaleCacheKey);
+    _cachedAppReviewing =
+        preferences.getBool(_appReviewingCacheKey) ?? false;
     // 以前设置页可选上传目标，本地覆盖作废，一律跟服务端。
     preferences.remove('app_config_cloud_storage_override');
     preferences.remove('app_config_oss_upload_override');
@@ -302,6 +326,7 @@ class AppConfig {
         cacheKey: _coinScaleCacheKey,
         onCached: (value) => _cachedCoinScale = value,
       );
+      setAppReviewing(isReviewingValue(data['app_reviewing']));
     } catch (error) {
       debugPrint('[AppConfig] 刷新配置失败，继续使用本地配置: $error');
     }

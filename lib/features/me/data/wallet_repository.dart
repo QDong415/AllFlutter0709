@@ -1,10 +1,18 @@
+import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
+import 'package:all_flutter0709/core/utils/money_util.dart';
 import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 
 /// 充值说明、会员价格和魅力提现。
 class WalletRepository {
   const WalletRepository();
+
+  /// 读取 `user/countprove` 里的 `app_reviewing`。
+  Future<bool> fetchAppReviewing() async {
+    final data = await _countprove(const <String, String>{});
+    return AppConfig.isReviewingValue(data['app_reviewing']);
+  }
 
   /// 金币余额，以及配置里的小秘书账号。
   Future<ChargeGuideModel> fetchChargeGuide() async {
@@ -26,16 +34,19 @@ class WalletRepository {
     return CharmCashModel.fromJson(data);
   }
 
-  /// 提交魅力提现。金额由服务端按比例重算。
+  /// 提交魅力提现，参数对齐 Buddy `MineTakeMoneyActivity`。
   Future<void> applyCharmWithdraw({
     required int charm,
+    required int cashScale,
     required String account,
     required String realName,
   }) async {
+    final reqmoney = MoneyUtil.charmWithdrawReqmoneyCents(charm, cashScale);
     final response = await HttpClient.instance.post(
       '/api/mission/takemoney',
       data: <String, dynamic>{
         'reqcharm': '$charm',
+        'reqmoney': '$reqmoney',
         'account': account,
         'realname': realName,
       },

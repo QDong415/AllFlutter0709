@@ -140,10 +140,18 @@ class UserRepository {
   Future<void> submitOpinion({
     required String content,
     String toUserId = '',
+    String? photoArrayJson,
   }) async {
+    final data = <String, dynamic>{
+      'to_userid': toUserId,
+      'content': content,
+    };
+    if (photoArrayJson != null && photoArrayJson.isNotEmpty) {
+      data['photoarray'] = photoArrayJson;
+    }
     final response = await HttpClient.instance.post(
       '/api/version/opinion_send',
-      data: <String, dynamic>{'to_userid': toUserId, 'content': content},
+      data: data,
     );
 
     final json = response.data;

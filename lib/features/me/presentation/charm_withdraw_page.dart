@@ -3,6 +3,7 @@ import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
 import 'package:all_flutter0709/features/me/presentation/widgets/charm_withdraw_balance_card.dart';
 import 'package:all_flutter0709/features/me/presentation/widgets/charm_withdraw_form_rows.dart';
+import 'package:all_flutter0709/features/me/presentation/widgets/charm_withdraw_success_dialog.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -116,6 +117,7 @@ class _CharmWithdrawPageState extends ConsumerState<CharmWithdrawPage> {
     try {
       await _repository.applyCharmWithdraw(
         charm: charm,
+        cashScale: cash.cashScale,
         account: account,
         realName: realName,
       );
@@ -128,23 +130,14 @@ class _CharmWithdrawPageState extends ConsumerState<CharmWithdrawPage> {
       if (!mounted) {
         return;
       }
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            content: const Text('提交成功'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('确定'),
-              ),
-            ],
-          );
+      await CharmWithdrawApplySuccessDialog.show(
+        context,
+        onConfirm: () {
+          if (context.mounted) {
+            context.pop();
+          }
         },
       );
-      if (mounted) {
-        context.pop();
-      }
     } catch (error) {
       if (mounted) {
         AppToast.show(context, '$error');

@@ -159,6 +159,30 @@ void main() {
     );
   });
 
+  test('审核开关缺省为否，写入本地并可恢复', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final preferences = await SharedPreferences.getInstance();
+    AppConfig.instance.initialize(preferences);
+    expect(AppConfig.instance.appReviewing, isFalse);
+
+    expect(AppConfig.isReviewingValue(null), isFalse);
+    expect(AppConfig.isReviewingValue(false), isFalse);
+    expect(AppConfig.isReviewingValue(0), isFalse);
+    expect(AppConfig.isReviewingValue('0'), isFalse);
+    expect(AppConfig.isReviewingValue(true), isTrue);
+    expect(AppConfig.isReviewingValue(1), isTrue);
+    expect(AppConfig.isReviewingValue('1'), isTrue);
+    expect(AppConfig.isReviewingValue('true'), isTrue);
+
+    AppConfig.instance.setAppReviewing(true);
+    expect(AppConfig.instance.appReviewing, isTrue);
+    expect(preferences.getBool('app_config_app_reviewing'), isTrue);
+
+    // 再次 initialize 应从 SharedPreferences 恢复
+    AppConfig.instance.initialize(preferences);
+    expect(AppConfig.instance.appReviewing, isTrue);
+  });
+
   test('三种缩略图规则按七牛语义拼接查询串', () {
     expect(
       CloudStorageThumbStyle.qiniu.query(

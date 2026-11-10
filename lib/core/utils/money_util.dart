@@ -20,4 +20,13 @@ abstract final class MoneyUtil {
     final scaled = cents / 100.0;
     return math.max(0, (scaled * 100).roundToDouble()) / 100.0;
   }
+
+  /// 魅力提现 `reqmoney`（分，元×100）。Buddy 传的是 `charm*cashscale*100`，库表按分存应用本公式。
+  static int charmWithdrawReqmoneyCents(int reqcharm, int cashScale) {
+    if (reqcharm <= 0) {
+      return 0;
+    }
+    final scale = cashScale > 0 ? cashScale : 20;
+    return ((reqcharm * 100) / scale).round();
+  }
 }
