@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:flutter/material.dart';
 
 /// 自定义 AI 表单提交值。
@@ -231,7 +232,7 @@ class _AiCreationFormState extends State<AiCreationForm> {
             maxLines: 5,
             textInputAction: TextInputAction.newline,
             decoration: InputDecoration(
-              hintText: '例如：喜欢摄影，刚认识时有点高冷，熟悉后会变得很健谈。\n穿搭提示：白衬衫、牛仔裤和白色运动鞋。',
+              hintText: '例如：喜欢摄影，刚认识时有点高冷，熟悉后会变得很健谈。\n穿搭提示：白衬衫、牛仔裤和白色运动鞋。\n禁止出现未成年或其他违法词汇',
               filled: true,
               fillColor: AppColors.white,
               border: OutlineInputBorder(
@@ -241,6 +242,18 @@ class _AiCreationFormState extends State<AiCreationForm> {
             ),
           ),
           const SizedBox(height: 32),
+          if (AppConfig.instance.aiCreationCoinCost > 0) ...[
+            Text(
+              '创建成功将消耗 ${AppConfig.instance.aiCreationCoinCost} 金币',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           SizedBox(
             height: 48,
             child: FilledButton.icon(

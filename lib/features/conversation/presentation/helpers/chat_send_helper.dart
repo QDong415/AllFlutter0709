@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
+import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -10,7 +11,15 @@ class ChatSendHelper {
   ChatSendHelper({ImagePicker? imagePicker})
     : _imagePicker = imagePicker ?? ImagePicker();
 
+  /// 单条文本最大字数；一个汉字 / 字母 / 表情按 1 计。输入不截断，发送时校验。
+  static const int maxTextCharacterCount = 1000;
+
   final ImagePicker _imagePicker;
+
+  /// 文本是否超过发送字数上限。
+  static bool isTextTooLong(String text) {
+    return text.characters.length > maxTextCharacterCount;
+  }
 
   /// 从相册选择图片；取消时返回 null。
   ///

@@ -31,7 +31,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _codeController = TextEditingController();
 
   _LoginStage _stage = _LoginStage.phone;
-  bool _agreed = false;
+  bool _agreed = true;
   bool _isRequestingCode = false;
   bool _isSubmitting = false;
   bool _isOneTapBusy = false;

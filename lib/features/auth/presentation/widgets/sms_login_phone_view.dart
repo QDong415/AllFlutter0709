@@ -177,7 +177,7 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
             TextButton(
               onPressed: widget.onPasswordLogin,
               child: const Text(
-                '使用密码登录',
+                '已有账号，使用密码登录',
                 style: TextStyle(color: AppColors.titleText),
               ),
             ),

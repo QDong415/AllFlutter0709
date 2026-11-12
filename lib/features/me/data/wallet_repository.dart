@@ -34,6 +34,42 @@ class WalletRepository {
     return CharmCashModel.fromJson(data);
   }
 
+  /// 兑换码兑金币。返回最新余额与提示文案。
+  Future<({int coin, String message})> redeemPromoCode(String content) async {
+    final response = await HttpClient.instance.post(
+      '/api/coin_promo_code/redeem',
+      data: <String, dynamic>{
+        'content': content,
+      },
+    );
+    final json = response.data;
+    if (json is! Map<String, dynamic>) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<Map<String, dynamic>>.fromJson(json, (dataJson) {
+      if (dataJson is Map<String, dynamic>) {
+        return dataJson;
+      }
+      if (dataJson is Map) {
+        return Map<String, dynamic>.from(dataJson);
+      }
+      return <String, dynamic>{};
+    });
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '兑换失败' : result.message);
+    }
+    final data = result.data ?? <String, dynamic>{};
+    final rawCoin = data['coin'];
+    final coin = switch (rawCoin) {
+      final int value => value,
+      final num value => value.toInt(),
+      _ => int.tryParse('$rawCoin') ?? 0,
+    };
+    final message =
+        result.message.isEmpty ? '兑换成功' : result.message;
+    return (coin: coin, message: message);
+  }
+
   /// 提交魅力提现，参数对齐 Buddy `MineTakeMoneyActivity`。
   Future<void> applyCharmWithdraw({
     required int charm,

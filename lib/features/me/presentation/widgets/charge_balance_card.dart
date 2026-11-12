@@ -17,13 +17,16 @@ class ChargeBalanceCard extends StatelessWidget {
   static const double _coinIconSize = 34;
 
   /// 与 `activity_charge.xml` 中 `lord_ic_money` / 白卡片 `layout_marginTop` 一致。
+  /// Android 的 `price_rl` marginTop=40 相对屏幕顶（叠在标题栏下），
+  /// Flutter 内容已在 AppBar 下方，这里只留图标外露的少量间距。
   static const double _iconTop = 23;
   static const double _cardTop = 45;
+  static const double _sectionTop = 8;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 40, 14, 0),
+      padding: const EdgeInsets.fromLTRB(14, _sectionTop, 14, 0),
       child: Stack(
         clipBehavior: Clip.none,
         children: [

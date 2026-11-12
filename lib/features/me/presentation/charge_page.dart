@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
 import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
@@ -24,13 +25,21 @@ class ChargePage extends ConsumerStatefulWidget {
 
 class _ChargePageState extends ConsumerState<ChargePage> {
   final WalletRepository _repository = const WalletRepository();
+  final TextEditingController _promoCodeController = TextEditingController();
   ChargeGuideModel? _guide;
   bool _loading = true;
+  bool _redeeming = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _promoCodeController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -39,12 +48,7 @@ class _ChargePageState extends ConsumerState<ChargePage> {
       if (!mounted) {
         return;
       }
-      final account = ref.read(accountProvider);
-      if (account != null) {
-        await ref
-            .read(accountProvider.notifier)
-            .setAccount(account.copyWith(coin: guide.coin));
-      }
+      await _syncCoin(guide.coin);
       setState(() {
         _guide = guide;
         _loading = false;
@@ -56,6 +60,16 @@ class _ChargePageState extends ConsumerState<ChargePage> {
       setState(() => _loading = false);
       AppToast.show(context, '$error');
     }
+  }
+
+  Future<void> _syncCoin(int coin) async {
+    final account = ref.read(accountProvider);
+    if (account == null) {
+      return;
+    }
+    await ref
+        .read(accountProvider.notifier)
+        .setAccount(account.copyWith(coin: coin));
   }
 
   void _openSecretary() {
@@ -74,6 +88,45 @@ class _ChargePageState extends ConsumerState<ChargePage> {
     );
   }
 
+  Future<void> _redeemPromoCode() async {
+    final code = _promoCodeController.text.trim();
+    if (code.isEmpty) {
+      AppToast.show(context, '请输入兑换码');
+      return;
+    }
+    if (_redeeming) {
+      return;
+    }
+    setState(() => _redeeming = true);
+    try {
+      final result = await _repository.redeemPromoCode(code);
+      if (!mounted) {
+        return;
+      }
+      await _syncCoin(result.coin);
+      final guide = _guide;
+      setState(() {
+        _redeeming = false;
+        if (guide != null) {
+          _guide = ChargeGuideModel(
+            coin: result.coin,
+            secretaryUserId: guide.secretaryUserId,
+            secretaryName: guide.secretaryName,
+            secretaryAvatar: guide.secretaryAvatar,
+          );
+        }
+      });
+      _promoCodeController.clear();
+      AppToast.show(context, result.message);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _redeeming = false);
+      AppToast.show(context, '$error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final guide = _guide;
@@ -90,8 +143,12 @@ class _ChargePageState extends ConsumerState<ChargePage> {
           ChargeMethodsCard(
             secretaryName: guide?.secretaryName ?? '',
             secretaryAvatar: guide?.secretaryAvatar ?? '',
+            way2Text: AppConfig.instance.payWay2,
+            promoCodeController: _promoCodeController,
             loading: _loading,
+            redeeming: _redeeming,
             onContactTap: _openSecretary,
+            onRedeemTap: _redeemPromoCode,
           ),
         ],
       ),

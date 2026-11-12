@@ -117,10 +117,15 @@ class AppConfig {
   static const _allowChatImageCacheKey = 'app_config_allow_chat_image';
   static const _allowChatCountCacheKey = 'app_config_allow_chat_count';
   static const _coinScaleCacheKey = 'app_config_coin_scale';
+  static const _aiCreationCoinCostCacheKey = 'app_config_ai_creation_coin_cost';
+  static const _payWay2CacheKey = 'app_config_pay_way2';
   static const _appReviewingCacheKey = 'app_config_app_reviewing';
 
   /// 没拉到配置时的发图上限，单位 MB。
   static const defaultImageUploadMaxMemoryMb = 6;
+
+  /// 充值页「充值方式2」默认文案，跟服务端 `pay_way2` 缺省一致。
+  static const defaultPayWay2 = '';
 
   /// Buddy 默认：0 表示非会员需 VIP 才能发话题（配合客户端 `shouldBeLimit`）。
   static const defaultAllowTopicSubmit = 0;
@@ -137,6 +142,9 @@ class AppConfig {
   static const defaultAllowChatCount = 30;
   static const defaultCoinScale = 10;
 
+  /// 创建 AI 成功时扣的金币数；跟服务端 `ai_creation_coin_cost`，0 表示免费。
+  static const defaultAiCreationCoinCost = 20;
+
   SharedPreferences? _preferences;
   String? _cachedHttp;
   String? _cachedVideoHttp;
@@ -150,6 +158,8 @@ class AppConfig {
   int? _cachedAllowChatImage;
   int? _cachedAllowChatCount;
   int? _cachedCoinScale;
+  int? _cachedAiCreationCoinCost;
+  String? _cachedPayWay2;
   bool _cachedAppReviewing = false;
 
   /// 文件访问前缀，跟服务端 `oss_http`。
@@ -202,6 +212,16 @@ class AppConfig {
 
   int get coinScale => _cachedCoinScale ?? defaultCoinScale;
 
+  /// 创建 AI 成功时扣的金币数。跟服务端 `ai_creation_coin_cost`。
+  int get aiCreationCoinCost =>
+      _cachedAiCreationCoinCost ?? defaultAiCreationCoinCost;
+
+  /// 充值页「充值方式2」说明文案。跟服务端 `pay_way2`。
+  String get payWay2 {
+    final cached = _cachedPayWay2?.trim() ?? '';
+    return cached.isEmpty ? defaultPayWay2 : cached;
+  }
+
   /// 审核期标记。为 true 时「我的」隐藏充值会员、充值金币、魅力提现。
   bool get appReviewing => _cachedAppReviewing;
 
@@ -253,6 +273,10 @@ class AppConfig {
     _cachedAllowChatImage = preferences.getInt(_allowChatImageCacheKey);
     _cachedAllowChatCount = preferences.getInt(_allowChatCountCacheKey);
     _cachedCoinScale = preferences.getInt(_coinScaleCacheKey);
+    _cachedAiCreationCoinCost = preferences.getInt(
+      _aiCreationCoinCostCacheKey,
+    );
+    _cachedPayWay2 = preferences.getString(_payWay2CacheKey);
     _cachedAppReviewing =
         preferences.getBool(_appReviewingCacheKey) ?? false;
     // 以前设置页可选上传目标，本地覆盖作废，一律跟服务端。
@@ -352,6 +376,17 @@ class AppConfig {
         cacheKey: _coinScaleCacheKey,
         onCached: (value) => _cachedCoinScale = value,
       );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['ai_creation_coin_cost'],
+        cacheKey: _aiCreationCoinCostCacheKey,
+        onCached: (value) => _cachedAiCreationCoinCost = value,
+      );
+      final payWay2 = data['pay_way2']?.toString().trim() ?? '';
+      if (payWay2.isNotEmpty) {
+        _cachedPayWay2 = payWay2;
+        await preferences.setString(_payWay2CacheKey, payWay2);
+      }
       setAppReviewing(isReviewingValue(data['app_reviewing']));
     } catch (error) {
       debugPrint('[AppConfig] 刷新配置失败，继续使用本地配置: $error');

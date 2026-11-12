@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/features/ai/data/ai_creation_repository.dart';
 import 'package:all_flutter0709/features/ai/data/models/ai_creation_model.dart';
 import 'package:all_flutter0709/features/ai/presentation/widgets/ai_creation_form.dart';
@@ -9,17 +11,18 @@ import 'package:all_flutter0709/shared/widgets/app_message_dialog.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// 用户自定义 AI：设定、同步生图、预览和确认发布。
-class AiCreationPage extends StatefulWidget {
+class AiCreationPage extends ConsumerStatefulWidget {
   const AiCreationPage({super.key});
 
   @override
-  State<AiCreationPage> createState() => _AiCreationPageState();
+  ConsumerState<AiCreationPage> createState() => _AiCreationPageState();
 }
 
-class _AiCreationPageState extends State<AiCreationPage> {
+class _AiCreationPageState extends ConsumerState<AiCreationPage> {
   final AiCreationRepository _repository = const AiCreationRepository();
 
   _CreationPhase _phase = _CreationPhase.form;
@@ -34,6 +37,14 @@ class _AiCreationPageState extends State<AiCreationPage> {
       _phase == _CreationPhase.confirming;
 
   Future<void> _start(AiCreationFormValue formValue) async {
+    final cost = AppConfig.instance.aiCreationCoinCost;
+    if (cost > 0) {
+      final coin = ref.read(accountProvider)?.coin ?? 0;
+      if (coin < cost) {
+        AppToast.show(context, '金币不足，创建需要 $cost 金币');
+        return;
+      }
+    }
     _formValue = formValue;
     _creationModel = null;
     setState(() {
@@ -58,7 +69,7 @@ class _AiCreationPageState extends State<AiCreationPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() => _phase = _CreationPhase.form);
-      await _showErrorDialog(_errorText(error));
+      AppToast.show(context, _errorText(error));
     }
   }
 
@@ -140,11 +151,27 @@ class _AiCreationPageState extends State<AiCreationPage> {
   Future<void> _confirm() async {
     final creationModel = _creationModel;
     if (creationModel == null) return;
+    final cost = AppConfig.instance.aiCreationCoinCost;
+    if (cost > 0) {
+      final coin = ref.read(accountProvider)?.coin ?? 0;
+      if (coin < cost) {
+        AppToast.show(context, '金币不足，创建需要 $cost 金币');
+        return;
+      }
+    }
     setState(() => _phase = _CreationPhase.confirming);
     try {
       final publishedModel = await _repository.confirm(
         creationModel.creationId,
       );
+      if (!mounted) return;
+      final nextCoin = publishedModel.coin;
+      final account = ref.read(accountProvider);
+      if (nextCoin != null && account != null) {
+        await ref
+            .read(accountProvider.notifier)
+            .setAccount(account.copyWith(coin: nextCoin));
+      }
       if (!mounted) return;
       AppToast.show(context, '${publishedModel.name} 已创建');
       context.pop(true);
@@ -206,9 +233,11 @@ class _AiCreationPageState extends State<AiCreationPage> {
           ),
         ),
         const SizedBox(height: 7),
-        const Text(
-          '确认后角色会正式发布，并出现在 AI 伙伴列表中。',
-          style: TextStyle(color: Color(0xFF777777), fontSize: 14),
+        Text(
+          AppConfig.instance.aiCreationCoinCost > 0
+              ? '确认后角色会正式发布，并消耗 ${AppConfig.instance.aiCreationCoinCost} 金币。'
+              : '确认后角色会正式发布，并出现在 AI 伙伴列表中。',
+          style: const TextStyle(color: Color(0xFF777777), fontSize: 14),
         ),
         const SizedBox(height: 20),
         Row(

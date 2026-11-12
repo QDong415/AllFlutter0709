@@ -371,6 +371,13 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (text.isEmpty || _isSubmitting) {
       return;
     }
+    if (ChatSendHelper.isTextTooLong(text)) {
+      AppToast.show(
+        context,
+        '消息最多${ChatSendHelper.maxTextCharacterCount}字',
+      );
+      return;
+    }
     if (!context.ensureLoggedIn()) {
       return;
     }

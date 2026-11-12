@@ -16,6 +16,7 @@ class AiCreationModel {
     required this.fullBodyImage,
     required this.errorMessage,
     required this.aiUserId,
+    this.coin,
   });
 
   final int creationId;
@@ -31,6 +32,9 @@ class AiCreationModel {
   final String fullBodyImage;
   final String errorMessage;
   final String aiUserId;
+
+  /// 确认创建成功后服务端回写的剩余金币；未扣费时为空。
+  final int? coin;
 
   String? get avatarUrl =>
       ValueUtil.getQiniuUrlByFileName(avatarImage, keepOriginal: true);
@@ -56,6 +60,7 @@ class AiCreationModel {
       fullBodyImage: json['full_body_image']?.toString() ?? '',
       errorMessage: json['error_message']?.toString() ?? '',
       aiUserId: json['ai_userid']?.toString() ?? '',
+      coin: json.containsKey('coin') ? _intOf(json['coin']) : null,
     );
   }
 
