@@ -154,6 +154,8 @@ class _MePageState extends ConsumerState<MePage> {
                     AppRoutes.meFriendship,
                     extra: const FriendshipArgs(isFansList: false),
                   ),
+                  onCoinTap: () => _open(AppRoutes.meCoinLog),
+                  onCharmTap: () => _open(AppRoutes.meCharmLog),
                 ),
                 MeMenuSection(
                   itemList: [

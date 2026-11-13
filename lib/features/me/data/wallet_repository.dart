@@ -1,10 +1,12 @@
 import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
+import 'package:all_flutter0709/core/network/page_data.dart';
 import 'package:all_flutter0709/core/utils/money_util.dart';
+import 'package:all_flutter0709/features/me/data/wallet_log_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 
-/// 充值说明、会员价格和魅力提现。
+/// 充值说明、会员价格、魅力提现和钱包流水。
 class WalletRepository {
   const WalletRepository();
 
@@ -20,10 +22,32 @@ class WalletRepository {
     return ChargeGuideModel.fromJson(data);
   }
 
-  /// 月 / 季 / 年价格，以及当前 vip 标记。
+  /// 月会员金币价、余额，以及当前 vip 标记。
   Future<VipOfferModel> fetchVipOffer() async {
     final data = await _countprove(const <String, String>{'showprice': '1'});
     return VipOfferModel.fromJson(data);
+  }
+
+  /// 用金币购买一个月会员。成功返回最新 coin / vip / vip_time。
+  Future<VipOfferModel> buyVipMonth() async {
+    final response = await HttpClient.instance.post('/api/user/buyvip');
+    final json = response.data;
+    if (json is! Map<String, dynamic>) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<Map<String, dynamic>>.fromJson(json, (dataJson) {
+      if (dataJson is Map<String, dynamic>) {
+        return dataJson;
+      }
+      if (dataJson is Map) {
+        return Map<String, dynamic>.from(dataJson);
+      }
+      return <String, dynamic>{};
+    });
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '购买失败' : result.message);
+    }
+    return VipOfferModel.fromJson(result.data ?? <String, dynamic>{});
   }
 
   /// 魅力、兑换比例，以及最近一次申请留下的支付宝信息。
@@ -95,6 +119,55 @@ class WalletRepository {
     if (!result.success) {
       throw Exception(result.message.isEmpty ? '提交失败' : result.message);
     }
+  }
+
+  /// 金币变动流水（`/api/mission/moneylog`）。
+  Future<WalletLogPageResult> fetchMoneyLogList({required int page}) {
+    return _fetchWalletLogList(
+      path: '/api/mission/moneylog',
+      page: page,
+      fromJson: WalletLogModel.fromMoneyJson,
+    );
+  }
+
+  /// 魅力值变动流水（`/api/mission/charmlog`）。
+  Future<WalletLogPageResult> fetchCharmLogList({required int page}) {
+    return _fetchWalletLogList(
+      path: '/api/mission/charmlog',
+      page: page,
+      fromJson: WalletLogModel.fromCharmJson,
+    );
+  }
+
+  Future<WalletLogPageResult> _fetchWalletLogList({
+    required String path,
+    required int page,
+    required WalletLogModel Function(Map<String, dynamic> json) fromJson,
+  }) async {
+    final response = await HttpClient.instance.get(
+      path,
+      queryParameters: <String, dynamic>{
+        'page': '$page',
+      },
+    );
+    final json = response.data;
+    if (json is! Map<String, dynamic>) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<PageData<WalletLogModel>>.fromJson(
+      json,
+      (pageJson) => PageData<WalletLogModel>.fromJson(
+        pageJson as Map<String, dynamic>,
+        (itemJson) => fromJson(itemJson as Map<String, dynamic>),
+      ),
+    );
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '加载失败' : result.message);
+    }
+    final pageData = result.data;
+    final items = pageData?.items ?? const <WalletLogModel>[];
+    final hasMore = (pageData?.totalPage ?? 0) > page;
+    return WalletLogPageResult(items: items, hasMore: hasMore);
   }
 
   Future<Map<String, dynamic>> _countprove(Map<String, String> query) async {

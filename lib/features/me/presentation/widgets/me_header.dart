@@ -15,6 +15,8 @@ class MeHeader extends StatelessWidget {
     this.coin = 0,
     this.charm = 0,
     this.showWallet = false,
+    this.onCoinTap,
+    this.onCharmTap,
   });
 
   final String name;
@@ -27,6 +29,8 @@ class MeHeader extends StatelessWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onFansTap;
   final VoidCallback onFollowTap;
+  final VoidCallback? onCoinTap;
+  final VoidCallback? onCharmTap;
 
   @override
   Widget build(BuildContext context) {
@@ -106,12 +110,14 @@ class MeHeader extends StatelessWidget {
                         iconAsset: 'assets/icons/gift/gift_gold_image.png',
                         label: '金币',
                         value: coin,
+                        onTap: onCoinTap,
                       ),
                       const SizedBox(width: 28),
                       _WalletChip(
                         iconAsset: 'assets/icons/gift/charm_icon.png',
                         label: '魅力',
                         value: charm,
+                        onTap: onCharmTap,
                       ),
                     ],
                   ),
@@ -172,37 +178,46 @@ class _WalletChip extends StatelessWidget {
     required this.iconAsset,
     required this.label,
     required this.value,
+    this.onTap,
   });
 
   final String iconAsset;
   final String label;
   final int value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(
-          iconAsset,
-          width: 18,
-          height: 18,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              iconAsset,
+              width: 18,
+              height: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF919191)),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$value',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF5B5B5B),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF919191)),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '$value',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF5B5B5B),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

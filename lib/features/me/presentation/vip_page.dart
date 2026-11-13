@@ -1,25 +1,28 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
-import 'package:all_flutter0709/core/utils/money_util.dart';
+import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
+import 'package:all_flutter0709/shared/widgets/vip_required_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// 会员说明。展示价格和特权，购买进入充值说明，不拉起支付。
-class VipPage extends StatefulWidget {
+/// 会员说明。展示金币月价与特权；续费/充值用金币购买一个月会员。
+class VipPage extends ConsumerStatefulWidget {
   const VipPage({super.key});
 
   @override
-  State<VipPage> createState() => _VipPageState();
+  ConsumerState<VipPage> createState() => _VipPageState();
 }
 
-class _VipPageState extends State<VipPage> {
+class _VipPageState extends ConsumerState<VipPage> {
   final WalletRepository _repository = const WalletRepository();
   VipOfferModel? _offer;
   bool _loading = true;
+  bool _buying = false;
 
   @override
   void initState() {
@@ -46,36 +49,80 @@ class _VipPageState extends State<VipPage> {
     }
   }
 
-  Future<void> _pickPlan() async {
+  Future<void> _onBuyTap() async {
     final offer = _offer;
-    if (offer == null) {
+    if (offer == null || _buying) {
       return;
     }
-    final labelList = <String>[
-      '${offer.monthPriceYuan}元/月',
-      '${offer.seasonPriceYuan}元/季',
-      '${offer.yearPriceYuan}元/年',
-    ];
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final label in labelList)
-                ListTile(
-                  title: Text(label, textAlign: TextAlign.center),
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    context.push(AppRoutes.meCharge, extra: true);
-                  },
-                ),
-            ],
-          ),
-        );
-      },
+    final cost = offer.monthCoinCost > 0
+        ? offer.monthCoinCost
+        : VipOfferModel.defaultMonthCoinCost;
+    final confirmed = await VipRequiredDialog.show(
+      context,
+      title: '购买会员',
+      message: '是否用 $cost 金币购买一个月会员？',
+      confirmText: '确认',
     );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    if (offer.coin < cost) {
+      await _showCoinInsufficient();
+      return;
+    }
+    await _buyVipMonth();
+  }
+
+  Future<void> _showCoinInsufficient() async {
+    final goCharge = await VipRequiredDialog.show(
+      context,
+      title: '金币不足',
+      message: '当前金币不足以购买会员',
+      confirmText: '去充值',
+      icon: Icons.monetization_on_rounded,
+    );
+    if (goCharge == true && mounted) {
+      context.push(AppRoutes.meCharge);
+    }
+  }
+
+  Future<void> _buyVipMonth() async {
+    setState(() => _buying = true);
+    try {
+      final result = await _repository.buyVipMonth();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _offer = VipOfferModel(
+          monthCoinCost: result.monthCoinCost > 0
+              ? result.monthCoinCost
+              : (_offer?.monthCoinCost ?? VipOfferModel.defaultMonthCoinCost),
+          coin: result.coin,
+          vip: result.vip,
+          vipTime: result.vipTime,
+        );
+      });
+      await ref.read(accountProvider.notifier).refreshMyProfile();
+      if (!mounted) {
+        return;
+      }
+      AppToast.show(context, '开通成功');
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = '$error';
+      if (message.contains('金币不足')) {
+        await _showCoinInsufficient();
+      } else {
+        AppToast.show(context, message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _buying = false);
+      }
+    }
   }
 
   String _expireText(VipOfferModel offer) {
@@ -92,6 +139,7 @@ class _VipPageState extends State<VipPage> {
   Widget build(BuildContext context) {
     final offer = _offer;
     final isVip = (offer?.vip ?? 0) > 0;
+    final cost = offer?.monthCoinCost ?? VipOfferModel.defaultMonthCoinCost;
     return Scaffold(
       backgroundColor: AppColors.bodyBackground,
       appBar: const CommonAppBar(title: '我的Vip'),
@@ -108,9 +156,7 @@ class _VipPageState extends State<VipPage> {
             child: Column(
               children: [
                 Text(
-                  _loading
-                      ? '…'
-                      : '${offer?.monthPriceYuan ?? MoneyUtil.centsToYuanInt(VipOfferModel.defaultMonthPriceCents)}',
+                  _loading ? '…' : '$cost',
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
@@ -119,19 +165,23 @@ class _VipPageState extends State<VipPage> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  '元/月',
+                  '金币/月',
                   style: TextStyle(fontSize: 13, color: Color(0xFF888888)),
                 ),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: 180,
                   child: FilledButton(
-                    onPressed: _loading ? null : _pickPlan,
+                    onPressed: (_loading || _buying) ? null : _onBuyTap,
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
-                    child: Text(isVip ? '续费' : '充值会员'),
+                    child: Text(
+                      _buying
+                          ? '处理中…'
+                          : (isVip ? '续费' : '充值会员'),
+                    ),
                   ),
                 ),
               ],

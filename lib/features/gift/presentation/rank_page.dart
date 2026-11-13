@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/features/gift/data/gift_model.dart';
@@ -12,6 +13,7 @@ import 'package:all_flutter0709/features/gift/presentation/widgets/rank_podium.d
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// 魅力榜、财富榜。各自有今日、本周、总榜。
 class RankPage extends StatefulWidget {
@@ -47,33 +49,57 @@ class _RankPageState extends State<RankPage>
           children: [
             SafeArea(
               bottom: false,
-              child: Center(
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  padding: EdgeInsets.zero,
-                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(0xB3FFFFFF),
-                  indicatorColor: Colors.white,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  indicator: const UnderlineTabIndicator(
-                    borderSide: BorderSide(width: 3, color: Colors.white),
-                  ),
-                  dividerColor: Colors.transparent,
-                  dividerHeight: 0,
-                  labelStyle: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  tabs: const [
-                    Tab(height: 44, text: '魅力榜'),
-                    Tab(height: 44, text: '财富榜'),
+              child: SizedBox(
+                height: 44,
+                child: Row(
+                  children: [
+                    // 与右侧问号同宽，保证 Tab 仍视觉居中。
+                    const SizedBox(width: 44),
+                    Expanded(
+                      child: TabBar(
+                        controller: _tabController,
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.center,
+                        padding: EdgeInsets.zero,
+                        labelPadding:
+                            const EdgeInsets.symmetric(horizontal: 10),
+                        labelColor: Colors.white,
+                        unselectedLabelColor: const Color(0xB3FFFFFF),
+                        indicatorColor: Colors.white,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        indicator: const UnderlineTabIndicator(
+                          borderSide:
+                              BorderSide(width: 3, color: Colors.white),
+                        ),
+                        dividerColor: Colors.transparent,
+                        dividerHeight: 0,
+                        labelStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        unselectedLabelStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        tabs: const [
+                          Tab(height: 44, text: '魅力榜'),
+                          Tab(height: 44, text: '财富榜'),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      width: 44,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        tooltip: '规则说明',
+                        onPressed: () => context.push(AppRoutes.rankHelp),
+                        icon: const Icon(
+                          Icons.help_outline,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

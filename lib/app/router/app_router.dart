@@ -2,6 +2,7 @@ import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/ai/presentation/ai_creation_page.dart';
 import 'package:all_flutter0709/features/gift/presentation/gift_sender_page.dart';
+import 'package:all_flutter0709/features/gift/presentation/rank_help_page.dart';
 import 'package:all_flutter0709/features/gift/presentation/rank_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/login_page.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
@@ -29,6 +30,7 @@ import 'package:all_flutter0709/features/me/presentation/search_page.dart';
 import 'package:all_flutter0709/features/me/presentation/search_result_page.dart';
 import 'package:all_flutter0709/features/me/presentation/settings_page.dart';
 import 'package:all_flutter0709/features/me/presentation/vip_page.dart';
+import 'package:all_flutter0709/features/me/presentation/wallet_log_page.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_detail_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_page.dart';
@@ -195,6 +197,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.rank,
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: RankPage()),
+                routes: [
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'help',
+                    builder: (context, state) => const RankHelpPage(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -318,6 +327,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     path: 'charge',
                     builder: (context, state) =>
                         ChargePage(forVip: state.extra == true),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'coin-log',
+                    builder: (context, state) =>
+                        const WalletLogPage(kind: WalletLogKind.coin),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'charm-log',
+                    builder: (context, state) =>
+                        const WalletLogPage(kind: WalletLogKind.charm),
                   ),
                   GoRoute(
                     parentNavigatorKey: _rootNavigatorKey,

@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const topicSubmit = 'submit';
   static const topicUserSelect = 'user-select';
   static const rank = '/rank';
+  static const rankHelp = '/rank/help';
   static const aiCreate = '/ai/create';
   static const giftSenders = '/gift/senders';
   static const video = '/video';
@@ -27,6 +28,8 @@ abstract final class AppRoutes {
   static const meSearchResult = '/me/search-result';
   static const meVip = '/me/vip';
   static const meCharge = '/me/charge';
+  static const meCoinLog = '/me/coin-log';
+  static const meCharmLog = '/me/charm-log';
   static const meCharmWithdraw = '/me/charm-withdraw';
   static const meSettings = '/me/settings';
   static const mePassword = '/me/password';
