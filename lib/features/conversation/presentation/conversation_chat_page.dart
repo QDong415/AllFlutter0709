@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
@@ -34,6 +35,7 @@ import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_n
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
 /// 单聊页；未登录时拦截并跳转登录，不加载会话消息。
@@ -265,6 +267,11 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         );
       case VoiceMessage():
         unawaited(_playVoice(message));
+      case TopicMessage(:final tid):
+        if (tid.isEmpty) {
+          break;
+        }
+        unawaited(context.push('${AppRoutes.topic}/detail/$tid'));
       case TextMessage():
       case GiftMessage():
         break;

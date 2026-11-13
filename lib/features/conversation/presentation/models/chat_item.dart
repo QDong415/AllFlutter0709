@@ -160,3 +160,29 @@ final class ImageMessage extends MessageItem {
   final double imageWidth;
   final double imageHeight;
 }
+
+/// 动态分享卡片气泡。
+final class TopicMessage extends MessageItem {
+  const TopicMessage({
+    required super.id,
+    required super.msgId,
+    required super.clientMessageId,
+    required super.direction,
+    required super.avatarUrl,
+    required super.createTimeSeconds,
+    super.deliveryStatus,
+    required this.tid,
+    required this.content,
+    required this.pictureUrl,
+    required this.authorName,
+    required this.authorAvatarUrl,
+    required this.hasVideo,
+  });
+
+  final String tid;
+  final String content;
+  final String pictureUrl;
+  final String authorName;
+  final String authorAvatarUrl;
+  final bool hasVideo;
+}

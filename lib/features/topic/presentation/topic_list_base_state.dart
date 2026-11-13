@@ -4,13 +4,12 @@ import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
-import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_like_helper.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_share_to_chat_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
-import 'package:all_flutter0709/features/topic/presentation/widgets/topic_share_sheet.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
@@ -19,7 +18,6 @@ import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inview_notifier_list/inview_notifier_list.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
@@ -343,39 +341,12 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
   @override
   void onShareTap(TopicModel topic) {
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return TopicShareSheet(
-          onWeChatTap: () => _shareTopic(sheetContext, topic),
-        );
-      },
+    unawaited(
+      const TopicShareToChatHelper().share(
+        context: context,
+        topicModel: topic,
+      ),
     );
-  }
-
-  Future<void> _shareTopic(BuildContext sheetContext, TopicModel topic) async {
-    Navigator.of(sheetContext).pop();
-
-    final content = topic.content?.trim();
-    final shareUrl = '${AppEnv.shareTopicBaseUrl}${topic.tid}';
-    final shareText = [
-      if (content != null && content.isNotEmpty) content,
-      shareUrl,
-    ].join('\n');
-
-    try {
-      await SharePlus.instance.share(
-        ShareParams(
-          text: shareText,
-          subject: content?.isNotEmpty == true ? content : '分享一条动态',
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.show(context, '分享失败: $e');
-    }
   }
 
   @override

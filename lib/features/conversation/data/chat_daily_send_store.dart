@@ -6,7 +6,7 @@ final chatDailySendStoreProvider = Provider<ChatDailySendStore>((ref) {
   return ChatDailySendStore(ref.watch(sharedPreferencesProvider));
 });
 
-/// 非会员当日已成功发出的文本/语音条数。
+/// 非会员当日已成功发出的文本 / 语音 / 动态分享条数。
 ///
 /// 单独存在 SharedPreferences，删除本地聊天记录不会把额度清掉。
 /// 按北京时间自然日分 key，过 0 点换一天。

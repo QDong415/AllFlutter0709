@@ -88,6 +88,32 @@ ChatItem _mapMessage(
         pictureUrl: giftPictureUrl(message.giftPicture),
         count: message.giftCount,
       );
+    case ConversationMessageType.topic:
+      return TopicMessage(
+        id: message.itemId,
+        msgId: message.msgId,
+        clientMessageId: message.clientMessageId,
+        direction: direction,
+        avatarUrl: avatarUrl,
+        createTimeSeconds: message.createTimeSeconds,
+        deliveryStatus: deliveryStatus,
+        tid: message.topicTid,
+        content: message.topicContent,
+        pictureUrl:
+            ValueUtil.getQiniuUrlByFileName(
+              message.topicPicture,
+              thumbnail: true,
+            ) ??
+            '',
+        authorName: message.topicAuthorName,
+        authorAvatarUrl:
+            ValueUtil.getQiniuUrlByFileName(
+              message.topicAuthorAvatar,
+              thumbnail: true,
+            ) ??
+            '',
+        hasVideo: message.topicHasVideo,
+      );
     case ConversationMessageType.voice:
       return VoiceMessage(
         id: message.itemId,

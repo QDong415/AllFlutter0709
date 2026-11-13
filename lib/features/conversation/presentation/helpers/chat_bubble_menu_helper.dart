@@ -170,6 +170,8 @@ class ChatBubbleMenuHelper {
       VoiceMessage() => '[语音消息]',
       GiftMessage(:final title, :final count) =>
         count > 1 ? '[礼物]$title x$count' : '[礼物]$title',
+      TopicMessage(:final content) =>
+        content.isEmpty ? '[动态]' : '[动态]$content',
     };
   }
 }

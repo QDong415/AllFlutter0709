@@ -431,6 +431,42 @@ class ConversationController extends ChangeNotifier {
     );
   }
 
+  /// 发送动态分享聊天消息。
+  Future<String?> sendTopicMessage({
+    required String conversationId,
+    required String tid,
+    required String topicContent,
+    required String picture,
+    required String authorUserId,
+    required String authorName,
+    required String authorAvatar,
+    required bool hasVideo,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      throw Exception('请先登录');
+    }
+    return _sendCoordinator.sendTopic(
+      account: account,
+      conversationId: conversationId,
+      tid: tid,
+      topicContent: topicContent,
+      picture: picture,
+      authorUserId: authorUserId,
+      authorName: authorName,
+      authorAvatar: authorAvatar,
+      hasVideo: hasVideo,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+      peerGender: peerGender,
+    );
+  }
+
   /// 发送语音：先落本地 pending，再上传七牛并 `/api/chat/send`。
   Future<String?> sendVoiceMessage({
     required String conversationId,

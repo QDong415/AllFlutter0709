@@ -228,6 +228,51 @@ class ConversationRepository {
     );
   }
 
+  /// 创建动态分享聊天消息。
+  Future<ConversationMessage> createPendingTopicMessage({
+    required AccountModel account,
+    required String conversationId,
+    required String tid,
+    required String topicContent,
+    required String picture,
+    required String authorUserId,
+    required String authorName,
+    required String authorAvatar,
+    required bool hasVideo,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) {
+    return _messageDeliveryService.createPendingTopicMessage(
+      account: account,
+      conversationId: conversationId,
+      tid: tid,
+      topicContent: topicContent,
+      picture: picture,
+      authorUserId: authorUserId,
+      authorName: authorName,
+      authorAvatar: authorAvatar,
+      hasVideo: hasVideo,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+  }
+
+  /// 把动态分享消息发到 `/api/chat/send`。
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingTopicMessage({
+    required AccountModel account,
+    required ConversationMessage message,
+    int peerGender = 0,
+  }) {
+    return _messageDeliveryService.sendPendingTextMessage(
+      account: account,
+      message: message,
+      peerGender: peerGender,
+    );
+  }
+
   /// 上传语音并调用 `/api/chat/send`。
   Future<({ConversationMessage message, String? vipTipMessage})>
   sendPendingVoiceMessage({

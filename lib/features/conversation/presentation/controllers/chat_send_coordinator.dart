@@ -157,6 +157,54 @@ class ChatSendCoordinator {
     }
   }
 
+  /// 写入并发送动态分享消息。
+  Future<String?> sendTopic({
+    required AccountModel account,
+    required String conversationId,
+    required String tid,
+    required String topicContent,
+    required String picture,
+    required String authorUserId,
+    required String authorName,
+    required String authorAvatar,
+    required bool hasVideo,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+  }) async {
+    final message = await _repository.createPendingTopicMessage(
+      account: account,
+      conversationId: conversationId,
+      tid: tid,
+      topicContent: topicContent,
+      picture: picture,
+      authorUserId: authorUserId,
+      authorName: authorName,
+      authorAvatar: authorAvatar,
+      hasVideo: hasVideo,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+    _messageStore.append(conversationId, message);
+    await _refreshConversations();
+    try {
+      final outcome = await _repository.sendPendingTopicMessage(
+        account: account,
+        message: message,
+        peerGender: peerGender,
+      );
+      _messageStore.replace(conversationId, outcome.message);
+      return outcome.vipTipMessage;
+    } catch (_) {
+      _markFailed(conversationId, message.clientMessageId);
+      rethrow;
+    } finally {
+      await _refreshConversations();
+    }
+  }
+
   /// 创建、上传并发送语音消息。
   Future<String?> sendVoice({
     required AccountModel account,

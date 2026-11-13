@@ -237,6 +237,54 @@ class ChatMessageDeliveryService {
     return _savePendingMessage(account.userId, message);
   }
 
+  /// 创建动态分享消息；无附件上传，快照写在 extend。
+  Future<ConversationMessage> createPendingTopicMessage({
+    required AccountModel account,
+    required String conversationId,
+    required String tid,
+    required String topicContent,
+    required String picture,
+    required String authorUserId,
+    required String authorName,
+    required String authorAvatar,
+    required bool hasVideo,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) async {
+    final snippet = topicContent.trim();
+    final preview = snippet.isEmpty
+        ? '[动态]'
+        : '[动态]${snippet.length > 40 ? '${snippet.substring(0, 40)}…' : snippet}';
+    final message = ConversationMessage(
+      msgId: 0,
+      clientMessageId: _nextClientMessageId(),
+      conversationId: conversationId,
+      otherUserId: conversationId,
+      otherName: peerName,
+      otherPhoto: peerAvatar,
+      content: preview,
+      createTimeSeconds: _nowSeconds(),
+      status: ConversationMessageStatus.sending,
+      type: _chatTypeSingle,
+      messageType: ConversationMessageType.topic,
+      filename: '',
+      extend: ConversationMessage.topicExtendJson(
+        tid: tid,
+        content: snippet.length > 80 ? '${snippet.substring(0, 80)}…' : snippet,
+        picture: picture,
+        userId: authorUserId,
+        name: authorName,
+        avatar: authorAvatar,
+        hasVideo: hasVideo,
+      ),
+      isSender: true,
+      isRead: true,
+      otherUserType: peerUserType,
+    );
+    return _savePendingMessage(account.userId, message);
+  }
+
   /// 上传并发送语音，过程中回传上传进度。
   Future<({ConversationMessage message, String? vipTipMessage})>
   sendPendingVoiceMessage({
@@ -377,7 +425,7 @@ class ChatMessageDeliveryService {
     return evaluation.tipMessage;
   }
 
-  /// 文本和语音成功发给服务器后 +1。图片、礼物、AI 不占这条额度。
+  /// 文本、语音、动态分享成功发给服务器后 +1。图片、礼物、AI 不占这条额度。
   Future<void> _recordCountableSend(
     AccountModel account,
     ConversationMessage message,
@@ -388,7 +436,8 @@ class ChatMessageDeliveryService {
     }
     final countable =
         message.messageType == ConversationMessageType.text ||
-        message.messageType == ConversationMessageType.voice;
+        message.messageType == ConversationMessageType.voice ||
+        message.messageType == ConversationMessageType.topic;
     if (!countable) {
       return;
     }

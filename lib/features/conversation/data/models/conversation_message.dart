@@ -13,6 +13,9 @@ enum ConversationMessageType {
 
   /// 居中灰字 tips，例如 AI 生图扣费提醒。
   tips(5),
+
+  /// 分享的动态卡片。展示快照在 extend JSON，点开再拉详情。
+  topic(6),
   callAudio(10),
   callVideo(11),
 
@@ -228,6 +231,91 @@ class ConversationMessage {
     return jsonEncode(map);
   }
 
+  /// 生成动态分享 extend；字段仅够画气泡，详情靠 [topicTid] 再请求。
+  static String topicExtendJson({
+    required String tid,
+    required String content,
+    required String picture,
+    required String userId,
+    required String name,
+    required String avatar,
+    required bool hasVideo,
+  }) {
+    return jsonEncode(<String, dynamic>{
+      'tid': tid,
+      'content': content,
+      'picture': picture,
+      'userid': userId,
+      'name': name,
+      'avatar': avatar,
+      'has_video': hasVideo ? 1 : 0,
+    });
+  }
+
+  /// 动态 id。
+  String get topicTid {
+    if (messageType != ConversationMessageType.topic) {
+      return '';
+    }
+    return _extendJsonMap()?['tid']?.toString().trim() ?? '';
+  }
+
+  /// 动态正文快照。
+  String get topicContent {
+    if (messageType != ConversationMessageType.topic) {
+      return '';
+    }
+    return _extendJsonMap()?['content']?.toString().trim() ?? '';
+  }
+
+  /// 动态封面（filename 或完整 URL）；视频动态一般为 pictures 首图。
+  String get topicPicture {
+    if (messageType != ConversationMessageType.topic) {
+      return '';
+    }
+    return _extendJsonMap()?['picture']?.toString().trim() ?? '';
+  }
+
+  /// 动态作者 id。
+  String get topicAuthorUserId {
+    if (messageType != ConversationMessageType.topic) {
+      return '';
+    }
+    return _extendJsonMap()?['userid']?.toString().trim() ?? '';
+  }
+
+  /// 动态作者昵称。
+  String get topicAuthorName {
+    if (messageType != ConversationMessageType.topic) {
+      return '';
+    }
+    return _extendJsonMap()?['name']?.toString().trim() ?? '';
+  }
+
+  /// 动态作者头像（filename 或完整 URL）。
+  String get topicAuthorAvatar {
+    if (messageType != ConversationMessageType.topic) {
+      return '';
+    }
+    return _extendJsonMap()?['avatar']?.toString().trim() ?? '';
+  }
+
+  /// 是否视频动态。
+  bool get topicHasVideo {
+    if (messageType != ConversationMessageType.topic) {
+      return false;
+    }
+    final raw = _extendJsonMap()?['has_video'];
+    if (raw is bool) {
+      return raw;
+    }
+    if (raw is num) {
+      return raw != 0;
+    }
+    final text = raw?.toString().trim() ?? '';
+    return text == '1' || text.toLowerCase() == 'true';
+  }
+
   /// 去掉接收语音里发送方带来的 hadplay，接收方应视为未读。
   static String stripIncomingVoiceHadPlay(String extend) {
     if (extend.trim().isEmpty) {
@@ -303,6 +391,8 @@ class ConversationMessage {
         return '[语音消息]';
       case ConversationMessageType.gift:
         return content.isEmpty ? '[礼物]' : content;
+      case ConversationMessageType.topic:
+        return content.isEmpty ? '[动态]' : content;
       case ConversationMessageType.tips:
         return content;
       case ConversationMessageType.callAudio:
