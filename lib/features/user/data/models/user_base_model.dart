@@ -1,6 +1,6 @@
 import 'package:all_flutter0709/core/account/user_type.dart';
 
-/// 好友选择、匹配列表等场景用的精简用户资料。
+/// 好友选择、匹配、附近、粉丝等列表用的用户资料。
 class UserBaseModel {
   const UserBaseModel({
     required this.userId,

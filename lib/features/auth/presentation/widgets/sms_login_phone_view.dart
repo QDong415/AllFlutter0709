@@ -204,7 +204,7 @@ class _BrandMark extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          '爱说说',
+          '梦缘AI',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             color: AppColors.titleText,
             fontWeight: FontWeight.w700,

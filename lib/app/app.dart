@@ -42,7 +42,7 @@ class _SocialAppState extends ConsumerState<SocialApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
-      title: 'Social App',
+      title: '梦缘AI',
       debugShowCheckedModeBanner: false,
       builder: AppTypography.wrapWithIosTextScale,
       theme: AppTypography.decorateTheme(

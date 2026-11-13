@@ -18,7 +18,7 @@ class AboutPage extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             children: [
               const Text(
-                '爱说说',
+                '梦缘AI',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
