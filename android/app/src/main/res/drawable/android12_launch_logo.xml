@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ SplashScreen 图标规范：画布约 288dp，可见圆直径 192dp。
+  launch_logo 本身是满幅 128dp 图，直接用作 AnimatedIcon 会被放大后再裁圆，出现底部截断。
+  这里按约 28% inset，使可见 logo ≈ 128dp，与 launch_background 一致且不被裁切。
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/launch_logo"
+    android:insetLeft="28%"
+    android:insetTop="28%"
+    android:insetRight="28%"
+    android:insetBottom="28%" />

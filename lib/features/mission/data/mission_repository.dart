@@ -1,6 +1,7 @@
 import 'package:all_flutter0709/core/network/api_response.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/features/mission/data/mission_sign_open_model.dart';
+import 'package:all_flutter0709/features/mission/data/mission_sign_result.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final missionRepositoryProvider = Provider<MissionRepository>((ref) {
@@ -33,16 +34,25 @@ class MissionRepository {
     return MissionSignOpenModel.fromJson(result.data ?? <String, dynamic>{});
   }
 
-  /// 提交签到（`POST /api/mission/sign`）。
-  Future<void> submitSign() async {
+  /// 提交签到（`POST /api/mission/sign`），返回本次奖励与最新余额。
+  Future<MissionSignResult> submitSign() async {
     final response = await HttpClient.instance.post('/api/mission/sign');
     final json = response.data;
     if (json is! Map<String, dynamic>) {
       throw Exception('服务器返回为空');
     }
-    final result = ApiResponse<Object?>.fromJson(json);
+    final result = ApiResponse<Map<String, dynamic>>.fromJson(json, (dataJson) {
+      if (dataJson is Map<String, dynamic>) {
+        return dataJson;
+      }
+      if (dataJson is Map) {
+        return Map<String, dynamic>.from(dataJson);
+      }
+      return <String, dynamic>{};
+    });
     if (!result.success) {
       throw Exception(result.message.isEmpty ? '签到失败' : result.message);
     }
+    return MissionSignResult.fromJson(result.data ?? <String, dynamic>{});
   }
 }

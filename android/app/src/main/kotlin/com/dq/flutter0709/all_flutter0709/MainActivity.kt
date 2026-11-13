@@ -25,6 +25,12 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Android 12+：去掉系统 Splash 淡出动画，直接切到与之一致的 windowBackground，避免闪一下。
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            splashScreen.setOnExitAnimationListener { splashScreenView ->
+                splashScreenView.remove()
+            }
+        }
         super.onCreate(savedInstanceState)
         applyEdgeToEdge()
         window.decorView.post {

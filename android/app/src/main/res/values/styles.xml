@@ -5,8 +5,9 @@
         <!-- Show a splash screen on the activity. Automatically removed when
              the Flutter engine draws its first frame -->
         <item name="android:windowBackground">@drawable/launch_background</item>
+        <!-- Android 12+ 系统启动图：白底 + 经 inset 的居中 logo，与 windowBackground 对齐 -->
         <item name="android:windowSplashScreenBackground">@android:color/white</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_logo</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/android12_launch_logo</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">#FFFFFFFF</item>
     </style>

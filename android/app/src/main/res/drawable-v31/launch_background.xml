@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+：系统 Splash 图标强制屏幕居中，无法上移。
+  这里改为居中 logo，与 windowSplashScreenAnimatedIcon 对齐，避免两帧跳变。
+  API 30 及以下仍用 drawable/drawable-v21 的上移布局（与 iOS 一致）。
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/launch_logo" />
+    </item>
+</layer-list>

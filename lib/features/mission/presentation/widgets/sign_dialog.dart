@@ -4,7 +4,7 @@ import 'package:all_flutter0709/features/mission/presentation/widgets/sign_day_c
 import 'package:flutter/material.dart';
 
 /// 连续签到弹窗，布局与尺寸对齐 Buddy `SignDialog` + `dialog_sign.xml`。
-class SignDialog extends StatelessWidget {
+class SignDialog extends StatefulWidget {
   const SignDialog({
     super.key,
     required this.openModel,
@@ -13,14 +13,35 @@ class SignDialog extends StatelessWidget {
   });
 
   final MissionSignOpenModel openModel;
-  final VoidCallback onSign;
+  final Future<void> Function() onSign;
   final VoidCallback onClose;
 
+  @override
+  State<SignDialog> createState() => _SignDialogState();
+}
+
+class _SignDialogState extends State<SignDialog> {
   static const _signRed = Color(0xFFFE6766);
 
   /// `sign_bg.png` 为 1080×1588。「每日签到」画在约 y=554–612，奖励格从标题下方开始。
   static const _signBgAspect = 1588 / 1080;
   static const _rewardBlockTopFactor = 0.42;
+
+  bool _submitting = false;
+
+  Future<void> _handleSign() async {
+    if (_submitting) {
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await widget.onSign();
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,12 +84,12 @@ class SignDialog extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _SignDayRow(
-                              openModel: openModel,
+                              openModel: widget.openModel,
                               days: const [1, 2, 3, 4],
                             ),
                             const SizedBox(height: 8),
                             _SignDayRow(
-                              openModel: openModel,
+                              openModel: widget.openModel,
                               days: const [5, 6, 7],
                               lastWide: true,
                             ),
@@ -82,18 +103,27 @@ class SignDialog extends StatelessWidget {
                           color: _signRed,
                           borderRadius: BorderRadius.circular(20),
                           child: InkWell(
-                            onTap: onSign,
+                            onTap: _submitting ? null : _handleSign,
                             borderRadius: BorderRadius.circular(20),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 6),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
                               child: Center(
-                                child: Text(
-                                  '签到',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                                child: _submitting
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        '签到',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                               ),
                             ),
                           ),
@@ -106,13 +136,16 @@ class SignDialog extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             GestureDetector(
-              onTap: onClose,
+              onTap: _submitting ? null : widget.onClose,
               behavior: HitTestBehavior.opaque,
-              child: Image.asset(
-                'assets/icons/sign/dialog_center_close_icon.png',
-                width: 52,
-                height: 52,
-                fit: BoxFit.contain,
+              child: Opacity(
+                opacity: _submitting ? 0.4 : 1,
+                child: Image.asset(
+                  'assets/icons/sign/dialog_center_close_icon.png',
+                  width: 52,
+                  height: 52,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             SizedBox(height: MediaQuery.paddingOf(context).bottom),
