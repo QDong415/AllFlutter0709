@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
@@ -11,12 +12,16 @@ import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_media_pick_helper.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_submit_voice_recorder.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_mention_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_publish_controller.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit_audio_preview.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit_local_preview_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit_media_grid.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit_toolbar.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
+import 'package:all_flutter0709/shared/widgets/recording_amplitude_bars.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:chat_bottom_container/chat_bottom_container.dart';
 import 'package:extended_text_field/extended_text_field.dart';
@@ -39,6 +44,9 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
   final FocusNode _focusNode = FocusNode();
   final TopicMediaPickHelper _mediaPickHelper = const TopicMediaPickHelper();
   final List<TopicSubmitMediaModel> _mediaList = <TopicSubmitMediaModel>[];
+  late final TopicSubmitVoiceRecorder _voiceRecorder;
+  File? _audioFile;
+  int _audioSeconds = 0;
 
   late final AnimationController _shakeController;
   late final ChatPanelHelper _panelHelper;
@@ -71,6 +79,27 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
         unawaited(_openUserSelect(byInput: true));
       });
     });
+    _voiceRecorder = TopicSubmitVoiceRecorder(
+      onTick: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+      onAmplitude: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+      onAutoStop: (file, seconds) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _audioFile = file;
+          _audioSeconds = seconds;
+        });
+      },
+    );
     _textController.addListener(_onTextOrSelectionChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future<void>.delayed(const Duration(milliseconds: 150), () {
@@ -87,6 +116,7 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
       ..dispose();
     _focusNode.dispose();
     _shakeController.dispose();
+    unawaited(_voiceRecorder.dispose());
     super.dispose();
   }
 
@@ -208,12 +238,49 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
     }
   }
 
+  Future<void> _startRecord() async {
+    final message = await _voiceRecorder.start();
+    if (!mounted) {
+      return;
+    }
+    if (message != null) {
+      AppToast.show(context, message);
+    }
+    setState(() {});
+  }
+
+  Future<void> _stopRecord() async {
+    final result = await _voiceRecorder.stop();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      if (result.file != null) {
+        _audioFile = result.file;
+        _audioSeconds = result.seconds;
+      }
+    });
+    if (result.message != null) {
+      AppToast.show(context, result.message!);
+    }
+  }
+
   void _onSubmit() {
     if (!context.ensureLoggedIn()) {
       return;
     }
     final content = _textController.text.trim();
-    if (content.isEmpty && _mediaList.isEmpty) {
+    final hasVideo = _mediaList.any((mediaModel) => mediaModel.isVideo);
+    if (hasVideo && _audioFile != null) {
+      AppToast.show(context, '语音和视频不能同时发布');
+      return;
+    }
+    if (_audioFile != null && content.isEmpty) {
+      _shakeController.forward(from: 0);
+      AppToast.show(context, '请填写动态内容');
+      return;
+    }
+    if (content.isEmpty && _mediaList.isEmpty && _audioFile == null) {
       _shakeController.forward(from: 0);
       return;
     }
@@ -223,6 +290,8 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
           content: content,
           atUserIds: _textController.findAtUserIds(),
           mediaList: List<TopicSubmitMediaModel>.from(_mediaList),
+          audioFile: _audioFile,
+          audioSeconds: _audioSeconds,
         );
     _panelHelper.hidePanel();
     context.pop();
@@ -266,31 +335,74 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                           child: Listener(
                             onPointerUp: (_) =>
                                 _panelHelper.handleInputViewOnPointerUp(),
-                            child: ExtendedTextField(
-                              controller: _textController,
-                              focusNode: _focusNode,
-                              readOnly: _panelHelper.readOnly,
-                              showCursor: true,
-                              specialTextSpanBuilder: _emojiSpanBuilder,
-                              scrollPhysics:
-                                  const NeverScrollableScrollPhysics(),
-                              maxLines: null,
-                              minLines: 6,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Color(0xFF5B5B5B),
-                              ),
-                              decoration: const InputDecoration(
-                                hintText: '输入动态内容',
-                                hintStyle: TextStyle(color: Color(0xFFB0B0B0)),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.fromLTRB(
-                                  8,
-                                  14,
-                                  8,
-                                  14,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                ExtendedTextField(
+                                  controller: _textController,
+                                  focusNode: _focusNode,
+                                  readOnly: _panelHelper.readOnly ||
+                                      _voiceRecorder.isRecording,
+                                  showCursor: !_voiceRecorder.isRecording,
+                                  specialTextSpanBuilder: _emojiSpanBuilder,
+                                  scrollPhysics:
+                                      const NeverScrollableScrollPhysics(),
+                                  maxLines: null,
+                                  minLines: 6,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: _voiceRecorder.isRecording
+                                        ? const Color(0x335B5B5B)
+                                        : const Color(0xFF5B5B5B),
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: _voiceRecorder.isRecording
+                                        ? ''
+                                        : '输入动态内容',
+                                    hintStyle: const TextStyle(
+                                      color: Color(0xFFB0B0B0),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.fromLTRB(
+                                      8,
+                                      14,
+                                      8,
+                                      14,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                if (_voiceRecorder.isRecording)
+                                  IgnorePointer(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.mic_rounded,
+                                          size: 28,
+                                          color: AppColors.link.withValues(
+                                            alpha: 0.85,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        RecordingAmplitudeBars(
+                                          amplitude: _voiceRecorder.amplitude,
+                                          barColor: AppColors.link,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '${_voiceRecorder.seconds}"',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF888888),
+                                            fontFeatures: [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
@@ -298,6 +410,28 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                           onAtTap: () =>
                               unawaited(_openUserSelect(byInput: false)),
                           onEmojiTap: _toggleEmoji,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                          child: _audioFile == null
+                              ? _RecordHoldButton(
+                                  recording: _voiceRecorder.isRecording,
+                                  seconds: _voiceRecorder.seconds,
+                                  onPointerDown: () => unawaited(_startRecord()),
+                                  onPointerUp: () => unawaited(_stopRecord()),
+                                  onPointerCancel: () =>
+                                      unawaited(_voiceRecorder.cancel()),
+                                )
+                              : TopicSubmitAudioPreview(
+                                  file: _audioFile!,
+                                  durationSeconds: _audioSeconds,
+                                  onDelete: () {
+                                    setState(() {
+                                      _audioFile = null;
+                                      _audioSeconds = 0;
+                                    });
+                                  },
+                                ),
                         ),
                       ],
                     ),
@@ -369,6 +503,45 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 按住录音按钮。
+class _RecordHoldButton extends StatelessWidget {
+  const _RecordHoldButton({
+    required this.recording,
+    required this.seconds,
+    required this.onPointerDown,
+    required this.onPointerUp,
+    required this.onPointerCancel,
+  });
+
+  final bool recording;
+  final int seconds;
+  final VoidCallback onPointerDown;
+  final VoidCallback onPointerUp;
+  final VoidCallback onPointerCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (_) => onPointerDown(),
+      onPointerUp: (_) => onPointerUp(),
+      onPointerCancel: (_) => onPointerCancel(),
+      child: Container(
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: recording ? const Color(0xFFE4E6EA) : const Color(0xFFF4F5F7),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          recording ? '松开结束 $seconds"' : '按住录音',
+          style: const TextStyle(fontSize: 15, color: Color(0xFF333333)),
+        ),
       ),
     );
   }

@@ -14,6 +14,7 @@ import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_like_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_audio_bar.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_more_button.dart';
@@ -346,7 +347,7 @@ class _TopicDetailHeader extends StatelessWidget {
       vip: topic.vip,
     ).dy;
 
-    return Container(
+    final card = Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
@@ -469,6 +470,10 @@ class _TopicDetailHeader extends StatelessWidget {
                   openUserDetailByName(context, name: mention),
             ),
           ],
+          if (topic.hasAudio) ...[
+            const SizedBox(height: 12),
+            TopicFeedAudioBar(topicModel: topic),
+          ],
           if (videoUrl.isNotEmpty) ...[
             const SizedBox(height: 12),
             TopicFeedVideoPlayer(
@@ -520,5 +525,9 @@ class _TopicDetailHeader extends StatelessWidget {
         ],
       ),
     );
+    if (!topic.hasAudio) {
+      return card;
+    }
+    return TopicAudioVisibility(tid: topic.tid, child: card);
   }
 }

@@ -103,6 +103,12 @@ class S3UploadService {
         return 'image/webp';
       case '.gif':
         return 'image/gif';
+      case '.m4a':
+        return 'audio/mp4';
+      case '.aac':
+        return 'audio/aac';
+      case '.mp3':
+        return 'audio/mpeg';
       default:
         return 'application/octet-stream';
     }

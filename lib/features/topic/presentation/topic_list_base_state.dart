@@ -9,6 +9,7 @@ import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_like_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_share_to_chat_helper.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_audio_list_scroll_notify.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_item_widget.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
@@ -288,24 +289,28 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
         const EdgeInsets.only(bottom: AppDimens.glassTabBarContentInset);
     final header = buildListHeader();
     if (header == null) {
-      return InViewNotifierList(
-        physics: physics,
-        padding: effectivePadding.resolve(TextDirection.ltr),
-        initialInViewIds: _initialVideoInViewIds(),
-        isInViewPortCondition: _isCenterInView,
-        itemCount: _topics.length,
-        builder: (context, index) => buildTopicListItem(index),
+      return TopicAudioListScrollNotify(
+        child: InViewNotifierList(
+          physics: physics,
+          padding: effectivePadding.resolve(TextDirection.ltr),
+          initialInViewIds: _initialVideoInViewIds(),
+          isInViewPortCondition: _isCenterInView,
+          itemCount: _topics.length,
+          builder: (context, index) => buildTopicListItem(index),
+        ),
       );
     }
 
-    return InViewNotifierCustomScrollView(
-      physics: physics,
-      initialInViewIds: _initialVideoInViewIds(),
-      isInViewPortCondition: _isCenterInView,
-      slivers: [
-        SliverToBoxAdapter(child: header),
-        buildTopicListSliver(padding: effectivePadding),
-      ],
+    return TopicAudioListScrollNotify(
+      child: InViewNotifierCustomScrollView(
+        physics: physics,
+        initialInViewIds: _initialVideoInViewIds(),
+        isInViewPortCondition: _isCenterInView,
+        slivers: [
+          SliverToBoxAdapter(child: header),
+          buildTopicListSliver(padding: effectivePadding),
+        ],
+      ),
     );
   }
 

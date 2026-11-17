@@ -3,6 +3,7 @@ import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_comment_preview_list.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_audio_bar.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_feed_video_player.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_more_button.dart';
@@ -83,7 +84,7 @@ class TopicItemWidget extends StatelessWidget {
       gap: 12,
     );
 
-    return Material(
+    final card = Material(
       color: Colors.white,
       child: InkWell(
         onTap: () => listener?.onItemTap(topicModel),
@@ -175,6 +176,13 @@ class TopicItemWidget extends StatelessWidget {
                     onLinkTap: (url) => listener?.onLinkTap(topicModel, url),
                   ),
                 ),
+              ),
+            ],
+            if (topicModel.hasAudio) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TopicFeedAudioBar(topicModel: topicModel),
               ),
             ],
             if (hasVideo) ...[
@@ -274,6 +282,10 @@ class TopicItemWidget extends StatelessWidget {
         ),
       ),
     );
+    if (!topicModel.hasAudio) {
+      return card;
+    }
+    return TopicAudioVisibility(tid: topicModel.tid, child: card);
   }
 }
 

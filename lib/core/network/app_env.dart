@@ -7,7 +7,7 @@ abstract final class AppEnv {
   static String get apiBaseUrl {
     switch (current) {
       case AppEnvironment.test:
-        return 'http://121.41.220.174';
+        return 'http://115.29.228.145';
       case AppEnvironment.production:
         return 'http://121.41.220.174';
     }
@@ -32,7 +32,7 @@ abstract final class AppEnv {
   static String get siteBaseUrl {
     switch (current) {
       case AppEnvironment.test:
-        return 'http://121.41.220.174';
+        return 'http://115.29.228.145';
       case AppEnvironment.production:
         return 'http://121.41.220.174';
     }

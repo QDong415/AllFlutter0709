@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:all_flutter0709/core/audio/app_audio_playback_coordinator.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -10,6 +11,7 @@ class ChatVoicePlayHelper {
     : _audioPlayer = audioPlayer ?? AudioPlayer();
 
   final AudioPlayer _audioPlayer;
+  final Object _playbackOwner = Object();
   StreamSubscription<ProcessingState>? _stateSubscription;
   String? _playingMessageId;
   VoidCallback? _onCompleted;
@@ -55,20 +57,26 @@ class ChatVoicePlayHelper {
       }
 
       await _stateSubscription?.cancel();
-      _stateSubscription = _audioPlayer.processingStateStream
-          .skip(1)
-          .listen((state) {
-            if (state != ProcessingState.completed) {
-              return;
-            }
-            final completedId = _playingMessageId;
-            unawaited(stop());
-            if (completedId != null) {
-              _onCompleted?.call();
-            }
-          });
+      _stateSubscription = _audioPlayer.processingStateStream.skip(1).listen((
+        state,
+      ) {
+        if (state != ProcessingState.completed) {
+          return;
+        }
+        final completedId = _playingMessageId;
+        unawaited(stop());
+        if (completedId != null) {
+          _onCompleted?.call();
+        }
+      });
 
-      unawaited(_audioPlayer.play());
+      await AppAudioPlaybackCoordinator.instance.start(
+        owner: _playbackOwner,
+        stop: stop,
+        start: () {
+          unawaited(_audioPlayer.play());
+        },
+      );
     } catch (_) {
       await stop();
       rethrow;
@@ -77,6 +85,7 @@ class ChatVoicePlayHelper {
 
   /// 停止当前播放。
   Future<void> stop({bool notify = true}) async {
+    AppAudioPlaybackCoordinator.instance.release(_playbackOwner);
     _playingMessageId = null;
     await _stateSubscription?.cancel();
     _stateSubscription = null;

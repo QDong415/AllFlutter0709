@@ -61,6 +61,8 @@ class TopicPublishController extends ChangeNotifier {
   bool _disposed = false;
   Map<String, dynamic>? _lastParamsMap;
   List<TopicSubmitMediaModel>? _lastMediaList;
+  File? _audioFile;
+  int _audioSeconds = 0;
 
   TopicPublishPhase get phase => _phase;
 
@@ -91,7 +93,11 @@ class TopicPublishController extends ChangeNotifier {
     required String content,
     required String atUserIds,
     required List<TopicSubmitMediaModel> mediaList,
+    File? audioFile,
+    int audioSeconds = 0,
   }) async {
+    _audioFile = audioFile;
+    _audioSeconds = audioSeconds;
     late final List<TopicSubmitMediaModel> persistedList;
     try {
       persistedList = _persistMediaSync(mediaList);
@@ -160,7 +166,7 @@ class TopicPublishController extends ChangeNotifier {
     _cancelUploads();
     _phase = TopicPublishPhase.uploading;
     _progress = 0;
-    _statusText = mediaList.isEmpty ? '正在发布' : '正在上传';
+    _statusText = mediaList.isEmpty && _audioFile == null ? '正在发布' : '正在上传';
     _coverFile = mediaList.isEmpty ? null : mediaList.first.file;
     _coverIsVideo = mediaList.isNotEmpty && mediaList.first.isVideo;
     _coverAsset = mediaList.isEmpty ? null : mediaList.first.asset;
@@ -179,6 +185,15 @@ class TopicPublishController extends ChangeNotifier {
       if (mediaList.isNotEmpty && !_hasUploadedMedia(paramsMap)) {
         throw Exception('媒体上传未完成，已取消发布');
       }
+      if (_audioFile != null) {
+        await _uploadAudio(paramsMap);
+        if (_cancelled) {
+          return;
+        }
+        if (_isBlank(paramsMap['audio'])) {
+          throw Exception('语音上传未完成，已取消发布');
+        }
+      }
 
       _uploadProgress.stop();
       _statusText = '正在发布';
@@ -195,6 +210,8 @@ class TopicPublishController extends ChangeNotifier {
 
       _lastParamsMap = null;
       _lastMediaList = null;
+      _audioFile = null;
+      _audioSeconds = 0;
       _progress = 1;
       _statusText = '上传成功';
       _shouldRefreshList = true;
@@ -343,6 +360,31 @@ class TopicPublishController extends ChangeNotifier {
       return 720;
     }
     return longest.clamp(360, 1280);
+  }
+
+  Future<void> _uploadAudio(Map<String, dynamic> paramsMap) async {
+    final file = _audioFile;
+    if (file == null) {
+      return;
+    }
+    debugPrint('[TopicPublish] 开始上传语音 ${file.path}');
+    String? token;
+    if (AppConfig.instance.cloudStorage != CloudStorage.s3) {
+      token = await _cloudStorageService.fetchQiniuUploadToken();
+      if (_cancelled) {
+        return;
+      }
+    }
+    final result = await _uploadInSlot(
+      file: file,
+      token: token,
+      keyIndex: 90,
+      slotIndex: 0,
+      slotTotal: 1,
+    );
+    paramsMap['audio'] = result.key;
+    paramsMap['duration'] = '$_audioSeconds';
+    debugPrint('[TopicPublish] 语音上传完成 key=${result.key}');
   }
 
   Future<void> _uploadImages(

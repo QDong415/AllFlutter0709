@@ -69,6 +69,7 @@ dependencies:
   image_cropper: ^12.2.1
   flutter_image_compress: ^2.4.0
   inview_notifier_list: ^4.1.0
+  visibility_detector: ^0.4.0+2
   liquid_glass_widgets: ^0.29.2
   just_audio: ^0.10.6
   geolocator: ^13.0.4

@@ -175,6 +175,8 @@ class TopicModel {
     this.content,
     this.avatar,
     this.videoUrl,
+    this.audioFileName = '',
+    this.audioDurationSeconds = 0,
     this.userType = UserType.human,
     this.sort = 0,
     this.gender = 0,
@@ -194,6 +196,12 @@ class TopicModel {
   final String? content;
   final String? avatar;
   final String? videoUrl;
+
+  /// 语音对象文件名，不含域名。
+  final String audioFileName;
+
+  /// 语音时长，秒。
+  final int audioDurationSeconds;
 
   /// 发布者账号类型：0 真人 / 1 AI。
   final int userType;
@@ -216,6 +224,13 @@ class TopicModel {
     return url.isNotEmpty;
   }
 
+  /// 是否带语音条。播放地址走视频 CDN，避开图片处理域名。
+  bool get hasAudio => audioFileName.trim().isNotEmpty;
+
+  /// 语音播放地址。
+  String get audioUrl =>
+      ValueUtil.getVideoUrlByFileName(audioFileName.trim()) ?? '';
+
   factory TopicModel.fromJson(Map<String, dynamic> json) {
     return TopicModel(
       tid: json['tid']?.toString() ?? '',
@@ -233,6 +248,9 @@ class TopicModel {
       videoUrl: ValueUtil.getVideoUrlByFileName(
         _TopicJsonParser.parseNullableString(json['videourl']),
       ),
+      audioFileName:
+          _TopicJsonParser.parseNullableString(json['audio']) ?? '',
+      audioDurationSeconds: _TopicJsonParser.parseInt(json['duration']),
       userType: UserType.parse(json['user_type']),
       sort: _TopicJsonParser.parseInt(json['sort']),
       gender: _TopicJsonParser.parseInt(json['gender']),
@@ -254,6 +272,8 @@ class TopicModel {
     String? content,
     String? avatar,
     String? videoUrl,
+    String? audioFileName,
+    int? audioDurationSeconds,
     int? userType,
     int? sort,
     int? gender,
@@ -273,6 +293,8 @@ class TopicModel {
       content: content ?? this.content,
       avatar: avatar ?? this.avatar,
       videoUrl: videoUrl ?? this.videoUrl,
+      audioFileName: audioFileName ?? this.audioFileName,
+      audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
       userType: userType ?? this.userType,
       sort: sort ?? this.sort,
       gender: gender ?? this.gender,
