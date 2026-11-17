@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
-import 'package:all_flutter0709/features/topic/presentation/widgets/topic_picture_preview_page.dart';
+import 'package:all_flutter0709/features/topic/presentation/helpers/topic_gallery_preview_mapper.dart';
+import 'package:all_flutter0709/shared/media/open_image_gallery_preview.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -191,33 +192,11 @@ void _openPreview(
   // 打开大图前清掉输入焦点，避免关闭预览时系统把焦点还给评论框并弹出键盘。
   FocusManager.instance.primaryFocus?.unfocus();
 
-  Navigator.of(context, rootNavigator: true)
-      .push(
-    PageRouteBuilder<void>(
-      opaque: false,
-      transitionDuration: const Duration(milliseconds: 220),
-      reverseTransitionDuration: const Duration(milliseconds: 180),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return TopicPicturePreviewPage(
-          pictures: pictures,
-          initialIndex: initialIndex,
-        );
-      },
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final fade = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        final scale = Tween<double>(begin: 0.96, end: 1.0).animate(fade);
-        return FadeTransition(
-          opacity: fade,
-          child: ScaleTransition(scale: scale, child: child),
-        );
-      },
-    ),
-  )
-      .whenComplete(() {
+  openImageGalleryPreview(
+    context,
+    itemList: topicPictureModelListToGalleryPreviewItemList(pictures),
+    initialIndex: initialIndex,
+  ).whenComplete(() {
     // pop 后 Flutter 可能恢复先前焦点，下一帧再清一次。
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusManager.instance.primaryFocus?.unfocus();

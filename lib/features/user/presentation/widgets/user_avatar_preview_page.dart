@@ -1,4 +1,6 @@
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
+import 'package:all_flutter0709/shared/media/image_preview_save_actions.dart';
+import 'package:all_flutter0709/shared/media/preview_save_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,13 @@ class UserAvatarPreviewPage extends StatelessWidget {
 
   final String imageUrl;
 
+  void _onLongPressSave(BuildContext context) {
+    ImagePreviewSaveActions.showSaveSheet(
+      context,
+      saveSource: PreviewSaveFromUrl(imageUrl),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FullscreenMediaSystemUi(
@@ -32,14 +41,19 @@ class UserAvatarPreviewPage extends StatelessWidget {
         child: Scaffold(
           backgroundColor: Colors.black,
           body: Stack(
+            fit: StackFit.expand,
             children: [
-              Center(
-                child: PhotoView(
-                  imageProvider: CachedNetworkImageProvider(imageUrl),
-                  minScale: PhotoViewComputedScale.contained,
-                  maxScale: PhotoViewComputedScale.covered * 3,
-                  backgroundDecoration: const BoxDecoration(
-                    color: Colors.black,
+              GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onLongPress: () => _onLongPressSave(context),
+                child: Center(
+                  child: PhotoView(
+                    imageProvider: CachedNetworkImageProvider(imageUrl),
+                    minScale: PhotoViewComputedScale.contained,
+                    maxScale: PhotoViewComputedScale.covered * 3,
+                    backgroundDecoration: const BoxDecoration(
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),
