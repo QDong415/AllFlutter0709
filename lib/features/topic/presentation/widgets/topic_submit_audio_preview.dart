@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/audio/app_audio_playback_coordinator.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_audio_bar.dart';
 import 'package:flutter/material.dart';
@@ -128,7 +129,11 @@ class _TopicSubmitAudioPreviewState extends State<TopicSubmitAudioPreview> {
         ),
         IconButton(
           onPressed: widget.onDelete,
-          icon: const Icon(Icons.close, size: 18),
+          icon: Icon(
+            Icons.close,
+            size: 18,
+            color: context.palette.secondaryText,
+          ),
         ),
       ],
     );

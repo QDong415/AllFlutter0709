@@ -2,6 +2,7 @@ package com.dq.flutter0709.all_flutter0709.bridge
 
 import android.app.Activity
 import android.os.Build
+import com.dq.flutter0709.all_flutter0709.MainActivity
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -60,6 +61,20 @@ class NativeBridge private constructor(
                 emitDemo()
                 result.success(true)
             }
+            API_SET_SYSTEM_BARS -> {
+                val args = payload["args"] as? Map<*, *>
+                val lightStatus = args?.get("lightStatusBars") == true
+                val lightNavigation = args?.get("lightNavigationBars") == true
+                val navigationColor =
+                    (args?.get("navigationBarColor") as? Number)?.toInt()
+                        ?: 0xFFFFFFFF.toInt()
+                (activity as? MainActivity)?.updateSystemBars(
+                    lightStatus,
+                    lightNavigation,
+                    navigationColor,
+                )
+                result.success(true)
+            }
             else -> result.error("unknown_api", "未知 api: $api", null)
         }
     }
@@ -116,6 +131,7 @@ class NativeBridge private constructor(
         private const val API_PING = "ping"
         private const val API_GET_DEVICE_INFO = "getDeviceInfo"
         private const val API_EMIT_DEMO = "emitDemo"
+        private const val API_SET_SYSTEM_BARS = "setSystemBars"
 
         private const val EVENT_DEMO_TICK = "demo.tick"
 

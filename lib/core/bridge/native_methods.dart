@@ -29,6 +29,9 @@ abstract final class NativeApis {
 
   /// iOS 个推在线透传到达后台时，展示本地通知。
   static const showGetuiOnlineNotification = 'showGetuiOnlineNotification';
+
+  /// Android 系统状态栏图标和导航栏底色。小米回到前台时会重刷，需要原生记住。
+  static const setSystemBars = 'setSystemBars';
 }
 
 /// Native → Flutter 事件名。

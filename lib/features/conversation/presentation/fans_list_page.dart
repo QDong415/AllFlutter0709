@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_match_user_item.dart';
@@ -78,7 +78,7 @@ class _FansListPageState extends ConsumerState<FansListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       appBar: const CommonAppBar(title: '新粉丝'),
       body: EasyRefresh(
         onRefresh: () => _requestList(isRefresh: true),
@@ -88,7 +88,8 @@ class _FansListPageState extends ConsumerState<FansListPage> {
           emptyText: '还没有新粉丝',
           successWidget: ListView.separated(
             itemCount: _userModelList.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            separatorBuilder: (_, _) =>
+                Divider(height: 1, color: context.palette.divider),
             itemBuilder: (context, index) {
               final userModel = _userModelList[index];
               return TopicMatchUserItem(

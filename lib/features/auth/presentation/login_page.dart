@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:all_flutter0709/app/app_flags.dart';
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_api_exception.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
@@ -253,7 +254,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.plainBackground,
       body: SafeArea(
         child: switch (_stage) {
           _LoginStage.phone => SmsLoginPhoneView(
@@ -263,10 +264,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             isRequestingCode: _isRequestingCode,
             onAgreedChanged: (value) => setState(() => _agreed = value),
             onRequestCode: _requestSmsCode,
-            onPasswordLogin: () => context.push(
-              AppRoutes.passwordLogin,
-              extra: _mobile,
-            ),
+            onPasswordLogin: () =>
+                context.push(AppRoutes.passwordLogin, extra: _mobile),
           ),
           _LoginStage.code => SmsLoginCodeView(
             mobile: _mobile,

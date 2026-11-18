@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_emoji_panel.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
@@ -31,7 +32,7 @@ class ChatBottomPanelHost extends StatelessWidget {
     return ChatBottomPanelContainer<ChatPanelType>(
       controller: controller,
       inputFocusNode: inputFocusNode,
-      panelBgColor: QInputBarColors.extendBackground,
+      panelBgColor: QInputBarColors.extendBackground(context.palette),
       onPanelTypeChange: onPanelTypeChange,
       otherPanelWidget: (type) {
         if (type == null) {

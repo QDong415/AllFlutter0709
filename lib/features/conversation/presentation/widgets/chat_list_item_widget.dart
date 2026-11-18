@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_gift_bubble.dart';
@@ -87,8 +88,8 @@ class _CenterLabel extends StatelessWidget {
       child: Center(
         child: Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFFB2B2B2),
+          style: TextStyle(
+            color: context.palette.secondaryText,
             fontSize: 12,
             height: 1,
           ),

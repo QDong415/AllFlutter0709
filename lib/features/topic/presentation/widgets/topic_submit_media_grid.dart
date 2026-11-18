@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
@@ -192,11 +193,15 @@ class _AddTile extends StatelessWidget {
           width: TopicSubmitMediaGrid._itemSize,
           height: TopicSubmitMediaGrid._itemSize,
           decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F2),
+            color: context.palette.pressed,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
+            border: Border.all(color: context.palette.divider),
           ),
-          child: const Icon(Icons.add, size: 36, color: Color(0xFFB0B0B0)),
+          child: Icon(
+            Icons.add,
+            size: 36,
+            color: context.palette.secondaryText,
+          ),
         ),
       ),
     );

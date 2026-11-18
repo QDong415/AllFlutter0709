@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ class ChatEmojiPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPadding = 12 + MediaQuery.paddingOf(context).bottom;
     return ColoredBox(
-      color: QInputBarColors.extendBackground,
+      color: QInputBarColors.extendBackground(context.palette),
       child: SizedBox(
         width: double.infinity,
         height: height,
@@ -51,7 +52,7 @@ class ChatEmojiPanel extends StatelessWidget {
                 onTap: onDelete,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.palette.card,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Padding(

@@ -96,12 +96,18 @@ class CommentRepository {
     String? toUserId,
     String? toUserName,
     String atUserIds = '',
+    String audio = '',
+    int audioDurationSeconds = 0,
+    String photoArrayJson = '',
   }) async {
     final payload = <String, dynamic>{
       'tid': targetId,
       'type': type.apiValue,
       'content': content,
       'tempid': tempId,
+      if (audio.trim().isNotEmpty) 'audio': audio.trim(),
+      if (audio.trim().isNotEmpty) 'duration': audioDurationSeconds,
+      if (photoArrayJson.trim().isNotEmpty) 'photoarray': photoArrayJson.trim(),
       if (parentCid != null && parentCid.isNotEmpty) 'pcid': parentCid,
       if (toUserId != null && toUserId.isNotEmpty) 'to_userid': toUserId,
       if (toUserName != null && toUserName.isNotEmpty) 'to_name': toUserName,

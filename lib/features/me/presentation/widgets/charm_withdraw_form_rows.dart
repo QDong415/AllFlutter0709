@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -16,11 +17,11 @@ class CharmWithdrawSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFFF3F3F3),
+      color: context.palette.bodyBackground,
       padding: EdgeInsets.fromLTRB(14, topGap ? 20 : 12, 14, 5),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 13, color: Color(0xFF919191)),
+        style: TextStyle(fontSize: 13, color: context.palette.secondaryText),
       ),
     );
   }
@@ -32,7 +33,7 @@ class CharmWithdrawDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 0.5, color: const Color(0xFFE3E3E3));
+    return Container(height: 0.5, color: context.palette.divider);
   }
 }
 
@@ -47,8 +48,8 @@ class CharmWithdrawInputRow extends StatelessWidget {
     this.maxLength,
     this.trailing,
     this.readOnly = false,
-    this.backgroundColor = Colors.white,
-    this.textColor = const Color(0xFF5B5B5B),
+    this.backgroundColor,
+    this.textColor,
   });
 
   final TextEditingController controller;
@@ -58,14 +59,15 @@ class CharmWithdrawInputRow extends StatelessWidget {
   final int? maxLength;
   final Widget? trailing;
   final bool readOnly;
-  final Color backgroundColor;
-  final Color textColor;
+  final Color? backgroundColor;
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Container(
       height: 44,
-      color: backgroundColor,
+      color: backgroundColor ?? palette.card,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
         children: [
@@ -76,10 +78,14 @@ class CharmWithdrawInputRow extends StatelessWidget {
               keyboardType: keyboardType,
               inputFormatters: inputFormatters,
               maxLength: maxLength,
-              style: TextStyle(fontSize: 16, color: textColor),
+              style: TextStyle(
+                fontSize: 16,
+                color: textColor ?? palette.bodyText,
+              ),
+              cursorColor: palette.ink,
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: const TextStyle(color: Color(0xFFBBBBBB)),
+                hintStyle: TextStyle(color: palette.secondaryText),
                 border: InputBorder.none,
                 counterText: '',
                 isDense: true,

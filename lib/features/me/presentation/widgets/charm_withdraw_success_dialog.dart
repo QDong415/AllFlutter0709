@@ -1,12 +1,10 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 魅力提现申请成功弹窗，对齐 Buddy `ApplySuccessDialog` + `dialog_apply_success.xml`。
 class CharmWithdrawApplySuccessDialog extends StatelessWidget {
-  const CharmWithdrawApplySuccessDialog({
-    super.key,
-    required this.onConfirm,
-  });
+  const CharmWithdrawApplySuccessDialog({super.key, required this.onConfirm});
 
   final VoidCallback onConfirm;
 
@@ -37,7 +35,7 @@ class CharmWithdrawApplySuccessDialog extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 280),
         child: Material(
-          color: AppColors.white,
+          color: context.palette.card,
           borderRadius: BorderRadius.circular(12),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -76,10 +74,7 @@ class CharmWithdrawApplySuccessDialog extends StatelessWidget {
                     child: Center(
                       child: Text(
                         '确 定',
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontSize: 18,
-                        ),
+                        style: TextStyle(color: AppColors.white, fontSize: 18),
                       ),
                     ),
                   ),

@@ -12,8 +12,23 @@ import io.flutter.embedding.engine.FlutterEngine
 class MainActivity : FlutterActivity() {
 
     companion object {
-        // 与 Flutter AppColors.tabBarBackground 保持一致
-        private const val NAV_BAR_COLOR = 0xFFFFFFFF.toInt()
+        private const val NAV_BAR_LIGHT = 0xFFFFFFFF.toInt()
+    }
+
+    // 浅色：白底深色图标。黑夜由 Flutter 改成黑底浅色图标。
+    private var lightStatusBars = true
+    private var lightNavigationBars = true
+    private var navigationBarColor = NAV_BAR_LIGHT
+
+    fun updateSystemBars(
+        lightStatusBars: Boolean,
+        lightNavigationBars: Boolean,
+        navigationBarColor: Int,
+    ) {
+        this.lightStatusBars = lightStatusBars
+        this.lightNavigationBars = lightNavigationBars
+        this.navigationBarColor = navigationBarColor
+        applyEdgeToEdge()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -53,13 +68,16 @@ class MainActivity : FlutterActivity() {
     private fun applyEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = NAV_BAR_COLOR
+        window.navigationBarColor = navigationBarColor
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
             window.isStatusBarContrastEnforced = false
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.navigationBarDividerColor = navigationBarColor
+        }
         val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.isAppearanceLightStatusBars = true
-        controller.isAppearanceLightNavigationBars = true
+        controller.isAppearanceLightStatusBars = lightStatusBars
+        controller.isAppearanceLightNavigationBars = lightNavigationBars
     }
 }

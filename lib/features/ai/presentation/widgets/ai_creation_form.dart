@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:flutter/material.dart';
 
@@ -126,24 +127,25 @@ class _AiCreationFormState extends State<AiCreationForm> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Form(
       key: _formKey,
       child: ListView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 36),
         children: [
-          const Text(
+          Text(
             '创造专属于你的 AI 伙伴',
             style: TextStyle(
-              color: AppColors.titleText,
+              color: palette.titleText,
               fontSize: 23,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 7),
-          const Text(
+          Text(
             '选择角色设定后，我们会依次生成头像和生活照。',
-            style: TextStyle(color: Color(0xFF777777), fontSize: 14),
+            style: TextStyle(color: palette.secondaryText, fontSize: 14),
           ),
           const SizedBox(height: 24),
           const _SectionTitle(title: '名字'),
@@ -151,11 +153,14 @@ class _AiCreationFormState extends State<AiCreationForm> {
           TextFormField(
             controller: _nameController,
             maxLength: 12,
+            style: TextStyle(color: palette.titleText),
+            cursorColor: palette.ink,
             decoration: InputDecoration(
               hintText: '输入 2～12 个字',
               counterText: '',
               filled: true,
-              fillColor: AppColors.white,
+              fillColor: palette.card,
+              hintStyle: TextStyle(color: palette.secondaryText),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -216,10 +221,10 @@ class _AiCreationFormState extends State<AiCreationForm> {
           const SizedBox(height: 22),
           const _SectionTitle(title: '补充人设（选填）'),
           const SizedBox(height: 7),
-          const Text(
+          Text(
             '可以补充性格、爱好、经历和说话方式。若写了衣服、鞋子、配饰或发型，会用于生成头像和生活照。内容会经过 AI 自动审核与整理。',
             style: TextStyle(
-              color: Color(0xFF888888),
+              color: palette.secondaryText,
               fontSize: 12,
               height: 1.4,
             ),
@@ -231,10 +236,14 @@ class _AiCreationFormState extends State<AiCreationForm> {
             minLines: 3,
             maxLines: 5,
             textInputAction: TextInputAction.newline,
+            style: TextStyle(color: palette.titleText),
+            cursorColor: palette.ink,
             decoration: InputDecoration(
-              hintText: '例如：喜欢摄影，刚认识时有点高冷，熟悉后会变得很健谈。\n穿搭提示：白衬衫、牛仔裤和白色运动鞋。\n禁止出现未成年或其他违法词汇',
+              hintText:
+                  '例如：喜欢摄影，刚认识时有点高冷，熟悉后会变得很健谈。\n穿搭提示：白衬衫、牛仔裤和白色运动鞋。\n禁止出现未成年或其他违法词汇',
               filled: true,
-              fillColor: AppColors.white,
+              fillColor: palette.card,
+              hintStyle: TextStyle(color: palette.secondaryText),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -269,10 +278,10 @@ class _AiCreationFormState extends State<AiCreationForm> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             '生成过程可能需要 1～3 分钟，请保持页面开启。',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF999999), fontSize: 12),
+            style: TextStyle(color: palette.secondaryText, fontSize: 12),
           ),
         ],
       ),
@@ -310,8 +319,8 @@ class _AiCreationFormState extends State<AiCreationForm> {
                 children: [
                   Text(
                     expanded ? '收起' : '更多',
-                    style: const TextStyle(
-                      color: Color(0xFF888888),
+                    style: TextStyle(
+                      color: context.palette.secondaryText,
                       fontSize: 13,
                       height: 1,
                     ),
@@ -321,7 +330,7 @@ class _AiCreationFormState extends State<AiCreationForm> {
                         ? Icons.arrow_drop_up_rounded
                         : Icons.arrow_drop_down_rounded,
                     size: 18,
-                    color: const Color(0xFF888888),
+                    color: context.palette.secondaryText,
                   ),
                 ],
               ),
@@ -365,10 +374,10 @@ class _AiCreationFormState extends State<AiCreationForm> {
           showCheckmark: false,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           side: BorderSide.none,
-          backgroundColor: AppColors.white,
+          backgroundColor: context.palette.card,
           selectedColor: AppColors.primary.withValues(alpha: 0.14),
           labelStyle: TextStyle(
-            color: isSelected ? AppColors.primary : AppColors.titleText,
+            color: isSelected ? AppColors.primary : context.palette.titleText,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
           onSelected: (_) => onSelected(option.value),
@@ -385,10 +394,11 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Text(
       title,
-      style: const TextStyle(
-        color: AppColors.titleText,
+      style: TextStyle(
+        color: palette.titleText,
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),

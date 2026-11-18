@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_display_model.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,7 @@ class CommentItemSingleTips extends StatelessWidget {
     };
 
     return ColoredBox(
-      color: Colors.white,
+      color: context.palette.card,
       child: Padding(
         padding: const EdgeInsets.only(left: 12),
         child: Column(
@@ -43,7 +44,7 @@ class CommentItemSingleTips extends StatelessWidget {
                           child: Container(
                             width: 0.6,
                             height: 24,
-                            color: const Color(0xFFDCDCDC),
+                            color: context.palette.divider,
                           ),
                         ),
                         Positioned(
@@ -52,7 +53,7 @@ class CommentItemSingleTips extends StatelessWidget {
                           child: Container(
                             width: 20,
                             height: 0.6,
-                            color: const Color(0xFFDCDCDC),
+                            color: context.palette.divider,
                           ),
                         ),
                       ],
@@ -62,7 +63,8 @@ class CommentItemSingleTips extends StatelessWidget {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(top: 10, bottom: 2),
-                      child: displayType == CommentDisplayType.loadingMoreComment
+                      child:
+                          displayType == CommentDisplayType.loadingMoreComment
                           ? const SizedBox(
                               width: 18,
                               height: 18,
@@ -72,9 +74,13 @@ class CommentItemSingleTips extends StatelessWidget {
                               onTap: onTap,
                               child: Text(
                                 label,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF133465),
+                                  color:
+                                      context.palette.brightness ==
+                                          Brightness.dark
+                                      ? context.palette.nameText
+                                      : const Color(0xFF133465),
                                 ),
                               ),
                             ),
@@ -84,9 +90,13 @@ class CommentItemSingleTips extends StatelessWidget {
               ),
             ),
             if (showCommentSeparator(displayType))
-              const Padding(
-                padding: EdgeInsets.only(left: 61, top: 10),
-                child: Divider(height: 0.6, thickness: 0.6),
+              Padding(
+                padding: const EdgeInsets.only(left: 61, top: 10),
+                child: Divider(
+                  height: 0.6,
+                  thickness: 0.6,
+                  color: context.palette.divider,
+                ),
               ),
           ],
         ),

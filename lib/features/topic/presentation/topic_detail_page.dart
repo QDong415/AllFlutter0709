@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/gift/presentation/gift_send_animation.dart';
@@ -240,7 +240,7 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: const CommonAppBar(title: '动态详情'),
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       body: _buildBody(topicModel),
     );
   }
@@ -257,15 +257,18 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.wifi_off_outlined,
                 size: 52,
-                color: Color(0xFFB3B3B8),
+                color: context.palette.secondaryText,
               ),
               const SizedBox(height: 12),
               Text(
                 _errorText ?? '动态详情加载失败',
-                style: const TextStyle(fontSize: 14, color: Color(0xFF7B7B80)),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: context.palette.secondaryText,
+                ),
               ),
               const SizedBox(height: 12),
               FilledButton(
@@ -347,11 +350,12 @@ class _TopicDetailHeader extends StatelessWidget {
       vip: topic.vip,
     ).dy;
 
+    final palette = context.palette;
     final card = Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -405,10 +409,10 @@ class _TopicDetailHeader extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 topic.userName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF304F84),
+                                  color: palette.nameText,
                                 ),
                               ),
                             ),
@@ -422,9 +426,9 @@ class _TopicDetailHeader extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         topic.displayTime,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF8B8B90),
+                          color: palette.secondaryText,
                         ),
                       ),
                     ],
@@ -437,7 +441,7 @@ class _TopicDetailHeader extends StatelessWidget {
                   child: IconButton(
                     onPressed: onRefreshTap,
                     icon: const Icon(Icons.refresh_rounded),
-                    color: const Color(0xFF8B8B90),
+                    color: palette.secondaryText,
                     tooltip: '刷新详情',
                   ),
                 ),
@@ -455,10 +459,10 @@ class _TopicDetailHeader extends StatelessWidget {
             const SizedBox(height: 14),
             TopicContentText(
               text: content,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 height: 1.6,
-                color: Color(0xFF222222),
+                color: palette.titleText,
               ),
               highlightStyle: const TextStyle(
                 fontSize: 17,
@@ -528,6 +532,6 @@ class _TopicDetailHeader extends StatelessWidget {
     if (!topic.hasAudio) {
       return card;
     }
-    return TopicAudioVisibility(tid: topic.tid, child: card);
+    return TopicAudioVisibility(playKey: topic.tid, child: card);
   }
 }

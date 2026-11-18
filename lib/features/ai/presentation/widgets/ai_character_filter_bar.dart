@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/ai/data/ai_character_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -21,8 +22,9 @@ class AiCharacterFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return ColoredBox(
-      color: AppColors.toolbar,
+      color: palette.toolbar,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
         child: Column(
@@ -31,10 +33,17 @@ class AiCharacterFilterBar extends StatelessWidget {
               controller: searchController,
               onChanged: onSearchChanged,
               textInputAction: TextInputAction.search,
+              style: TextStyle(color: palette.titleText),
+              cursorColor: palette.ink,
               decoration: InputDecoration(
                 isDense: true,
                 hintText: '搜索 AI 伙伴',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                hintStyle: TextStyle(color: palette.secondaryText),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  size: 20,
+                  color: palette.secondaryText,
+                ),
                 suffixIcon: searchController.text.isEmpty
                     ? null
                     : IconButton(
@@ -43,10 +52,14 @@ class AiCharacterFilterBar extends StatelessWidget {
                           searchController.clear();
                           onSearchChanged('');
                         },
-                        icon: const Icon(Icons.close_rounded, size: 18),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: palette.secondaryText,
+                        ),
                       ),
                 filled: true,
-                fillColor: AppColors.white,
+                fillColor: palette.card,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -66,12 +79,12 @@ class AiCharacterFilterBar extends StatelessWidget {
                       onSelected: (_) => onFilterChanged(filter),
                       showCheckmark: false,
                       side: BorderSide.none,
-                      backgroundColor: AppColors.white,
+                      backgroundColor: palette.card,
                       selectedColor: AppColors.primary.withValues(alpha: 0.14),
                       labelStyle: TextStyle(
                         color: filter == selectedFilter
                             ? AppColors.primary
-                            : AppColors.titleText,
+                            : palette.titleText,
                         fontWeight: filter == selectedFilter
                             ? FontWeight.w600
                             : FontWeight.w400,
@@ -88,7 +101,7 @@ class AiCharacterFilterBar extends StatelessWidget {
                     label: const Text('新角色'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      backgroundColor: AppColors.white,
+                      backgroundColor: palette.card,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       shape: const StadiumBorder(),
                       textStyle: const TextStyle(

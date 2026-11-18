@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_match_user_item.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
@@ -94,7 +94,7 @@ class _BlacklistPageState extends State<BlacklistPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       appBar: const CommonAppBar(title: '黑名单'),
       body: EasyRefresh(
         onRefresh: () => _request(isRefresh: true),
@@ -104,7 +104,8 @@ class _BlacklistPageState extends State<BlacklistPage> {
           emptyText: '黑名单是空的',
           successWidget: ListView.separated(
             itemCount: _userModelList.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            separatorBuilder: (_, _) =>
+                Divider(height: 1, color: context.palette.divider),
             itemBuilder: (context, index) {
               final userModel = _userModelList[index];
               return TopicMatchUserItem(

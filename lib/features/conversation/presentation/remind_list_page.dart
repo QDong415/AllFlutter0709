@@ -1,5 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/data/models/remind_model.dart';
@@ -126,7 +126,7 @@ class _RemindListPageState extends ConsumerState<RemindListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       appBar: CommonAppBar(title: _title),
       body: EasyRefresh(
         header: const ClassicHeader(showMessage: false, showText: false),
@@ -192,14 +192,15 @@ class _RemindTile extends StatelessWidget {
               ) ??
               '';
 
+    final palette = context.palette;
     return Material(
-      color: Colors.white,
+      color: palette.card,
       child: InkWell(
         onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Divider(height: 1, thickness: 1, color: AppColors.divider),
+            Divider(height: 1, thickness: 1, color: palette.divider),
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
               child: Row(
@@ -208,7 +209,7 @@ class _RemindTile extends StatelessWidget {
                     onTap: onActorTap,
                     child: CircleAvatar(
                       radius: 21.5,
-                      backgroundColor: const Color(0xFFE8E8E8),
+                      backgroundColor: palette.pressed,
                       backgroundImage: avatarUrl.isNotEmpty
                           ? CachedNetworkImageProvider(avatarUrl)
                           : const AssetImage('assets/icons/user_photo.png')
@@ -224,9 +225,11 @@ class _RemindTile extends StatelessWidget {
                           remindModel.actorName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: Color(0xFF133465),
+                            color: palette.brightness == Brightness.dark
+                                ? palette.nameText
+                                : const Color(0xFF133465),
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -234,9 +237,9 @@ class _RemindTile extends StatelessWidget {
                           remindModel.displayTime,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF919191),
+                            color: palette.secondaryText,
                           ),
                         ),
                       ],
@@ -250,17 +253,17 @@ class _RemindTile extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                 child: TopicContentText(
                   text: remindModel.content,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     height: 1.25,
-                    color: AppColors.titleText,
+                    color: palette.titleText,
                   ),
                 ),
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
               child: ColoredBox(
-                color: const Color(0xFFF3F3F3),
+                color: palette.pressed,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -293,19 +296,19 @@ class _RemindTile extends StatelessWidget {
                               remindModel.topicUserName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
-                                color: AppColors.titleText,
+                                color: palette.titleText,
                               ),
                             ),
                             const SizedBox(height: 8),
                             TopicContentText(
                               text: remindModel.topicContent,
                               maxLines: 2,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 height: 1.2,
-                                color: AppColors.titleText,
+                                color: palette.titleText,
                               ),
                             ),
                           ],
@@ -316,7 +319,7 @@ class _RemindTile extends StatelessWidget {
                 ),
               ),
             ),
-            const Divider(height: 1, thickness: 1, color: AppColors.divider),
+            Divider(height: 1, thickness: 1, color: palette.divider),
           ],
         ),
       ),

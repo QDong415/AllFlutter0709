@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// AI 角色列表首次加载骨架屏。
@@ -22,27 +23,39 @@ class AiCharacterSkeleton extends StatelessWidget {
       ),
       itemCount: 6,
       itemBuilder: (context, index) {
+        final palette = context.palette;
+        final placeholder = palette.brightness == Brightness.dark
+            ? palette.pressed
+            : const Color(0xFFE5E5E5);
         return DecoratedBox(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: palette.card,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(child: ColoredBox(color: Color(0xFFE5E5E5))),
+              Expanded(child: ColoredBox(color: placeholder)),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _line(width: 82, height: 14),
+                    _line(color: placeholder, width: 82, height: 14),
                     const SizedBox(height: 8),
-                    _line(width: double.infinity, height: 10),
+                    _line(
+                      color: placeholder,
+                      width: double.infinity,
+                      height: 10,
+                    ),
                     const SizedBox(height: 6),
-                    _line(width: 104, height: 10),
+                    _line(color: placeholder, width: 104, height: 10),
                     const SizedBox(height: 8),
-                    _line(width: double.infinity, height: 32),
+                    _line(
+                      color: placeholder,
+                      width: double.infinity,
+                      height: 32,
+                    ),
                   ],
                 ),
               ),
@@ -53,12 +66,16 @@ class AiCharacterSkeleton extends StatelessWidget {
     );
   }
 
-  static Widget _line({required double width, required double height}) {
+  static Widget _line({
+    required Color color,
+    required double width,
+    required double height,
+  }) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E5E5),
+        color: color,
         borderRadius: BorderRadius.circular(6),
       ),
     );

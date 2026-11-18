@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/app_flags.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -67,7 +68,7 @@ class _SmsLoginCodeViewState extends State<SmsLoginCodeView> {
       children: [
         IconButton(
           onPressed: widget.onBack,
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: context.palette.titleText),
         ),
         Expanded(
           child: Center(
@@ -79,14 +80,14 @@ class _SmsLoginCodeViewState extends State<SmsLoginCodeView> {
                   Text(
                     '输入验证码',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppColors.titleText,
+                      color: context.palette.titleText,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '验证码已发送至 +86 ${_maskMobile(widget.mobile)}',
-                    style: const TextStyle(color: Color(0xFF8A8A8A)),
+                    style: TextStyle(color: context.palette.secondaryText),
                   ),
                   const SizedBox(height: 36),
                   _CodeBoxes(
@@ -99,9 +100,9 @@ class _SmsLoginCodeViewState extends State<SmsLoginCodeView> {
                   ),
                   const SizedBox(height: 20),
                   if (AppFlags.testLogin) ...[
-                    const Text(
+                    Text(
                       '测试可输入 0000，无需短信验证码',
-                      style: TextStyle(color: Color(0xFF8A8A8A)),
+                      style: TextStyle(color: context.palette.secondaryText),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -114,7 +115,7 @@ class _SmsLoginCodeViewState extends State<SmsLoginCodeView> {
                   else if (widget.countdownSeconds > 0)
                     Text.rich(
                       TextSpan(
-                        style: const TextStyle(color: Color(0xFF8A8A8A)),
+                        style: TextStyle(color: context.palette.secondaryText),
                         children: [
                           TextSpan(
                             text: '${widget.countdownSeconds}',
@@ -242,10 +243,10 @@ class _CodeBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.card,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: focused ? AppColors.primary : AppColors.divider,
+          color: focused ? AppColors.primary : context.palette.divider,
           width: focused ? 1.5 : 1,
         ),
       ),
@@ -256,10 +257,10 @@ class _CodeBox extends StatelessWidget {
                   : const SizedBox.shrink())
             : Text(
                 digit,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.titleText,
+                  color: context.palette.titleText,
                 ),
               ),
       ),

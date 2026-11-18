@@ -252,26 +252,25 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
                                   },
                             borderRadius: BorderRadius.circular(4),
                             child: InputDecorator(
-                            decoration: InputDecoration(
-                              labelText: '性别',
-                              hintText: '请选择性别（必填）',
-                              border: const OutlineInputBorder(),
-                              errorText: field.errorText,
-                            ),
-                            child: Text(
-                              genderLabel ?? '',
-                              style: genderLabel == null
-                                  ? Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
+                              decoration: InputDecoration(
+                                labelText: '性别',
+                                hintText: '请选择性别（必填）',
+                                border: const OutlineInputBorder(),
+                                errorText: field.errorText,
+                              ),
+                              child: Text(
+                                genderLabel ?? '',
+                                style: genderLabel == null
+                                    ? Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
                                       )
-                                  : null,
+                                    : null,
+                              ),
                             ),
-                          ),
                           ),
                         );
                       },

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
@@ -50,6 +52,10 @@ class CommentModel {
     this.userType = UserType.human,
     this.gender = 0,
     this.vip = 0,
+    this.audioFileName = '',
+    this.audioDurationSeconds = 0,
+    this.localAudioFile,
+    this.localImageFile,
   });
 
   final String cid;
@@ -80,8 +86,20 @@ class CommentModel {
   /// 评论作者会员：0 普通 / 1 VIP / 2 SVIP。
   final int vip;
 
+  final String audioFileName;
+  final int audioDurationSeconds;
+
+  /// 发送中本地试听，不上传服务端。
+  final File? localAudioFile;
+
+  /// 发送中优先展示的本地评论图片。
+  final File? localImageFile;
+
   /// 是否为 AI 账号。
   bool get isAi => UserType.isAi(userType);
+
+  bool get hasAudio =>
+      audioFileName.trim().isNotEmpty || localAudioFile != null;
 
   bool get isRoot => parentCid.isEmpty || parentCid == '0';
   bool get hasReplyTarget =>
@@ -90,7 +108,11 @@ class CommentModel {
   String get effectiveId => cid.isNotEmpty ? cid : tempId;
   String get displayContent {
     if (content.isNotEmpty) return content;
-    if (pictures.isNotEmpty) return '[图片]';
+    if (hasAudio) {
+      final seconds = audioDurationSeconds > 0 ? audioDurationSeconds : 1;
+      return "$seconds'' 语音";
+    }
+    if (pictures.isNotEmpty || localImageFile != null) return '[图片]';
     return '';
   }
 
@@ -118,6 +140,8 @@ class CommentModel {
         userType: UserType.human,
         gender: 0,
         vip: 0,
+        audioFileName: '',
+        audioDurationSeconds: 0,
       );
     }
 
@@ -149,6 +173,8 @@ class CommentModel {
       userType: UserType.parse(json['user_type']),
       gender: _CommentJsonParser.parseInt(json['gender']),
       vip: _CommentJsonParser.parseInt(json['vip']),
+      audioFileName: _CommentJsonParser.parseString(json['audio']),
+      audioDurationSeconds: _CommentJsonParser.parseInt(json['duration']),
     );
   }
 
@@ -174,6 +200,12 @@ class CommentModel {
     int? userType,
     int? gender,
     int? vip,
+    String? audioFileName,
+    int? audioDurationSeconds,
+    File? localAudioFile,
+    bool clearLocalAudioFile = false,
+    File? localImageFile,
+    bool clearLocalImageFile = false,
   }) {
     return CommentModel(
       cid: cid ?? this.cid,
@@ -197,6 +229,14 @@ class CommentModel {
       userType: userType ?? this.userType,
       gender: gender ?? this.gender,
       vip: vip ?? this.vip,
+      audioFileName: audioFileName ?? this.audioFileName,
+      audioDurationSeconds: audioDurationSeconds ?? this.audioDurationSeconds,
+      localAudioFile: clearLocalAudioFile
+          ? null
+          : (localAudioFile ?? this.localAudioFile),
+      localImageFile: clearLocalImageFile
+          ? null
+          : (localImageFile ?? this.localImageFile),
     );
   }
 

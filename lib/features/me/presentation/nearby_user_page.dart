@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_match_user_item.dart';
@@ -153,7 +153,7 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       appBar: CommonAppBar(
         title: '附近的人',
         actions: [
@@ -172,10 +172,10 @@ class _NearbyUserPageState extends State<NearbyUserPage> {
           errorText: '定位或加载失败，下拉重试',
           successWidget: ListView.separated(
             itemCount: _userModelList.length,
-            separatorBuilder: (_, _) => const Divider(
+            separatorBuilder: (_, _) => Divider(
               height: AppDimens.dividerThickness,
               thickness: AppDimens.dividerThickness,
-              color: AppColors.divider,
+              color: context.palette.divider,
             ),
             itemBuilder: (context, index) {
               final userModel = _userModelList[index];

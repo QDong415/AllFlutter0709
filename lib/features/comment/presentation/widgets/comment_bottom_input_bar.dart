@@ -1,15 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_shadows.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
-import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
-import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit_toolbar.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit_audio_preview.dart';
 import 'package:extended_text_field/extended_text_field.dart';
 import 'package:flutter/material.dart';
 
-/// 评论底部输入栏：头像、表情输入框、表情 / @ / 发送。
+/// 评论底部输入：语音键 + 按住说话 / 文本，右侧 @ / 表情 / 发送。
 class CommentBottomInputBar extends StatelessWidget {
   const CommentBottomInputBar({
     super.key,
@@ -17,13 +17,27 @@ class CommentBottomInputBar extends StatelessWidget {
     required this.focusNode,
     required this.onCancelReply,
     required this.onSend,
+    required this.onImageTap,
     required this.onToggleEmoji,
     required this.onInputPointerUp,
     required this.emojiSpanBuilder,
-    this.onAtTap,
+    required this.isVoiceMode,
+    required this.onToggleVoiceMode,
+    required this.isRecording,
+    required this.willCancelRecording,
+    required this.onVoicePointerDown,
+    required this.onVoicePointerMove,
+    required this.onVoicePointerUp,
+    required this.onVoicePointerCancel,
     this.replyHintText,
     this.readOnly = false,
     this.isEmojiPanel = false,
+    this.pendingAudioFile,
+    this.pendingAudioSeconds = 0,
+    this.onDeletePendingAudio,
+    this.pendingImageFile,
+    this.onPendingImageTap,
+    this.onDeletePendingImage,
   });
 
   final TextEditingController controller;
@@ -31,34 +45,42 @@ class CommentBottomInputBar extends StatelessWidget {
   final String? replyHintText;
   final VoidCallback onCancelReply;
   final Future<void> Function() onSend;
-  final VoidCallback? onAtTap;
+  final VoidCallback onImageTap;
   final VoidCallback onToggleEmoji;
   final VoidCallback onInputPointerUp;
   final SpecialTextSpanBuilder emojiSpanBuilder;
   final bool readOnly;
   final bool isEmojiPanel;
+  final bool isVoiceMode;
+  final VoidCallback onToggleVoiceMode;
+  final bool isRecording;
+  final bool willCancelRecording;
+  final ValueChanged<Offset> onVoicePointerDown;
+  final ValueChanged<Offset> onVoicePointerMove;
+  final VoidCallback onVoicePointerUp;
+  final VoidCallback onVoicePointerCancel;
+  final File? pendingAudioFile;
+  final int pendingAudioSeconds;
+  final VoidCallback? onDeletePendingAudio;
+  final File? pendingImageFile;
+  final VoidCallback? onPendingImageTap;
+  final VoidCallback? onDeletePendingImage;
 
   static const double _actionSize = 36;
-  static const double _actionGap = 8;
+  static const double _actionGap = 6;
 
   @override
   Widget build(BuildContext context) {
-    final currentAccount = context.currentAccount;
-    final avatarUrl =
-        ValueUtil.getQiniuUrlByFileName(
-          currentAccount?.avatar,
-          thumbnail: true,
-        ) ??
-        '';
-    final enabled = currentAccount != null;
+    final enabled = context.currentAccount != null;
+    final palette = context.palette;
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: palette.card,
         boxShadow: AppShadows.upward,
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        padding: const EdgeInsets.fromLTRB(8, 8, 10, 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -70,80 +92,117 @@ class CommentBottomInputBar extends StatelessWidget {
                     Expanded(
                       child: Text(
                         replyHintText!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF7B7B80),
+                          color: palette.secondaryText,
                         ),
                       ),
                     ),
                     GestureDetector(
                       onTap: onCancelReply,
-                      child: const Icon(
+                      child: Icon(
                         Icons.close_rounded,
                         size: 16,
-                        color: Color(0xFF9B9B9B),
+                        color: palette.secondaryText,
                       ),
                     ),
                   ],
                 ),
               ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 15,
-                  backgroundColor: const Color(0xFFE8E8E8),
-                  backgroundImage: avatarUrl.isNotEmpty
-                      ? CachedNetworkImageProvider(avatarUrl)
-                      : null,
+            if (pendingImageFile != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _PendingCommentImagePreview(
+                    file: pendingImageFile!,
+                    onTap: onPendingImageTap ?? () {},
+                    onDelete: onDeletePendingImage ?? () {},
+                  ),
                 ),
-                const SizedBox(width: 8),
+              ),
+            if (pendingAudioFile != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TopicSubmitAudioPreview(
+                  file: pendingAudioFile!,
+                  durationSeconds: pendingAudioSeconds,
+                  onDelete: onDeletePendingAudio ?? () {},
+                ),
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: enabled
+                      ? onToggleVoiceMode
+                      : () => context.ensureLoggedIn(),
+                  child: SizedBox(
+                    width: QInputBarMetrics.switchButtonSize,
+                    height: QInputBarMetrics.switchButtonSize,
+                    child: Image.asset(
+                      context.themedAsset(
+                        isVoiceMode
+                            ? ChatInputAssets.keyboard
+                            : ChatInputAssets.voice,
+                        isVoiceMode
+                            ? ChatInputAssets.keyboardDark
+                            : ChatInputAssets.voiceDark,
+                      ),
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: enabled ? null : () => context.ensureLoggedIn(),
-                    child: AbsorbPointer(
-                      absorbing: !enabled,
-                      child: Listener(
-                        onPointerUp: (_) => onInputPointerUp(),
-                        child: ExtendedTextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          readOnly: readOnly,
-                          showCursor: true,
-                          specialTextSpanBuilder: emojiSpanBuilder,
-                          minLines: 1,
-                          maxLines: 4,
-                          enabled: enabled,
-                          style: const TextStyle(fontSize: 16.5, height: 1.25),
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) {
-                            unawaited(onSend());
-                          },
-                          onTapOutside: (_) {},
-                          decoration: InputDecoration(
-                            hintText: enabled
-                                ? (replyHintText ?? '说点什么吧...')
-                                : '请先登录后再评论',
-                            hintStyle: const TextStyle(
+                  child: isVoiceMode
+                      ? _CommentVoiceHoldButton(
+                          isRecording: isRecording,
+                          willCancelRecording: willCancelRecording,
+                          onPointerDown: onVoicePointerDown,
+                          onPointerMove: onVoicePointerMove,
+                          onPointerUp: onVoicePointerUp,
+                          onPointerCancel: onVoicePointerCancel,
+                        )
+                      : Listener(
+                          onPointerUp: (_) => onInputPointerUp(),
+                          child: ExtendedTextField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            readOnly: readOnly,
+                            showCursor: true,
+                            specialTextSpanBuilder: emojiSpanBuilder,
+                            minLines: 1,
+                            maxLines: 4,
+                            enabled: enabled,
+                            style: TextStyle(
                               fontSize: 16.5,
-                              color: Color(0xFFB0B0B0),
+                              height: 1.25,
+                              color: palette.ink,
                             ),
-                            filled: true,
-                            fillColor: const Color(0xFFF4F5F7),
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              borderSide: BorderSide.none,
+                            textInputAction: TextInputAction.newline,
+                            onTapOutside: (_) {},
+                            decoration: InputDecoration(
+                              hintText: enabled ? '说点什么吧...' : '请先登录后再评论',
+                              hintStyle: TextStyle(
+                                fontSize: 16.5,
+                                color: palette.secondaryText,
+                              ),
+                              filled: true,
+                              fillColor: palette.inputExtendBackground,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
                 ),
                 const SizedBox(width: _actionGap),
                 GestureDetector(
@@ -155,30 +214,33 @@ class CommentBottomInputBar extends StatelessWidget {
                     width: _actionSize,
                     height: _actionSize,
                     child: Image.asset(
-                      isEmojiPanel
-                          ? ChatInputAssets.keyboard
-                          : ChatInputAssets.emoji,
+                      context.themedAsset(
+                        isEmojiPanel
+                            ? ChatInputAssets.keyboard
+                            : ChatInputAssets.emoji,
+                        isEmojiPanel
+                            ? ChatInputAssets.keyboardDark
+                            : ChatInputAssets.emojiDark,
+                      ),
                       fit: BoxFit.contain,
                     ),
                   ),
                 ),
-                if (onAtTap != null) ...[
-                  const SizedBox(width: _actionGap),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: enabled
-                        ? onAtTap
-                        : () => context.ensureLoggedIn(),
-                    child: SizedBox(
-                      width: _actionSize,
-                      height: _actionSize,
-                      child: Image.asset(
-                        TopicSubmitAssets.at,
-                        fit: BoxFit.contain,
-                      ),
+                const SizedBox(width: _actionGap),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: enabled ? onImageTap : () => context.ensureLoggedIn(),
+                  child: SizedBox(
+                    width: _actionSize,
+                    height: _actionSize,
+                    child: Image.asset(
+                      'assets/icons/topic/comment_photo_black_normal.png',
+                      fit: BoxFit.contain,
+                      color: palette.ink,
+                      colorBlendMode: BlendMode.srcIn,
                     ),
                   ),
-                ],
+                ),
                 const SizedBox(width: _actionGap),
                 Material(
                   color: Theme.of(context).colorScheme.primary,
@@ -211,6 +273,154 @@ class CommentBottomInputBar extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingCommentImagePreview extends StatelessWidget {
+  const _PendingCommentImagePreview({
+    required this.file,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  final File file;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 76,
+      height: 76,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: onTap,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(file, fit: BoxFit.cover),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onDelete,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: Color(0xCC222222),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommentVoiceHoldButton extends StatefulWidget {
+  const _CommentVoiceHoldButton({
+    required this.isRecording,
+    required this.willCancelRecording,
+    required this.onPointerDown,
+    required this.onPointerMove,
+    required this.onPointerUp,
+    required this.onPointerCancel,
+  });
+
+  final bool isRecording;
+  final bool willCancelRecording;
+  final ValueChanged<Offset> onPointerDown;
+  final ValueChanged<Offset> onPointerMove;
+  final VoidCallback onPointerUp;
+  final VoidCallback onPointerCancel;
+
+  @override
+  State<_CommentVoiceHoldButton> createState() =>
+      _CommentVoiceHoldButtonState();
+}
+
+class _CommentVoiceHoldButtonState extends State<_CommentVoiceHoldButton> {
+  int? _pointer;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = widget.willCancelRecording
+        ? '松开手指，取消'
+        : (widget.isRecording ? '松开 结束' : '按住说话');
+    final titleColor = widget.willCancelRecording
+        ? const Color(0xFFD93025)
+        : QInputBarColors.recordTitle(context.palette);
+
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (event) {
+        if (_pointer != null) {
+          return;
+        }
+        _pointer = event.pointer;
+        widget.onPointerDown(event.position);
+      },
+      onPointerMove: (event) {
+        if (event.pointer != _pointer) {
+          return;
+        }
+        widget.onPointerMove(event.position);
+      },
+      onPointerUp: (event) {
+        if (event.pointer != _pointer) {
+          return;
+        }
+        _pointer = null;
+        widget.onPointerUp();
+      },
+      onPointerCancel: (event) {
+        if (event.pointer != _pointer) {
+          return;
+        }
+        _pointer = null;
+        widget.onPointerCancel();
+      },
+      child: SizedBox(
+        height: QInputBarMetrics.textMinHeight,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: widget.willCancelRecording
+                ? const Color(0xFFFCE8E6)
+                : QInputBarColors.textViewBackground(context.palette),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: widget.willCancelRecording
+                  ? const Color(0xFFD93025)
+                  : QInputBarColors.barBorder(context.palette),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: titleColor,
+              ),
+            ),
+          ),
         ),
       ),
     );

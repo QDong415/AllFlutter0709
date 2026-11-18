@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -29,8 +30,10 @@ class VideoDetailNavBar extends StatelessWidget {
     final alpha = scrollAlpha.clamp(0.0, 1.0);
     final overlayStyle = AppSystemUi.overlayStyleWithStatusBarIcons(
       darkIcons: alpha > 0.5,
+      navigationBar: context.palette.brightness,
     );
 
+    AppSystemUi.apply(overlayStyle);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: overlayStyle,
       child: SizedBox(
@@ -126,13 +129,18 @@ class _NavContent extends StatelessWidget {
               IconButton(
                 onPressed: onLike,
                 icon: Icon(
-                  isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  isLiked
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
                   color: isLiked ? likedColor : iconColor,
                 ),
               ),
               IconButton(
                 onPressed: onReport,
-                icon: Icon(Icons.report_gmailerrorred_outlined, color: iconColor),
+                icon: Icon(
+                  Icons.report_gmailerrorred_outlined,
+                  color: iconColor,
+                ),
               ),
               const Spacer(),
               Padding(
@@ -140,8 +148,7 @@ class _NavContent extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 16,
                   backgroundColor: const Color(0xFFE8E8E8),
-                  backgroundImage:
-                      avatarUrl != null && avatarUrl!.isNotEmpty
+                  backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
                       ? CachedNetworkImageProvider(avatarUrl!)
                       : null,
                   child: avatarUrl == null || avatarUrl!.isEmpty

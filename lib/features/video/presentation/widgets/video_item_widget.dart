@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
@@ -16,11 +17,12 @@ class VideoItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(_radius),
-        border: Border.all(color: const Color(0xFFE7E7E7)),
+        border: Border.all(color: palette.divider),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D000000),
@@ -96,9 +98,9 @@ class VideoItemWidget extends StatelessWidget {
                             video.userName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF666666),
+                              color: palette.bodyText,
                             ),
                           ),
                         ),
@@ -139,7 +141,7 @@ class _VideoCover extends StatelessWidget {
     return AspectRatio(
       aspectRatio: aspectRatio,
       child: DecoratedBox(
-        decoration: const BoxDecoration(color: Color(0xFFF4F4F4)),
+        decoration: BoxDecoration(color: context.palette.pressed),
         child: video.coverUrl?.isNotEmpty == true
             ? _LoggedCoverImage(
                 videoId: video.videoId,
@@ -220,13 +222,13 @@ class _CoverFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(color: Color(0xFFF4F4F4)),
+    return DecoratedBox(
+      decoration: BoxDecoration(color: context.palette.pressed),
       child: Center(
         child: Icon(
           Icons.play_circle_outline_rounded,
           size: 42,
-          color: Color(0xFF999999),
+          color: context.palette.secondaryText,
         ),
       ),
     );

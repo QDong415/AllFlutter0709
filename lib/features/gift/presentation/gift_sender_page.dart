@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/gift/data/gift_list_errors.dart';
 import 'package:all_flutter0709/features/gift/data/gift_model.dart';
 import 'package:all_flutter0709/features/gift/data/gift_repository.dart';
@@ -26,7 +27,9 @@ void openGiftSenderPage(
   if (type != null) {
     query['type'] = '$type';
   }
-  context.push(Uri(path: AppRoutes.giftSenders, queryParameters: query).toString());
+  context.push(
+    Uri(path: AppRoutes.giftSenders, queryParameters: query).toString(),
+  );
 }
 
 /// 谁送了什么礼物。
@@ -109,14 +112,15 @@ class _GiftSenderPageState extends State<GiftSenderPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Scaffold(
       appBar: const CommonAppBar(title: '送礼的人'),
-      backgroundColor: Colors.white,
-      body: _buildBody(),
+      backgroundColor: palette.plainBackground,
+      body: _buildBody(palette),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(AppPalette palette) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -127,7 +131,7 @@ class _GiftSenderPageState extends State<GiftSenderPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(message, style: const TextStyle(color: Color(0xFF8B8B90))),
+            Text(message, style: TextStyle(color: palette.secondaryText)),
             if (!hidden) ...[
               const SizedBox(height: 12),
               FilledButton(
@@ -140,8 +144,8 @@ class _GiftSenderPageState extends State<GiftSenderPage> {
       );
     }
     if (_records.isEmpty) {
-      return const Center(
-        child: Text('还没有人送礼', style: TextStyle(color: Color(0xFF8B8B90))),
+      return Center(
+        child: Text('还没有人送礼', style: TextStyle(color: palette.secondaryText)),
       );
     }
     return NotificationListener<ScrollNotification>(
@@ -154,7 +158,8 @@ class _GiftSenderPageState extends State<GiftSenderPage> {
       },
       child: ListView.separated(
         itemCount: _records.length + (_loadingMore ? 1 : 0),
-        separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+        separatorBuilder: (_, _) =>
+            Divider(height: 1, indent: 72, color: palette.divider),
         itemBuilder: (context, index) {
           if (index >= _records.length) {
             return const Padding(
@@ -175,11 +180,13 @@ class _GiftSenderPageState extends State<GiftSenderPage> {
               record.name.isEmpty ? '用户' : record.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 16, color: palette.titleText),
             ),
             subtitle: Text(
               '${record.title} x${record.count}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 14, color: palette.secondaryText),
             ),
             trailing: record.pictureUrl.isEmpty
                 ? null

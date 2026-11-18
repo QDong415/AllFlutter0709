@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/me/presentation/me_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_match_user_item.dart';
@@ -76,7 +76,7 @@ class _FriendshipListPageState extends State<FriendshipListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       appBar: CommonAppBar(title: widget.args.isFansList ? '我的粉丝' : '我的关注'),
       body: EasyRefresh(
         onRefresh: () => _request(isRefresh: true),
@@ -86,7 +86,8 @@ class _FriendshipListPageState extends State<FriendshipListPage> {
           emptyText: widget.args.isFansList ? '还没有粉丝' : '还没有关注',
           successWidget: ListView.separated(
             itemCount: _userModelList.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            separatorBuilder: (_, _) =>
+                Divider(height: 1, color: context.palette.divider),
             itemBuilder: (context, index) {
               final userModel = _userModelList[index];
               return TopicMatchUserItem(

@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,8 @@ class UserDetailTags extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final neutralBg = context.palette.pressed;
+    final neutralText = context.palette.bodyText;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
       child: Wrap(
@@ -33,17 +36,23 @@ class UserDetailTags extends StatelessWidget {
                   : 'assets/icons/user/profile_icon_female_m_normal.png',
               backgroundColor: profileModel.gender == 2
                   ? const Color(0xFFFFE8F0)
-                  : const Color(0xFFEEEEEE),
+                  : neutralBg,
+              // 女标底色两种模式都是浅粉，字色固定，不跟深色正文走。
+              textColor: profileModel.gender == 2
+                  ? const Color(0xFF666666)
+                  : neutralText,
             ),
           if (profileModel.hasAge)
             _TagChip(
               label: '${profileModel.age} 岁',
-              backgroundColor: const Color(0xFFEEEEEE),
+              backgroundColor: neutralBg,
+              textColor: neutralText,
             ),
           if (profileModel.hasCity)
             _TagChip(
               label: profileModel.cityName,
-              backgroundColor: const Color(0xFFEEEEEE),
+              backgroundColor: neutralBg,
+              textColor: neutralText,
             ),
         ],
       ),
@@ -82,11 +91,7 @@ class _TagChip extends StatelessWidget {
           ],
           Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
-              color: textColor,
-              height: 1.1,
-            ),
+            style: TextStyle(fontSize: 13, color: textColor, height: 1.1),
           ),
         ],
       ),

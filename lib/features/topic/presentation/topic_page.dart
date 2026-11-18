@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/vip/vip_topic_guard.dart';
@@ -101,7 +101,7 @@ class _TopicPageState extends State<TopicPage>
             onPublishTap: () => unawaited(_onPublishTap()),
             isPublishBusy: controller.isBusy,
           ),
-          backgroundColor: AppColors.bodyBackground,
+          backgroundColor: context.palette.bodyBackground,
           body: Column(
             children: [
               TopicSubmitProgressBar(controller: controller),

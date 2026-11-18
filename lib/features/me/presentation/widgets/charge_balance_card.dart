@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 充值页金币余额区，对齐 Android `activity_charge` 的 `price_rl` + `lord_ic_money`。
@@ -11,8 +12,6 @@ class ChargeBalanceCard extends StatelessWidget {
   final String coinText;
   final bool loading;
 
-  static const _textBlack = Color(0xFF5B5B5B);
-
   /// `drawable-xxhdpi/lord_ic_money.png` 为 102px，按 xxhdpi 折算约 34dp。
   static const double _coinIconSize = 34;
 
@@ -25,6 +24,12 @@ class ChargeBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final amountStyle = TextStyle(
+      fontSize: 29,
+      fontWeight: FontWeight.w700,
+      color: context.palette.bodyText,
+      height: 1.1,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, _sectionTop, 14, 0),
       child: Stack(
@@ -35,25 +40,20 @@ class ChargeBalanceCard extends StatelessWidget {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.palette.card,
                 borderRadius: BorderRadius.circular(5),
               ),
               padding: const EdgeInsets.fromLTRB(16, 32, 16, 18),
               child: Column(
                 children: [
-                  Text(
-                    loading ? '…' : coinText,
-                    style: const TextStyle(
-                      fontSize: 29,
-                      fontWeight: FontWeight.w700,
-                      color: _textBlack,
-                      height: 1.1,
-                    ),
-                  ),
+                  Text(loading ? '…' : coinText, style: amountStyle),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     '金币余额',
-                    style: TextStyle(fontSize: 13, color: _textBlack),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.palette.bodyText,
+                    ),
                   ),
                 ],
               ),

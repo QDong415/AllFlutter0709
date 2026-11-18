@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:all_flutter0709/app/app.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
+import 'package:all_flutter0709/app/theme/app_theme_preference.dart';
 import 'package:all_flutter0709/core/account/account_repository.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/core/network/http_client.dart';
@@ -18,7 +19,16 @@ Future<void> main() async {
   await HttpClient.instance.prepare(preferences);
   AppConfig.instance.initialize(preferences);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  AppSystemUi.apply(AppSystemUi.overlayStyle);
+  final themePreference = AppThemePreference.fromStorage(
+    preferences.getInt(AppThemePreferenceNotifier.storageKey) ?? 0,
+  );
+  AppSystemUi.apply(
+    AppSystemUi.overlayForToolbar(
+      themePreference.resolve(
+        WidgetsBinding.instance.platformDispatcher.platformBrightness,
+      ),
+    ),
+  );
   runApp(
     LiquidGlassWidgets.wrap(
       adaptiveQuality: true,

@@ -34,10 +34,7 @@ class ChatGiftBubble extends StatelessWidget {
               ),
             ),
     );
-    final count = GiftCountBadge(
-      count: item.count,
-      markOnRight: isRight,
-    );
+    final count = GiftCountBadge(count: item.count, markOnRight: isRight);
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,

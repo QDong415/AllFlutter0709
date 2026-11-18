@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/user/data/models/user_profile_model.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
@@ -33,7 +34,6 @@ class UserDetailHeader extends StatelessWidget {
   final VoidCallback onFollowTap;
   final VoidCallback onEditTap;
 
-  static const _headerBg = Color(0xFFF8F8F8);
   static const _avatarSize = 96.0;
   static const _avatarOverlap = 30.0;
 
@@ -47,6 +47,7 @@ class UserDetailHeader extends StatelessWidget {
     final intro = profileModel.intro.trim().isEmpty
         ? '尚未填写个人介绍'
         : profileModel.intro;
+    final headerBg = context.palette.bodyBackground;
     final banLabel = profileModel.banLabel.trim();
 
     return Column(
@@ -75,12 +76,12 @@ class UserDetailHeader extends StatelessWidget {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Positioned(
+                    Positioned(
                       left: 0,
                       right: 0,
                       bottom: 0,
                       height: 82,
-                      child: ColoredBox(color: _headerBg),
+                      child: ColoredBox(color: headerBg),
                     ),
                     Positioned(
                       left: 12,
@@ -90,6 +91,8 @@ class UserDetailHeader extends StatelessWidget {
                         child: VipHaloAvatar(
                           size: _avatarSize,
                           imageUrl: avatarUrl,
+                          borderColor: headerBg,
+                          backgroundColor: context.palette.pressed,
                         ),
                       ),
                     ),
@@ -148,7 +151,7 @@ class UserDetailHeader extends StatelessWidget {
           ),
         ),
         ColoredBox(
-          color: _headerBg,
+          color: headerBg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -159,10 +162,10 @@ class UserDetailHeader extends StatelessWidget {
                     Flexible(
                       child: Text(
                         displayName.isEmpty ? '加载中' : displayName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: context.palette.titleText,
                         ),
                       ),
                     ),
@@ -177,10 +180,10 @@ class UserDetailHeader extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                 child: Text(
                   intro,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     height: 1.4,
-                    color: Color(0xFF888888),
+                    color: context.palette.secondaryText,
                   ),
                 ),
               ),
@@ -218,16 +221,16 @@ class _ProfileStatItem extends StatelessWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 21,
-            color: Color(0xFF222222),
+            color: context.palette.titleText,
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF888888)),
+          style: TextStyle(fontSize: 13, color: context.palette.secondaryText),
         ),
       ],
     );

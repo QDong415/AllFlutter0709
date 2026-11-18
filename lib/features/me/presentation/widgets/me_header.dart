@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:flutter/material.dart';
 
@@ -38,6 +39,7 @@ class MeHeader extends StatelessWidget {
         ValueUtil.getQiniuUrlByFileName(avatar, thumbnail: true) ?? '';
     final topInset = MediaQuery.paddingOf(context).top;
 
+    final palette = context.palette;
     return Padding(
       padding: EdgeInsets.fromLTRB(14, topInset + 36, 14, 0),
       child: Stack(
@@ -48,7 +50,7 @@ class MeHeader extends StatelessWidget {
             margin: const EdgeInsets.only(top: 65),
             padding: const EdgeInsets.fromLTRB(16, 70, 16, 18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.card,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Column(
@@ -63,10 +65,10 @@ class MeHeader extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF5B5B5B),
+                            color: palette.bodyText,
                           ),
                         ),
                       ),
@@ -92,7 +94,7 @@ class MeHeader extends StatelessWidget {
                       width: 1,
                       height: 14,
                       margin: const EdgeInsets.symmetric(horizontal: 12),
-                      color: const Color(0xFFE6E6E6),
+                      color: palette.divider,
                     ),
                     _CountButton(
                       title: '粉丝',
@@ -196,23 +198,22 @@ class _WalletChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              iconAsset,
-              width: 18,
-              height: 18,
-            ),
+            Image.asset(iconAsset, width: 18, height: 18),
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF919191)),
+              style: TextStyle(
+                fontSize: 14,
+                color: context.palette.secondaryText,
+              ),
             ),
             const SizedBox(width: 4),
             Text(
               '$value',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF5B5B5B),
+                color: context.palette.bodyText,
               ),
             ),
           ],
@@ -242,15 +243,18 @@ class _CountButton extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 15, color: Color(0xFF919191)),
+            style: TextStyle(
+              fontSize: 15,
+              color: context.palette.secondaryText,
+            ),
           ),
           const SizedBox(width: 5),
           Text(
             '$count',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF5B5B5B),
+              color: context.palette.bodyText,
             ),
           ),
         ],

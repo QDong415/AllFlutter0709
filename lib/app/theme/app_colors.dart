@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// 应用统一色板。
+/// 应用统一色板（浅色固定值）。
+///
+/// 会随明暗切换的壳层色在 [AppPalette]，不要把这里改成运行时取值。
 ///
 /// 业务强调色（如点赞橙）与壳层主色分离，避免全局被红覆盖。
 abstract final class AppColors {

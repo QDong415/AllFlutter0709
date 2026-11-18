@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
@@ -30,6 +32,10 @@ class CommentSendHelper {
     required String targetId,
     required String content,
     CommentReplyTarget? replyTarget,
+    File? localAudioFile,
+    int audioDurationSeconds = 0,
+    String audioFileName = '',
+    File? localImageFile,
   }) {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final tempId = DateTime.now().microsecondsSinceEpoch.toString();
@@ -56,6 +62,10 @@ class CommentSendHelper {
       userType: account.userType,
       gender: account.gender,
       vip: account.vip,
+      audioFileName: audioFileName,
+      audioDurationSeconds: audioDurationSeconds,
+      localAudioFile: localAudioFile,
+      localImageFile: localImageFile,
     );
   }
 
@@ -64,6 +74,9 @@ class CommentSendHelper {
     required CommentTargetType type,
     required CommentModel localComment,
     String atUserIds = '',
+    String audioFileName = '',
+    int audioDurationSeconds = 0,
+    String photoArrayJson = '',
   }) async {
     final result = await repository.submitComment(
       targetId: targetId,
@@ -74,6 +87,9 @@ class CommentSendHelper {
       toUserId: localComment.toUserId,
       toUserName: localComment.toUserName,
       atUserIds: atUserIds,
+      audio: audioFileName,
+      audioDurationSeconds: audioDurationSeconds,
+      photoArrayJson: photoArrayJson,
     );
     if (atUserIds.isNotEmpty && result.cid.isNotEmpty) {
       try {

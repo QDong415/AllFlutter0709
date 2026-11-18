@@ -1,17 +1,25 @@
+import 'dart:async';
+
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/core/bridge/native_bridge.dart';
+import 'package:all_flutter0709/core/bridge/native_methods.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// 系统状态栏 / 导航栏样式（全应用唯一来源）。
 ///
 /// 不要直接使用 [SystemUiOverlayStyle.light] / [SystemUiOverlayStyle.dark]，
-/// 它们会把 `systemNavigationBarColor` 设成黑色，小米等机型底部指示区会变黑。
+/// 它们在小米上会把导航栏对比度强制打开。导航栏用明确的白/黑，图标跟随明暗。
 abstract final class AppSystemUi {
-  /// 默认：透明系统导航栏 + 深色图标（配合液态玻璃底栏 / edge-to-edge）。
+  /// 当前界面明暗。全屏预览退出时用它恢复系统栏。
+  static Brightness themeBrightness = Brightness.light;
+
+  /// 浅色默认：白底导航栏 + 深色图标。深色由 [overlayForToolbar] 覆盖。
   static const SystemUiOverlayStyle overlayStyle = SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarColor: Color(0xFFFFFFFF),
+    systemNavigationBarDividerColor: Color(0xFFFFFFFF),
     systemNavigationBarContrastEnforced: false,
     systemStatusBarContrastEnforced: false,
     systemNavigationBarIconBrightness: Brightness.dark,
@@ -32,21 +40,83 @@ abstract final class AppSystemUi {
         statusBarBrightness: Brightness.dark,
       );
 
-  /// 在 [overlayStyle]（透明导航栏）基础上，只切换状态栏图标明暗。
+  /// 浅色：白底导航栏、深色状态栏文字。黑夜：黑底导航栏、浅色状态栏文字。
+  static SystemUiOverlayStyle overlayForToolbar(Brightness toolbarBrightness) {
+    final dark = toolbarBrightness == Brightness.dark;
+    final navigationBar = dark
+        ? const Color(0xFF000000)
+        : const Color(0xFFFFFFFF);
+    return overlayStyle.copyWith(
+      systemNavigationBarColor: navigationBar,
+      systemNavigationBarDividerColor: navigationBar,
+      systemNavigationBarIconBrightness: dark
+          ? Brightness.light
+          : Brightness.dark,
+      statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+    );
+  }
+
+  /// 导航栏跟 [navigationBar] 走，状态栏图标可单独指定。
   ///
-  /// 用于个人主页 / 视频详情等「顶栏随滚动变实色」的场景。
+  /// 个人主页封面、视频详情这类顶栏会随滚动变色，状态栏图标不能只看整页明暗。
   static SystemUiOverlayStyle overlayStyleWithStatusBarIcons({
     required bool darkIcons,
+    Brightness navigationBar = Brightness.light,
   }) {
+    final darkNavigation = navigationBar == Brightness.dark;
+    final navigationColor = darkNavigation
+        ? const Color(0xFF000000)
+        : const Color(0xFFFFFFFF);
     return overlayStyle.copyWith(
+      systemNavigationBarColor: navigationColor,
+      systemNavigationBarDividerColor: navigationColor,
+      systemNavigationBarIconBrightness: darkNavigation
+          ? Brightness.light
+          : Brightness.dark,
       statusBarIconBrightness: darkIcons ? Brightness.dark : Brightness.light,
       statusBarBrightness: darkIcons ? Brightness.light : Brightness.dark,
     );
   }
 
-  /// 立即应用到系统栏（部分机型仅靠 [AnnotatedRegion] 不可靠）。
+  static int? _appliedSignature;
+
+  /// 立即应用到系统栏。小米会在回到前台时重刷系统栏，所以同时写给原生。
   static void apply(SystemUiOverlayStyle style) {
+    final signature = Object.hash(
+      style.statusBarIconBrightness,
+      style.statusBarBrightness,
+      style.systemNavigationBarColor,
+      style.systemNavigationBarIconBrightness,
+      style.statusBarColor,
+    );
+    if (signature == _appliedSignature) {
+      return;
+    }
+    _appliedSignature = signature;
     SystemChrome.setSystemUIOverlayStyle(style);
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    final navigationColor =
+        style.systemNavigationBarColor ?? const Color(0xFFFFFFFF);
+    unawaited(
+      NativeBridge.instance
+          .call<bool>(
+            api: NativeApis.setSystemBars,
+            args: <String, dynamic>{
+              'lightStatusBars':
+                  style.statusBarIconBrightness != Brightness.light,
+              'lightNavigationBars':
+                  style.systemNavigationBarIconBrightness != Brightness.light,
+              'navigationBarColor': navigationColor.toARGB32(),
+            },
+          )
+          .catchError((Object _) {
+            _appliedSignature = null;
+            return false;
+          }),
+    );
   }
 }
 
@@ -70,7 +140,9 @@ class _FullscreenMediaSystemUiState extends State<FullscreenMediaSystemUi> {
 
   @override
   void dispose() {
-    AppSystemUi.apply(AppSystemUi.overlayStyle);
+    AppSystemUi.apply(
+      AppSystemUi.overlayForToolbar(AppSystemUi.themeBrightness),
+    );
     super.dispose();
   }
 

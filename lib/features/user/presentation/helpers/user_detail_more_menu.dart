@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 别人主页右上角菜单的选项。
@@ -30,10 +30,12 @@ Future<UserDetailMoreAction?> showUserDetailMoreMenu(
   }
 
   final topLeft = button.localToGlobal(Offset.zero, ancestor: overlay);
+  final palette = anchorContext.palette;
+  final itemStyle = TextStyle(fontSize: 17, color: palette.titleText);
   return showMenu<UserDetailMoreAction>(
     context: anchorContext,
     useRootNavigator: true,
-    color: Colors.white,
+    color: palette.card,
     elevation: 8,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     constraints: const BoxConstraints(minWidth: 160, maxWidth: 160),
@@ -46,30 +48,21 @@ Future<UserDetailMoreAction?> showUserDetailMoreMenu(
       ),
       Offset.zero & overlay.size,
     ),
-    items: const [
+    items: [
       PopupMenuItem<UserDetailMoreAction>(
         value: UserDetailMoreAction.remark,
         height: 44,
-        child: Text(
-          '设置备注',
-          style: TextStyle(fontSize: 17, color: AppColors.titleText),
-        ),
+        child: Text('设置备注', style: itemStyle),
       ),
       PopupMenuItem<UserDetailMoreAction>(
         value: UserDetailMoreAction.block,
         height: 44,
-        child: Text(
-          '拉入黑名单',
-          style: TextStyle(fontSize: 17, color: AppColors.titleText),
-        ),
+        child: Text('拉入黑名单', style: itemStyle),
       ),
       PopupMenuItem<UserDetailMoreAction>(
         value: UserDetailMoreAction.report,
         height: 44,
-        child: Text(
-          '举报',
-          style: TextStyle(fontSize: 17, color: AppColors.titleText),
-        ),
+        child: Text('举报', style: itemStyle),
       ),
     ],
   );

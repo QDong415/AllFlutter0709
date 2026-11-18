@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:all_flutter0709/core/audio/app_audio_playback_coordinator.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_audio_file_store.dart';
+import 'package:all_flutter0709/features/topic/data/topic_audio_source.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -30,7 +31,7 @@ class TopicAudioPlayController extends ChangeNotifier
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<PlayerState>? _stateSubscription;
 
-  String? _targetTid;
+  String? _playKey;
   TopicAudioPhase _phase = TopicAudioPhase.idle;
   double _progress = 0;
   int _positionSeconds = 0;
@@ -39,10 +40,13 @@ class TopicAudioPlayController extends ChangeNotifier
   String _errorText = '';
   int _errorNonce = 0;
 
-  /// 当前想播放的动态 id。为空表示没有播放意图。
-  String? get targetTid => _targetTid;
+  /// 当前想播放的标识（动态 tid 或评论 `c:cid`）。为空表示没有播放意图。
+  String? get targetPlayKey => _playKey;
 
-  /// 当前阶段。只有 [targetTid] 对应的语音条会显示 loading / 进度。
+  /// 兼容旧调用。
+  String? get targetTid => _playKey;
+
+  /// 当前阶段。只有 [targetPlayKey] 对应的语音条会显示 loading / 进度。
   TopicAudioPhase get phase => _phase;
 
   /// 当前目标的播放进度，0 到 1。
@@ -60,45 +64,64 @@ class TopicAudioPlayController extends ChangeNotifier
   /// 失败次数。界面用来决定是否弹出提示。
   int get errorNonce => _errorNonce;
 
-  /// 点击语音条。同一条在播则暂停，暂停后再点继续；点另一条会停掉当前这条。
+  /// 点击动态语音条。
   Future<void> onTap(TopicModel topicModel) async {
-    final tid = topicModel.tid.trim();
-    if (tid.isEmpty || !topicModel.hasAudio) {
+    await onTapSource(TopicAudioSource.fromTopic(topicModel));
+  }
+
+  /// 点击语音条。同一条在播则暂停，暂停后再点继续；点另一条会停掉当前这条。
+  Future<void> onTapSource(TopicAudioSource source) async {
+    final key = source.playKey.trim();
+    if (key.isEmpty || !source.canPlay) {
       return;
     }
-    if (_targetTid == tid && _phase == TopicAudioPhase.playing) {
+    if (_playKey == key && _phase == TopicAudioPhase.playing) {
       await _pause();
       return;
     }
-    if (_targetTid == tid && _phase == TopicAudioPhase.paused) {
+    if (_playKey == key && _phase == TopicAudioPhase.paused) {
       await _resume();
       return;
     }
-    if (_targetTid == tid && _phase == TopicAudioPhase.loading) {
+    if (_playKey == key && _phase == TopicAudioPhase.loading) {
       _dropIntent();
       return;
     }
 
     final generation = ++_generation;
+    // 先同步冻结 UI，再停止和重新装载播放器。just_audio 在 stop/setFilePath
+    // 完成前仍可能发出上一轮 position；idle 阶段会忽略这些事件，避免进度
+    // 先前进约 0.2 秒、随后又回到 0。
+    _playKey = key;
+    _phase = TopicAudioPhase.idle;
+    _durationSeconds = source.audioDurationSeconds;
+    _positionSeconds = 0;
+    _progress = 0;
+    notifyListeners();
+
     await _stopPlayer();
     if (generation != _generation) {
       return;
     }
-    _targetTid = tid;
-    _durationSeconds = topicModel.audioDurationSeconds;
-    _positionSeconds = 0;
-    _progress = 0;
 
-    final cached = await TopicAudioFileStore.cachedFileForName(
-      topicModel.audioFileName,
-    );
-    if (cached == null) {
-      _phase = TopicAudioPhase.loading;
+    File? readyFile;
+    final pending = source.localFile;
+    if (pending != null &&
+        await pending.exists() &&
+        await pending.length() > 0) {
+      readyFile = pending;
+    } else if (source.hasRemoteAudio) {
+      readyFile = await TopicAudioFileStore.cachedFileForName(
+        source.audioFileName,
+      );
     }
-    notifyListeners();
+    if (readyFile == null) {
+      _phase = TopicAudioPhase.loading;
+      notifyListeners();
+    }
 
-    final file = cached ?? await _localOrDownload(topicModel);
-    if (generation != _generation || _targetTid != tid) {
+    final file = readyFile ?? await _localOrDownload(source);
+    if (generation != _generation || _playKey != key) {
       return;
     }
     if (file == null) {
@@ -106,12 +129,12 @@ class TopicAudioPlayController extends ChangeNotifier
       _fail('语音下载失败');
       return;
     }
-    await _startFile(file, generation, tid);
+    await _startFile(file, generation, key);
   }
 
   /// 整格滑出屏幕、被盖住或退到后台时调用。下载继续，但完成后不播放。
-  void onHidden(String tid) {
-    if (_targetTid != tid.trim()) {
+  void onHidden(String playKey) {
+    if (_playKey != playKey.trim()) {
       return;
     }
     _dropIntent();
@@ -121,9 +144,9 @@ class TopicAudioPlayController extends ChangeNotifier
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      final tid = _targetTid;
-      if (tid != null) {
-        onHidden(tid);
+      final key = _playKey;
+      if (key != null) {
+        onHidden(key);
       }
     }
   }
@@ -138,22 +161,22 @@ class TopicAudioPlayController extends ChangeNotifier
     super.dispose();
   }
 
-  Future<File?> _localOrDownload(TopicModel topicModel) async {
+  Future<File?> _localOrDownload(TopicAudioSource source) async {
     final localFile = await TopicAudioFileStore.fileForName(
-      topicModel.audioFileName,
+      source.audioFileName,
     );
-    final inflight = _downloadMap[topicModel.tid];
+    final inflight = _downloadMap[source.playKey];
     if (inflight != null) {
       return inflight;
     }
-    final future = _download(topicModel, localFile);
-    _downloadMap[topicModel.tid] = future;
-    future.whenComplete(() => _downloadMap.remove(topicModel.tid));
+    final future = _download(source, localFile);
+    _downloadMap[source.playKey] = future;
+    future.whenComplete(() => _downloadMap.remove(source.playKey));
     return future;
   }
 
-  Future<File?> _download(TopicModel topicModel, File localFile) async {
-    final url = topicModel.audioUrl.trim();
+  Future<File?> _download(TopicAudioSource source, File localFile) async {
+    final url = source.audioUrl.trim();
     if (url.isEmpty) {
       return null;
     }
@@ -177,17 +200,17 @@ class TopicAudioPlayController extends ChangeNotifier
     return null;
   }
 
-  Future<void> _startFile(File file, int generation, String tid) async {
+  Future<void> _startFile(File file, int generation, String playKey) async {
     try {
       await _player.setFilePath(file.path);
-      if (generation != _generation || _targetTid != tid) {
+      if (generation != _generation || _playKey != playKey) {
         return;
       }
       await AppAudioPlaybackCoordinator.instance.start(
         owner: _playbackOwner,
         stop: _stopForCoordinator,
         start: () {
-          if (generation != _generation || _targetTid != tid) {
+          if (generation != _generation || _playKey != playKey) {
             return;
           }
           _phase = TopicAudioPhase.playing;
@@ -196,7 +219,7 @@ class TopicAudioPlayController extends ChangeNotifier
         },
       );
     } catch (_) {
-      if (generation != _generation || _targetTid != tid) {
+      if (generation != _generation || _playKey != playKey) {
         return;
       }
       _dropIntent();
@@ -233,7 +256,7 @@ class TopicAudioPlayController extends ChangeNotifier
   void _dropIntent() {
     _generation++;
     AppAudioPlaybackCoordinator.instance.release(_playbackOwner);
-    _targetTid = null;
+    _playKey = null;
     _phase = TopicAudioPhase.idle;
     _progress = 0;
     _positionSeconds = 0;
@@ -246,7 +269,7 @@ class TopicAudioPlayController extends ChangeNotifier
 
   Future<void> _stopForCoordinator() async {
     _generation++;
-    _targetTid = null;
+    _playKey = null;
     _phase = TopicAudioPhase.idle;
     _progress = 0;
     _positionSeconds = 0;
@@ -284,7 +307,7 @@ class TopicAudioPlayController extends ChangeNotifier
     }
     _generation++;
     AppAudioPlaybackCoordinator.instance.release(_playbackOwner);
-    _targetTid = null;
+    _playKey = null;
     _phase = TopicAudioPhase.idle;
     _progress = 0;
     _positionSeconds = 0;

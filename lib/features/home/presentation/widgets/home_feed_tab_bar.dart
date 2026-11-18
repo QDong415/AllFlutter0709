@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 首页顶部：最新、关注、匹配、AI（样式与原先三 Tab 一致，仅多一项）。
@@ -12,7 +13,7 @@ class HomeFeedTabBar extends StatelessWidget {
     return TabBar(
       controller: controller,
       labelColor: AppColors.link,
-      unselectedLabelColor: AppColors.titleText,
+      unselectedLabelColor: context.palette.titleText,
       indicatorColor: AppColors.link,
       indicatorSize: TabBarIndicatorSize.label,
       indicator: const UnderlineTabIndicator(

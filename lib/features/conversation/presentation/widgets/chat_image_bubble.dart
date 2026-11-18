@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -43,16 +44,18 @@ class ChatImageBubble extends StatelessWidget {
         : CachedNetworkImage(
             imageUrl: item.imageUrl ?? '',
             fit: BoxFit.cover,
-            placeholder: (_, _) => const ColoredBox(
-              color: Color(0xFFF1F1F1),
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            placeholder: (_, _) => ColoredBox(
+              color: context.palette.inputExtendBackground,
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
-            errorWidget: (_, _, _) => const ColoredBox(
-              color: Color(0xFFF1F1F1),
+            errorWidget: (_, _, _) => ColoredBox(
+              color: context.palette.inputExtendBackground,
               child: Center(
                 child: Icon(
                   Icons.broken_image_outlined,
-                  color: Color(0xFFB0B0B0),
+                  color: context.palette.secondaryText,
                 ),
               ),
             ),

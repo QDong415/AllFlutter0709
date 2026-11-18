@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 「我的」页一组白底菜单，圆角对齐 Android `white_single_round`（4dp）。
@@ -8,21 +9,22 @@ class MeMenuSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 14, 14, 0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
         children: [
           for (var index = 0; index < itemList.length; index++) ...[
             if (index > 0)
-              const Divider(
+              Divider(
                 height: 0.5,
                 thickness: 0.5,
                 indent: 18,
-                color: Color(0xFFE6E6E6),
+                color: palette.divider,
               ),
             _MeMenuRow(item: itemList[index]),
           ],
@@ -65,7 +67,10 @@ class _MeMenuRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.title,
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF5B5B5B)),
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: context.palette.bodyText,
+                  ),
                 ),
               ),
               Padding(

@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/network/app_env.dart';
 import 'package:all_flutter0709/features/auth/presentation/agreement_page.dart';
 import 'package:flutter/gestures.dart';
@@ -60,8 +61,7 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
 
   @override
   Widget build(BuildContext context) {
-    final canRequest =
-        widget.countdownSeconds == 0 && !widget.isRequestingCode;
+    final canRequest = widget.countdownSeconds == 0 && !widget.isRequestingCode;
     final buttonText = widget.countdownSeconds > 0
         ? '${widget.countdownSeconds}秒后重获'
         : '获取验证码';
@@ -83,20 +83,27 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(11),
               ],
+              style: TextStyle(color: context.palette.titleText, fontSize: 16),
               decoration: InputDecoration(
                 hintText: '请输入手机号',
-                prefixIcon: const Padding(
-                  padding: EdgeInsets.only(left: 14, right: 8),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 14, right: 8),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('+86', style: TextStyle(color: AppColors.titleText)),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_drop_down, color: AppColors.titleText),
+                      Text(
+                        '+86',
+                        style: TextStyle(color: context.palette.titleText),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: context.palette.titleText,
+                      ),
                       SizedBox(
                         width: 1,
                         height: 18,
-                        child: ColoredBox(color: AppColors.divider),
+                        child: ColoredBox(color: context.palette.divider),
                       ),
                     ],
                   ),
@@ -107,7 +114,7 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.divider),
+                  borderSide: BorderSide(color: context.palette.divider),
                 ),
               ),
             ),
@@ -150,9 +157,9 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
                 Expanded(
                   child: Text.rich(
                     TextSpan(
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF8A8A8A),
+                        color: context.palette.secondaryText,
                       ),
                       children: [
                         const TextSpan(text: '登录即同意'),
@@ -176,9 +183,9 @@ class _SmsLoginPhoneViewState extends State<SmsLoginPhoneView> {
             const SizedBox(height: 12),
             TextButton(
               onPressed: widget.onPasswordLogin,
-              child: const Text(
+              child: Text(
                 '已有账号，使用密码登录',
-                style: TextStyle(color: AppColors.titleText),
+                style: TextStyle(color: context.palette.titleText),
               ),
             ),
           ],
@@ -206,7 +213,7 @@ class _BrandMark extends StatelessWidget {
         Text(
           '梦缘AI',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: AppColors.titleText,
+            color: context.palette.titleText,
             fontWeight: FontWeight.w700,
           ),
         ),

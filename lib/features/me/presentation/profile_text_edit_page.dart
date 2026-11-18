@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/me/presentation/profile_edit_page.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +37,12 @@ class _ProfileTextEditPageState extends State<ProfileTextEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final border = OutlineInputBorder(
+      borderSide: BorderSide(color: palette.divider),
+    );
     return Scaffold(
+      backgroundColor: palette.bodyBackground,
       appBar: CommonAppBar(
         title: widget.args.title,
         actions: [TextButton(onPressed: _submit, child: const Text('完成'))],
@@ -48,7 +54,18 @@ class _ProfileTextEditPageState extends State<ProfileTextEditPage> {
           autofocus: true,
           maxLength: widget.args.maxLength,
           maxLines: widget.args.multiline ? 8 : 1,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+          style: TextStyle(fontSize: 16, color: palette.ink),
+          cursorColor: palette.ink,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: palette.card,
+            counterStyle: TextStyle(color: palette.secondaryText),
+            border: border,
+            enabledBorder: border,
+            focusedBorder: border.copyWith(
+              borderSide: BorderSide(color: palette.primary),
+            ),
+          ),
         ),
       ),
     );

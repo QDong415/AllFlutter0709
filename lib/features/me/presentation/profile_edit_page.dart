@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
@@ -90,13 +90,15 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   Future<void> _pickAge(int currentAge) async {
     final selected = await showModalBottomSheet<int>(
       context: context,
+      backgroundColor: context.palette.card,
       builder: (context) {
+        final palette = context.palette;
         return ListView.builder(
           itemCount: 35,
           itemBuilder: (context, index) {
             final age = 15 + index;
             return ListTile(
-              title: Text('$age'),
+              title: Text('$age', style: TextStyle(color: palette.titleText)),
               selected: age == currentAge,
               onTap: () => Navigator.pop(context, age),
             );
@@ -126,6 +128,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     final picked = await showModalBottomSheet<_CityPick>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: context.palette.card,
       builder: (context) => _CityPicker(provinceList: provinceList),
     );
     if (picked == null) {
@@ -152,7 +155,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
     final intro = account?.intro ?? '';
 
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       appBar: const CommonAppBar(title: '我的资料'),
       body: Stack(
         children: [
@@ -164,12 +167,16 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 onTap: _changeAvatar,
                 trailing: CircleAvatar(
                   radius: 16,
-                  backgroundColor: const Color(0xFFE6E6E6),
+                  backgroundColor: context.palette.pressed,
                   backgroundImage: avatarUrl.isEmpty
                       ? null
                       : NetworkImage(avatarUrl),
                   child: avatarUrl.isEmpty
-                      ? const Icon(Icons.person, size: 18, color: Colors.white)
+                      ? Icon(
+                          Icons.person,
+                          size: 18,
+                          color: context.palette.secondaryText,
+                        )
                       : null,
                 ),
               ),
@@ -188,11 +195,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 value: age == 0 ? '' : '$age岁',
                 onTap: () => _pickAge(age),
               ),
-              _EditRow(
-                label: '性别',
-                value: genderText,
-                showArrow: false,
-              ),
+              _EditRow(label: '性别', value: genderText, showArrow: false),
               _EditRow(
                 label: '城市',
                 value: account?.cityName ?? '',
@@ -200,7 +203,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               ),
               const _SectionLabel('自我介绍'),
               Material(
-                color: AppColors.white,
+                color: context.palette.card,
                 child: InkWell(
                   onTap: () => _editText(
                     title: '自我介绍',
@@ -218,8 +221,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                         fontSize: 15,
                         height: 1.5,
                         color: intro.isEmpty
-                            ? const Color(0xFFBBBBBB)
-                            : AppColors.titleText,
+                            ? context.palette.secondaryText
+                            : context.palette.titleText,
                       ),
                     ),
                   ),
@@ -246,7 +249,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 13, color: Color(0xFF999999)),
+        style: TextStyle(fontSize: 13, color: context.palette.secondaryText),
       ),
     );
   }
@@ -270,27 +273,25 @@ class _EditRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final isPlaceholder = value.isEmpty && trailing == null;
     return Material(
-      color: AppColors.white,
+      color: palette.card,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: 50,
           padding: const EdgeInsets.only(left: 16),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: Color(0xFFE6E6E6), width: 0.5),
+              bottom: BorderSide(color: palette.divider, width: 0.5),
             ),
           ),
           child: Row(
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.titleText,
-                ),
+                style: TextStyle(fontSize: 15, color: palette.titleText),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -299,12 +300,7 @@ class _EditRow extends StatelessWidget {
                   textAlign: TextAlign.right,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: isPlaceholder
-                        ? const Color(0xFFBBBBBB)
-                        : const Color(0xFF999999),
-                  ),
+                  style: TextStyle(fontSize: 15, color: palette.secondaryText),
                 ),
               ),
               if (trailing != null) ...[
@@ -313,9 +309,9 @@ class _EditRow extends StatelessWidget {
                 const SizedBox(width: 2),
               ],
               if (showArrow)
-                const Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.chevron_right, color: Color(0xFFC8C8C8)),
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(Icons.chevron_right, color: palette.chevron),
                 )
               else
                 const SizedBox(width: 16),
@@ -355,6 +351,7 @@ class _CityPickerState extends State<_CityPicker> {
         ? null
         : cityList[_cityIndex.clamp(0, cityList.length - 1)];
 
+    final palette = context.palette;
     return SafeArea(
       child: SizedBox(
         height: 360,
@@ -366,8 +363,12 @@ class _CityPickerState extends State<_CityPicker> {
                   onPressed: () => Navigator.pop(context),
                   child: const Text('取消'),
                 ),
-                const Expanded(
-                  child: Text('城市选择', textAlign: TextAlign.center),
+                Expanded(
+                  child: Text(
+                    '城市选择',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: palette.titleText),
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
@@ -392,7 +393,10 @@ class _CityPickerState extends State<_CityPicker> {
                       itemBuilder: (context, index) {
                         return ListTile(
                           selected: index == _provinceIndex,
-                          title: Text(widget.provinceList[index].name),
+                          title: Text(
+                            widget.provinceList[index].name,
+                            style: TextStyle(color: palette.titleText),
+                          ),
                           onTap: () => setState(() {
                             _provinceIndex = index;
                             _cityIndex = 0;
@@ -407,7 +411,10 @@ class _CityPickerState extends State<_CityPicker> {
                       itemBuilder: (context, index) {
                         return ListTile(
                           selected: index == _cityIndex,
-                          title: Text(cityList[index].name),
+                          title: Text(
+                            cityList[index].name,
+                            style: TextStyle(color: palette.titleText),
+                          ),
                           onTap: () => setState(() => _cityIndex = index),
                         );
                       },

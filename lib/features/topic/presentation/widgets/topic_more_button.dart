@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,7 @@ class TopicMoreButton extends StatelessWidget {
     final selected = await showMenu<String>(
       context: context,
       useRootNavigator: true,
-      color: Colors.white,
+      color: context.palette.card,
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       constraints: const BoxConstraints(minWidth: 128, maxWidth: 160),
@@ -58,7 +59,7 @@ class TopicMoreButton extends StatelessWidget {
             isOwner ? '删除' : '举报',
             style: TextStyle(
               fontSize: 17,
-              color: isOwner ? AppColors.primary : const Color(0xFF333333),
+              color: isOwner ? AppColors.primary : context.palette.titleText,
             ),
           ),
         ),
@@ -82,7 +83,10 @@ class TopicMoreButton extends StatelessWidget {
       onTap: () => _openMenu(context),
       child: Padding(
         padding: const EdgeInsets.only(left: 8, top: 4, bottom: 4),
-        child: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade400),
+        child: Icon(
+          Icons.keyboard_arrow_down,
+          color: context.palette.secondaryText,
+        ),
       ),
     );
   }

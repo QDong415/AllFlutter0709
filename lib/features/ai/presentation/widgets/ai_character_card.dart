@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/ai/data/models/ai_character_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -18,8 +19,9 @@ class AiCharacterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Material(
-      color: AppColors.white,
+      color: palette.card,
       borderRadius: BorderRadius.circular(14),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -40,8 +42,8 @@ class AiCharacterCard extends StatelessWidget {
                           characterModel.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.titleText,
+                          style: TextStyle(
+                            color: palette.titleText,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -78,8 +80,10 @@ class AiCharacterCard extends StatelessWidget {
                           : characterModel.greeting,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF777777),
+                      style: TextStyle(
+                        color: palette.brightness == Brightness.dark
+                            ? palette.secondaryText
+                            : const Color(0xFF777777),
                         fontSize: 12,
                         height: 1.45,
                       ),
@@ -145,18 +149,20 @@ class _ImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isDark = palette.brightness == Brightness.dark;
     return ColoredBox(
-      color: const Color(0xFFEAEAEA),
+      color: isDark ? palette.pressed : const Color(0xFFEAEAEA),
       child: Center(
         child: showProgress
             ? const SizedBox.square(
                 dimension: 22,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(
+            : Icon(
                 Icons.person_rounded,
                 size: 54,
-                color: Color(0xFFB8B8B8),
+                color: isDark ? palette.secondaryText : const Color(0xFFB8B8B8),
               ),
       ),
     );

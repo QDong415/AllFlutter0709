@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 动态语音条：进度、时间、播放或暂停。下载中显示转圈。
@@ -22,6 +23,7 @@ class TopicAudioBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final width = (108.0 + durationSeconds * 2.2).clamp(128.0, 236.0);
     return Align(
       alignment: Alignment.centerLeft,
@@ -33,7 +35,7 @@ class TopicAudioBar extends StatelessWidget {
           height: 36,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: palette.pressed,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
@@ -44,9 +46,11 @@ class TopicAudioBar extends StatelessWidget {
                 child: loading
                     ? const CircularProgressIndicator(strokeWidth: 2)
                     : Icon(
-                        playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        playing
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
                         size: 20,
-                        color: const Color(0xFF222222),
+                        color: palette.titleText,
                       ),
               ),
               const SizedBox(width: 8),
@@ -58,7 +62,7 @@ class TopicAudioBar extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        const ColoredBox(color: Color(0xFFD5D8DE)),
+                        ColoredBox(color: palette.divider),
                         FractionallySizedBox(
                           alignment: Alignment.centerLeft,
                           widthFactor: progress.clamp(0.0, 1.0),
@@ -72,9 +76,9 @@ class TopicAudioBar extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 timeLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF666666),
+                  color: palette.bodyText,
                   fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),

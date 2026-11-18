@@ -79,7 +79,8 @@ abstract final class ChatImageFileStore {
       return message;
     }
     final currentPath = '$directory$separator$name';
-    if (!File(currentPath).existsSync() || message.localFilePath == currentPath) {
+    if (!File(currentPath).existsSync() ||
+        message.localFilePath == currentPath) {
       return message;
     }
     return message.copyWith(localFilePath: currentPath);

@@ -1,5 +1,7 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
+import 'package:all_flutter0709/app/theme/app_theme_preference.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/me/presentation/helpers/me_account_helper.dart';
@@ -15,7 +17,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 
-/// 系统设置。对齐 Android `MineSystemActivity`（不含夜间模式）。
+/// 系统设置。对齐 Android `MineSystemActivity`，黑夜模式对齐 iOS 设置页。
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -112,6 +114,35 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   String _hideLabel(bool hide) => hide ? '隐藏' : '不隐藏';
+
+  Future<void> _pickTheme(AppThemePreference current) async {
+    final selected = await showModalBottomSheet<AppThemePreference>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('跟随系统'),
+              onTap: () => Navigator.pop(context, AppThemePreference.system),
+            ),
+            ListTile(
+              title: const Text('普通模式'),
+              onTap: () => Navigator.pop(context, AppThemePreference.light),
+            ),
+            ListTile(
+              title: const Text('黑夜模式'),
+              onTap: () => Navigator.pop(context, AppThemePreference.dark),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || selected == current) {
+      return;
+    }
+    await ref.read(appThemePreferenceProvider.notifier).setPreference(selected);
+  }
 
   Future<void> _setSlience(int value) async {
     final current = ref.read(accountProvider);
@@ -241,9 +272,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
     final slienceText = (account?.slience ?? 0) == 0 ? '响铃' : '静音';
+    final themePreference = ref.watch(appThemePreferenceProvider);
+    final palette = context.palette;
 
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: palette.bodyBackground,
       appBar: const CommonAppBar(title: '系统设置'),
       body: ListView(
         children: [
@@ -272,6 +305,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               );
               if (value != null) await _setSlience(value);
             },
+          ),
+          _SettingTile(
+            title: '黑夜模式',
+            trailing: themePreference.settingsLabel,
+            onTap: () => _pickTheme(themePreference),
           ),
           _SettingTile(title: '系统通知设置', onTap: _openSystemNotificationSettings),
           _SettingTile(title: '检查更新', onTap: _checkUpdate),
@@ -370,16 +408,20 @@ class _SettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final titleStyleColor =
+        titleColor ??
+        (palette.brightness == Brightness.dark ? palette.titleText : null);
     return Material(
-      color: AppColors.white,
+      color: palette.card,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: AppColors.divider, width: 0.5),
+              bottom: BorderSide(color: palette.divider, width: 0.5),
             ),
           ),
           child: Row(
@@ -387,15 +429,12 @@ class _SettingTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(fontSize: 15, color: titleColor),
+                  style: TextStyle(fontSize: 15, color: titleStyleColor),
                 ),
               ),
               if (trailing != null)
-                Text(
-                  trailing!,
-                  style: const TextStyle(color: Color(0xFF999999)),
-                ),
-              const Icon(Icons.chevron_right, color: Color(0xFFC8C8C8)),
+                Text(trailing!, style: TextStyle(color: palette.secondaryText)),
+              Icon(Icons.chevron_right, color: palette.chevron),
             ],
           ),
         ),

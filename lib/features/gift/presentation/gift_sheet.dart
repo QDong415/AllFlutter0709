@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/gift/data/gift_model.dart';
 import 'package:all_flutter0709/features/gift/data/gift_repository.dart';
@@ -26,9 +26,10 @@ Future<void> showGiftSheet(
   void Function(GiftModel giftModel, int count)? onCombo,
   void Function(GiftSendResult result)? onSent,
 }) {
+  final palette = context.palette;
   return showMaterialModalBottomSheet<void>(
     context: context,
-    backgroundColor: Colors.white,
+    backgroundColor: palette.card,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
@@ -241,10 +242,11 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
       return;
     }
     final topLeft = button.localToGlobal(Offset.zero, ancestor: overlay);
+    final palette = buttonContext.palette;
     final selected = await showMenu<int>(
       context: buttonContext,
       useRootNavigator: true,
-      color: Colors.white,
+      color: palette.card,
       elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       constraints: const BoxConstraints(minWidth: 108, maxWidth: 140),
@@ -259,7 +261,7 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
             height: 40,
             child: Text(
               '$count个',
-              style: const TextStyle(fontSize: 17, color: AppColors.titleText),
+              style: TextStyle(fontSize: 17, color: palette.titleText),
             ),
           ),
       ],
@@ -288,6 +290,7 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
   Widget build(BuildContext context) {
     final giftModel = _selected;
     final bottom = MediaQuery.paddingOf(context).bottom;
+    final palette = context.palette;
 
     return SafeArea(
       top: false,
@@ -301,17 +304,23 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFE0E0E0),
+                color: palette.brightness == Brightness.dark
+                    ? palette.chevron
+                    : const Color(0xFFE0E0E0),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   '送礼物',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: palette.titleText,
+                  ),
                 ),
               ),
             ),
@@ -320,10 +329,12 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
               height: 52 + bottom,
               padding: EdgeInsets.only(bottom: bottom),
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF3F3F3),
+              decoration: BoxDecoration(
+                color: palette.brightness == Brightness.dark
+                    ? palette.bodyBackground
+                    : const Color(0xFFF3F3F3),
                 border: Border(
-                  top: BorderSide(color: Color(0xFFE3E3E3), width: 0.5),
+                  top: BorderSide(color: palette.divider, width: 0.5),
                 ),
               ),
               child: Row(
@@ -337,7 +348,7 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
                   const SizedBox(width: 12),
                   Text(
                     '$_coin',
-                    style: const TextStyle(fontSize: 16, color: Colors.black),
+                    style: TextStyle(fontSize: 16, color: palette.ink),
                   ),
                   const Spacer(),
                   _GiftCountButton(count: _count, onTap: _pickCount),
@@ -353,6 +364,7 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
   }
 
   Widget _buildGrid(BuildContext context) {
+    final palette = context.palette;
     final scrollController = ModalScrollController.of(context);
     const scrollPhysics = AlwaysScrollableScrollPhysics(
       parent: ClampingScrollPhysics(),
@@ -382,7 +394,7 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
                 children: [
                   Text(
                     _errorText,
-                    style: const TextStyle(color: Color(0xFF888888)),
+                    style: TextStyle(color: palette.secondaryText),
                   ),
                   const SizedBox(height: 8),
                   TextButton(onPressed: _load, child: const Text('重试')),
@@ -397,8 +409,16 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
       return ListView(
         controller: scrollController,
         physics: scrollPhysics,
-        children: const [
-          SizedBox(height: 220, child: Center(child: Text('暂无礼物'))),
+        children: [
+          SizedBox(
+            height: 220,
+            child: Center(
+              child: Text(
+                '暂无礼物',
+                style: TextStyle(color: palette.secondaryText),
+              ),
+            ),
+          ),
         ],
       );
     }
@@ -429,8 +449,12 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: selected
-                  ? const Color(0xFFFFF3F5)
-                  : const Color(0xFFF7F7F7),
+                  ? (palette.brightness == Brightness.dark
+                        ? const Color(0x33E85D75)
+                        : const Color(0xFFFFF3F5))
+                  : (palette.brightness == Brightness.dark
+                        ? palette.pressed
+                        : const Color(0xFFF7F7F7)),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: selected ? const Color(0xFFE85D75) : Colors.transparent,
@@ -442,25 +466,32 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
                 children: [
                   Expanded(
                     child: item.pictureUrl.isEmpty
-                        ? const Icon(Icons.card_giftcard)
+                        ? Icon(
+                            Icons.card_giftcard,
+                            color: palette.secondaryText,
+                          )
                         : CachedNetworkImage(
                             imageUrl: item.pictureUrl,
                             fit: BoxFit.contain,
-                            errorWidget: (context, url, error) =>
-                                const Icon(Icons.card_giftcard),
+                            errorWidget: (context, url, error) => Icon(
+                              Icons.card_giftcard,
+                              color: palette.secondaryText,
+                            ),
                           ),
                   ),
                   Text(
                     item.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 12, color: palette.titleText),
                   ),
                   Text(
                     '${item.price}金币',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF888888),
+                      color: palette.brightness == Brightness.dark
+                          ? palette.secondaryText
+                          : const Color(0xFF888888),
                     ),
                   ),
                 ],
@@ -482,6 +513,7 @@ class _GiftCountButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onTap(context),
@@ -489,16 +521,18 @@ class _GiftCountButton extends StatelessWidget {
         width: 64,
         height: 32,
         alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.horizontal(left: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius: const BorderRadius.horizontal(
+            left: Radius.circular(20),
+          ),
           border: Border.fromBorderSide(
-            BorderSide(color: Color(0xFFE3E3E3), width: 0.5),
+            BorderSide(color: palette.divider, width: 0.5),
           ),
         ),
         child: Text(
           '$count个',
-          style: const TextStyle(fontSize: 15, color: Colors.black),
+          style: TextStyle(fontSize: 15, color: palette.ink),
         ),
       ),
     );

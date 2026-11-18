@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/vip/vip_topic_guard.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/vip_chat_guard.dart';
@@ -12,14 +14,21 @@ import 'package:all_flutter0709/features/comment/data/models/comment_model.dart'
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_list_local_helper.dart';
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_long_press_menu.dart';
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_send_helper.dart';
+import 'package:all_flutter0709/features/comment/presentation/helpers/comment_audio_upload.dart';
+import 'package:all_flutter0709/features/comment/presentation/helpers/comment_image_upload.dart';
+import 'package:all_flutter0709/features/comment/presentation/helpers/comment_voice_record_helper.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_bottom_input_bar.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item_single_tips.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
+import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_emoji_panel.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
+import 'package:all_flutter0709/features/topic/data/topic_audio_file_store.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_mention_helper.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_audio_list_scroll_notify.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_submit_local_preview_page.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
@@ -72,6 +81,11 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
   late final QqEmojiSpanBuilder _emojiSpanBuilder;
 
   CommentReplyTarget? _replyTarget;
+  late final CommentVoiceRecordHelper _voiceRecordHelper;
+  bool _isVoiceMode = false;
+  File? _pendingAudioFile;
+  int _pendingAudioSeconds = 0;
+  File? _pendingImageFile;
   int _nextPage = 1;
   int _commentCount = 0;
   bool _hasMore = true;
@@ -97,6 +111,30 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           (from: rangeModel.from, to: rangeModel.to),
       ],
     );
+    _voiceRecordHelper = CommentVoiceRecordHelper(
+      onUpdate: () {
+        if (mounted) {
+          setState(() {});
+        }
+      },
+      onRecorded: (file, seconds) {
+        if (!mounted) {
+          unawaited(_deleteLocalAudio(file));
+          return;
+        }
+        final previous = _pendingAudioFile;
+        if (previous != null && previous.path != file.path) {
+          unawaited(_deleteLocalAudio(previous));
+        }
+        setState(() {
+          _pendingAudioFile = file;
+          _pendingAudioSeconds = seconds;
+          _isVoiceMode = false;
+        });
+      },
+      onTip: _showSnack,
+      onHidePanel: _panelHelper.hidePanel,
+    );
     _inputController
       ..setOnAtTyped(() => _openUserSelect(byInput: true))
       ..addListener(_onInputChanged);
@@ -108,7 +146,15 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.targetId != widget.targetId ||
         oldWidget.targetType != widget.targetType) {
+      final pendingAudio = _pendingAudioFile;
+      if (pendingAudio != null) {
+        unawaited(_deleteLocalAudio(pendingAudio));
+      }
       _replyTarget = null;
+      _pendingAudioFile = null;
+      _pendingAudioSeconds = 0;
+      _pendingImageFile = null;
+      _isVoiceMode = false;
       _items.clear();
       _nextPage = 1;
       _commentCount = widget.initialCommentCount;
@@ -126,6 +172,11 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   @override
   void dispose() {
+    unawaited(_voiceRecordHelper.dispose());
+    final pendingAudio = _pendingAudioFile;
+    if (pendingAudio != null) {
+      unawaited(_deleteLocalAudio(pendingAudio));
+    }
     _inputController
       ..removeListener(_onInputChanged)
       ..dispose();
@@ -275,6 +326,12 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   Future<void> _openUserSelect({required bool byInput}) async {
     if (!context.ensureLoggedIn()) return;
+    if (_voiceRecordHelper.isRecording) return;
+    if (_isVoiceMode) {
+      setState(() {
+        _isVoiceMode = false;
+      });
+    }
     _panelHelper.hidePanel();
     final userModel = await context.push<UserBaseModel>(
       '${AppRoutes.topic}/${AppRoutes.topicUserSelect}',
@@ -307,6 +364,33 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     return false;
   }
 
+  Future<void> _pickCommentImage() async {
+    if (!context.ensureLoggedIn() || _voiceRecordHelper.isRecording) {
+      return;
+    }
+    if (_isVoiceMode) {
+      setState(() {
+        _isVoiceMode = false;
+      });
+    }
+    _panelHelper.hidePanel();
+    final file = await const AlbumImagePickHelper().pickImage(context: context);
+    if (!mounted || file == null) {
+      return;
+    }
+    setState(() {
+      _pendingImageFile = file;
+    });
+  }
+
+  void _previewPendingImage() {
+    final file = _pendingImageFile;
+    if (file == null) {
+      return;
+    }
+    unawaited(TopicSubmitLocalPreviewPage.open(context: context, file: file));
+  }
+
   Future<void> _sendComment() async {
     final account = context.currentAccount;
     if (account == null) {
@@ -320,17 +404,23 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     }
 
     final content = _inputController.text.trim();
-    if (content.isEmpty) {
-      _showSnack('请输入评论内容');
+    final pendingAudio = _pendingAudioFile;
+    final pendingImage = _pendingImageFile;
+    if (content.isEmpty && pendingAudio == null && pendingImage == null) {
+      _showSnack('请输入评论、选择图片或录制语音');
       return;
     }
     final atUserIds = _inputController.findAtUserIds();
+    final audioSeconds = _pendingAudioSeconds;
 
     final localComment = _sendHelper.buildLocalComment(
       account: account,
       targetId: widget.targetId,
       content: content,
       replyTarget: _replyTarget,
+      localAudioFile: pendingAudio,
+      audioDurationSeconds: audioSeconds,
+      localImageFile: pendingImage,
     );
 
     _panelHelper.hidePanel();
@@ -338,6 +428,9 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       _listLocalHelper.insertOptimisticComment(_items, localComment);
       _replyTarget = null;
       _inputController.clearContent();
+      _pendingAudioFile = null;
+      _pendingAudioSeconds = 0;
+      _pendingImageFile = null;
       _syncCommentCount(_commentCount + 1);
     });
     if (!localComment.isRoot) {
@@ -366,12 +459,34 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     }
 
     try {
+      var audioKey = '';
+      if (pendingAudio != null) {
+        audioKey = await CommentAudioUpload.upload(pendingAudio);
+      }
+      CommentImageUploadResult? imageResult;
+      if (pendingImage != null) {
+        imageResult = await CommentImageUpload.upload(pendingImage);
+      }
       final result = await _sendHelper.submit(
         targetId: widget.targetId,
         type: widget.targetType,
         localComment: localComment,
         atUserIds: atUserIds,
+        audioFileName: audioKey,
+        audioDurationSeconds: audioSeconds,
+        photoArrayJson: imageResult?.photoArrayJson ?? '',
       );
+      File? cachedAudio = pendingAudio;
+      if (pendingAudio != null && audioKey.isNotEmpty) {
+        try {
+          cachedAudio = await TopicAudioFileStore.persistLocalFile(
+            source: pendingAudio,
+            filename: audioKey,
+          );
+        } catch (_) {
+          // 缓存失败不影响已经提交成功的评论，当前会话继续使用原临时文件。
+        }
+      }
       if (!mounted) return;
 
       setState(() {
@@ -381,10 +496,18 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           (comment) => comment.copyWith(
             cid: result.cid.isNotEmpty ? result.cid : comment.cid,
             sendState: CommentSendState.normal,
+            audioFileName: audioKey,
+            localAudioFile: cachedAudio,
+            pictures: imageResult == null
+                ? comment.pictures
+                : [imageResult.picture],
           ),
         );
       });
     } catch (error) {
+      if (pendingAudio != null) {
+        await _deleteLocalAudio(pendingAudio);
+      }
       if (!mounted) return;
       setState(() {
         _listLocalHelper.removeOptimisticComment(_items, localComment);
@@ -453,7 +576,9 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
     switch (action) {
       case CommentLongPressAction.copy:
-        await Clipboard.setData(ClipboardData(text: commentModel.content));
+        await Clipboard.setData(
+          ClipboardData(text: commentModel.displayContent),
+        );
         _showSnack('复制成功');
       case CommentLongPressAction.delete:
         await _deleteComment(commentModel);
@@ -520,6 +645,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
         currentUserId.isNotEmpty && currentUserId == comment.userId;
     final parentCid = comment.isRoot ? comment.effectiveId : comment.parentCid;
 
+    final isRecording = _voiceRecordHelper.isRecording;
     setState(() {
       _replyTarget = CommentReplyTarget(
         parentCid: parentCid,
@@ -528,9 +654,17 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
         toAvatar: isReplyToCurrentUser ? null : comment.avatar,
         hintText: '回复 @${comment.userName}',
       );
+      if (!isRecording) {
+        _isVoiceMode = false;
+      }
     });
 
-    _panelHelper.updatePanelType(ChatPanelType.keyboard);
+    if (!isRecording) {
+      _panelHelper.updatePanelType(ChatPanelType.keyboard);
+      // Android 收起键盘后可能仍保留输入框焦点，requestFocus 不会再次弹出；
+      // 直接显示输入法，不再通过 scheduler 反复切换焦点。
+      SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+    }
   }
 
   List<CommentDisplayModel> _flattenPage(List<CommentModel> comments) {
@@ -584,88 +718,130 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
     AppToast.show(context, message.replaceFirst('Exception: ', ''));
   }
 
+  void _toggleVoiceMode() {
+    if (!context.ensureLoggedIn()) {
+      return;
+    }
+    if (_voiceRecordHelper.isRecording) {
+      return;
+    }
+    setState(() {
+      _isVoiceMode = !_isVoiceMode;
+      if (_isVoiceMode) {
+        _panelHelper.hidePanel();
+      } else {
+        _panelHelper.updatePanelType(ChatPanelType.keyboard);
+      }
+    });
+  }
+
+  void _toggleEmoji() {
+    if (!context.ensureLoggedIn() || _voiceRecordHelper.isRecording) {
+      return;
+    }
+    if (_isVoiceMode) {
+      setState(() {
+        _isVoiceMode = false;
+      });
+    }
+    _panelHelper.handleEmojiBtnClick();
+  }
+
+  Future<void> _deleteLocalAudio(File file) async {
+    try {
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final body = Column(
       children: [
         Expanded(
           child: NotificationListener<ScrollNotification>(
             onNotification: _hidePanelOnListDrag,
-            child: EasyRefresh(
-              header: const ClassicHeader(showMessage: false, showText: false),
-              footer: const ClassicFooter(showMessage: false),
-              onRefresh: widget.enablePullRefresh ? _refreshComments : null,
-              onLoad: _hasMore && !_isLoading ? _loadMoreComments : null,
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: widget.listPadding,
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                itemCount: _buildVisibleItemCount(),
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildHeaderAndCommentTitle();
-                  }
+            child: TopicAudioListScrollNotify(
+              child: EasyRefresh(
+                header: const ClassicHeader(
+                  showMessage: false,
+                  showText: false,
+                ),
+                footer: const ClassicFooter(showMessage: false),
+                onRefresh: widget.enablePullRefresh ? _refreshComments : null,
+                onLoad: _hasMore && !_isLoading ? _loadMoreComments : null,
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: widget.listPadding,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  itemCount: _buildVisibleItemCount(),
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return _buildHeaderAndCommentTitle();
+                    }
 
-                  if (_isLoading && _items.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
+                    if (_isLoading && _items.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 48),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
 
-                  if (_errorText != null && _items.isEmpty) {
-                    return CommonStatePlaceholder(
-                      icon: Icons.wifi_off_outlined,
-                      text: _errorText!,
-                      actionText: '重试',
-                      onTap: () {
-                        unawaited(_refreshComments());
+                    if (_errorText != null && _items.isEmpty) {
+                      return CommonStatePlaceholder(
+                        icon: Icons.wifi_off_outlined,
+                        text: _errorText!,
+                        actionText: '重试',
+                        onTap: () {
+                          unawaited(_refreshComments());
+                        },
+                      );
+                    }
+
+                    if (_items.isEmpty) {
+                      return const CommonStatePlaceholder(
+                        icon: Icons.mode_comment_outlined,
+                        text: '还没有评论，来抢沙发吧',
+                      );
+                    }
+
+                    final item = _items[index - 1];
+                    if (item.isAction) {
+                      return CommentItemSingleTips(
+                        item: item,
+                        onTap: () {
+                          unawaited(_loadMoreReplies(item));
+                        },
+                      );
+                    }
+                    return CommentItem(
+                      key: ValueKey('comment-${item.comment!.effectiveId}'),
+                      comment: item.comment!,
+                      isChild: item.isChild,
+                      authorUserId: widget.authorUserId,
+                      displayType: item.displayType!,
+                      onTap: () => _handleCommentTap(item.comment!),
+                      onLongPress: (anchorContext) {
+                        unawaited(
+                          _handleCommentLongPress(anchorContext, item.comment!),
+                        );
+                      },
+                      onLikeTap: () => _toggleCommentLike(item.comment!),
+                      onAvatarTap: () {
+                        final comment = item.comment!;
+                        openUserDetailPage(
+                          context,
+                          userId: comment.userId,
+                          name: comment.userName,
+                          avatar: comment.avatar,
+                          userType: comment.userType,
+                        );
                       },
                     );
-                  }
-
-                  if (_items.isEmpty) {
-                    return const CommonStatePlaceholder(
-                      icon: Icons.mode_comment_outlined,
-                      text: '还没有评论，来抢沙发吧',
-                    );
-                  }
-
-                  final item = _items[index - 1];
-                  if (item.isAction) {
-                    return CommentItemSingleTips(
-                      item: item,
-                      onTap: () {
-                        unawaited(_loadMoreReplies(item));
-                      },
-                    );
-                  }
-                  return CommentItem(
-                    key: ValueKey('comment-${item.comment!.effectiveId}'),
-                    comment: item.comment!,
-                    isChild: item.isChild,
-                    authorUserId: widget.authorUserId,
-                    displayType: item.displayType!,
-                    onTap: () => _handleCommentTap(item.comment!),
-                    onLongPress: (anchorContext) {
-                      unawaited(
-                        _handleCommentLongPress(anchorContext, item.comment!),
-                      );
-                    },
-                    onLikeTap: () => _toggleCommentLike(item.comment!),
-                    onAvatarTap: () {
-                      final comment = item.comment!;
-                      openUserDetailPage(
-                        context,
-                        userId: comment.userId,
-                        name: comment.userName,
-                        avatar: comment.avatar,
-                        userType: comment.userType,
-                      );
-                    },
-                  );
-                },
+                  },
+                ),
               ),
             ),
           ),
@@ -676,6 +852,34 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           emojiSpanBuilder: _emojiSpanBuilder,
           readOnly: _panelHelper.readOnly,
           isEmojiPanel: _panelHelper.currentPanelType == ChatPanelType.emoji,
+          isVoiceMode: _isVoiceMode,
+          onToggleVoiceMode: _toggleVoiceMode,
+          isRecording: _voiceRecordHelper.isRecording,
+          willCancelRecording: _voiceRecordHelper.willCancel,
+          onVoicePointerDown: _voiceRecordHelper.handlePointerDown,
+          onVoicePointerMove: _voiceRecordHelper.handlePointerMove,
+          onVoicePointerUp: _voiceRecordHelper.handlePointerUp,
+          onVoicePointerCancel: _voiceRecordHelper.handlePointerCancel,
+          pendingAudioFile: _pendingAudioFile,
+          pendingAudioSeconds: _pendingAudioSeconds,
+          onDeletePendingAudio: () {
+            final pendingAudio = _pendingAudioFile;
+            if (pendingAudio != null) {
+              unawaited(_deleteLocalAudio(pendingAudio));
+            }
+            setState(() {
+              _pendingAudioFile = null;
+              _pendingAudioSeconds = 0;
+            });
+          },
+          pendingImageFile: _pendingImageFile,
+          onImageTap: () => unawaited(_pickCommentImage()),
+          onPendingImageTap: _previewPendingImage,
+          onDeletePendingImage: () {
+            setState(() {
+              _pendingImageFile = null;
+            });
+          },
           replyHintText: _replyTarget?.hintText,
           onCancelReply: () {
             setState(() {
@@ -683,17 +887,13 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
             });
           },
           onSend: _sendComment,
-          onAtTap: () => _openUserSelect(byInput: false),
-          onToggleEmoji: () {
-            if (!context.ensureLoggedIn()) return;
-            _panelHelper.handleEmojiBtnClick();
-          },
+          onToggleEmoji: _toggleEmoji,
           onInputPointerUp: _panelHelper.handleInputViewOnPointerUp,
         ),
         ChatBottomPanelContainer<ChatPanelType>(
           controller: _panelHelper.controller,
           inputFocusNode: _inputFocusNode,
-          panelBgColor: QInputBarColors.extendBackground,
+          panelBgColor: QInputBarColors.extendBackground(context.palette),
           onPanelTypeChange: _panelHelper.onPanelTypeChange,
           otherPanelWidget: (type) {
             if (type != ChatPanelType.emoji) {
@@ -709,6 +909,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
         ),
       ],
     );
+    final overlay = _voiceRecordHelper.buildOverlay();
+    return Stack(children: [body, ?overlay]);
   }
 
   int _buildVisibleItemCount() {
@@ -729,17 +931,17 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.palette.card,
             borderRadius: hasComments
                 ? const BorderRadius.vertical(top: Radius.circular(16))
                 : BorderRadius.circular(16),
           ),
           child: Text(
             '全部评论 ${_commentCount > 0 ? _commentCount : ''}'.trim(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF222222),
+              color: context.palette.titleText,
             ),
           ),
         ),

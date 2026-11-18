@@ -1,5 +1,5 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_comment_preview_list.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
@@ -84,16 +84,17 @@ class TopicItemWidget extends StatelessWidget {
       gap: 12,
     );
 
+    final palette = context.palette;
     final card = Material(
-      color: Colors.white,
+      color: palette.card,
       child: InkWell(
         onTap: () => listener?.onItemTap(topicModel),
         child: Column(
           children: [
-            const Divider(
+            Divider(
               height: AppDimens.dividerThickness,
               thickness: AppDimens.dividerThickness,
-              color: AppColors.divider,
+              color: palette.divider,
             ),
             const SizedBox(height: 6),
             Padding(
@@ -124,10 +125,10 @@ class TopicItemWidget extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   topicModel.userName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF304F84),
+                                    color: palette.nameText,
                                   ),
                                 ),
                               ),
@@ -142,7 +143,7 @@ class TopicItemWidget extends StatelessWidget {
                             topicModel.displayTime,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey.shade600,
+                              color: palette.secondaryText,
                             ),
                           ),
                         ],
@@ -168,7 +169,7 @@ class TopicItemWidget extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: TopicContentText(
                     text: content,
-                    style: const TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 18, color: palette.titleText),
                     onMentionTap: (mention) =>
                         listener?.onMentionTap(topicModel, mention),
                     onHashtagTap: (hashtag) =>
@@ -234,10 +235,10 @@ class TopicItemWidget extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 8),
-            const Divider(
+            Divider(
               height: AppDimens.dividerThickness,
               thickness: AppDimens.dividerThickness,
-              color: AppColors.divider,
+              color: palette.divider,
             ),
             SizedBox(
               height: 48,
@@ -245,19 +246,19 @@ class TopicItemWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _ActionButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.share_outlined,
                       size: 18,
-                      color: Colors.grey,
+                      color: palette.secondaryText,
                     ),
                     text: '分享',
                     onTap: () => listener?.onShareTap(topicModel),
                   ),
                   _ActionButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.mode_comment_outlined,
                       size: 18,
-                      color: Colors.grey,
+                      color: palette.secondaryText,
                     ),
                     text: commentCount > 0 ? '评论 $commentCount' : '评论',
                     onTap: () => listener?.onCommentTap(topicModel),
@@ -273,10 +274,10 @@ class TopicItemWidget extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(
+            Divider(
               height: AppDimens.dividerThickness,
               thickness: AppDimens.dividerThickness,
-              color: AppColors.divider,
+              color: palette.divider,
             ),
           ],
         ),
@@ -285,7 +286,7 @@ class TopicItemWidget extends StatelessWidget {
     if (!topicModel.hasAudio) {
       return card;
     }
-    return TopicAudioVisibility(tid: topicModel.tid, child: card);
+    return TopicAudioVisibility(playKey: topicModel.tid, child: card);
   }
 }
 

@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/me/data/wallet_log_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
 import 'package:all_flutter0709/features/me/presentation/widgets/wallet_log_item.dart';
@@ -9,17 +9,11 @@ import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 
 /// 钱包流水类型：金币或魅力。
-enum WalletLogKind {
-  coin,
-  charm,
-}
+enum WalletLogKind { coin, charm }
 
 /// 金币 / 魅力变动记录列表。
 class WalletLogPage extends StatefulWidget {
-  const WalletLogPage({
-    super.key,
-    required this.kind,
-  });
+  const WalletLogPage({super.key, required this.kind});
 
   final WalletLogKind kind;
 
@@ -85,8 +79,9 @@ class _WalletLogPageState extends State<WalletLogPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: palette.bodyBackground,
       appBar: CommonAppBar(title: _title),
       body: EasyRefresh(
         onRefresh: () => _request(isRefresh: true),
@@ -97,11 +92,11 @@ class _WalletLogPageState extends State<WalletLogPage> {
           onRefresh: () => _request(isRefresh: true),
           successWidget: ListView.separated(
             itemCount: _walletLogModelList.length,
-            separatorBuilder: (_, _) => const Divider(
+            separatorBuilder: (_, _) => Divider(
               height: 1,
               indent: 16,
               endIndent: 16,
-              color: AppColors.divider,
+              color: palette.divider,
             ),
             itemBuilder: (context, index) {
               return WalletLogItem(

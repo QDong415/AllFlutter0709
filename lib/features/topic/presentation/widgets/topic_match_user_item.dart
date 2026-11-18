@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
@@ -20,14 +20,14 @@ class TopicMatchUserItem extends StatelessWidget {
   /// 附加距离，例如附近的人列表。为空则不展示。
   final String? distanceText;
 
-  Color get _nameColor {
+  Color _nameColor(BuildContext context) {
     if (userModel.vip == 2) {
       return const Color(0xFFED3C21);
     }
     if (userModel.vip == 1) {
       return const Color(0xFFFBC058);
     }
-    return AppColors.titleText;
+    return context.palette.titleText;
   }
 
   static const _avatarSize = 66.0;
@@ -37,6 +37,8 @@ class TopicMatchUserItem extends StatelessWidget {
     final avatarUrl =
         ValueUtil.getQiniuUrlByFileName(userModel.avatar, thumbnail: true) ??
         '';
+    final nameColor = _nameColor(context);
+    final palette = context.palette;
     final openTimeText = ValueUtil.getTimeStringFromNow(userModel.openTime);
     final genderLabel = userModel.genderLabel;
     final showsHalo = VipHaloAvatar.showsHalo(userModel.vip);
@@ -50,7 +52,7 @@ class TopicMatchUserItem extends StatelessWidget {
         : VipHaloAvatar.avatarOrigin(size: _avatarSize, vip: 2).dx;
 
     return Material(
-      color: Colors.white,
+      color: palette.card,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -80,86 +82,86 @@ class TopicMatchUserItem extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            userModel.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: _nameColor,
-                              fontWeight: FontWeight.w500,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              userModel.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: nameColor,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                        if (userModel.vip == 1 || userModel.vip == 2) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            userModel.vip == 2 ? 'SVIP' : 'VIP',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: _nameColor,
+                          if (userModel.vip == 1 || userModel.vip == 2) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              userModel.vip == 2 ? 'SVIP' : 'VIP',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: nameColor,
+                              ),
                             ),
-                          ),
+                          ],
+                          if (userModel.isAi) ...[
+                            const SizedBox(width: 6),
+                            const UserAiTag(compact: true),
+                          ],
                         ],
-                        if (userModel.isAi) ...[
-                          const SizedBox(width: 6),
-                          const UserAiTag(compact: true),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          if (genderLabel != null)
+                            _TagChip(
+                              label: genderLabel,
+                              iconAsset: userModel.gender == 1
+                                  ? 'assets/icons/user/profile_icon_male_m_normal.png'
+                                  : 'assets/icons/user/profile_icon_female_m_normal.png',
+                            ),
+                          if (userModel.age > 0)
+                            _TagChip(label: '${userModel.age}岁'),
+                          if (userModel.cityName.trim().isNotEmpty)
+                            _TagChip(label: userModel.cityName),
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        if (genderLabel != null)
-                          _TagChip(
-                            label: genderLabel,
-                            iconAsset: userModel.gender == 1
-                                ? 'assets/icons/user/profile_icon_male_m_normal.png'
-                                : 'assets/icons/user/profile_icon_female_m_normal.png',
+                      ),
+                      if (openTimeText.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          '$openTimeText 在线',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: palette.secondaryText,
                           ),
-                        if (userModel.age > 0)
-                          _TagChip(label: '${userModel.age}岁'),
-                        if (userModel.cityName.trim().isNotEmpty)
-                          _TagChip(label: userModel.cityName),
+                        ),
                       ],
-                    ),
-                    if (openTimeText.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        '$openTimeText 在线',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF999999),
+                      if (distanceText != null && distanceText!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          distanceText!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: palette.secondaryText,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                    if (distanceText != null && distanceText!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        distanceText!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF999999),
-                        ),
-                      ),
-                    ],
-                  ],
                   ),
                 ),
               ),
               Padding(
                 padding: EdgeInsets.only(top: avatarTop),
-                child: Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                child: Icon(Icons.chevron_right, color: palette.chevron),
               ),
             ],
           ),
@@ -181,7 +183,7 @@ class _TagChip extends StatelessWidget {
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEEEEE),
+        color: context.palette.pressed,
         borderRadius: BorderRadius.circular(3),
       ),
       child: Row(
@@ -193,9 +195,9 @@ class _TagChip extends StatelessWidget {
           ],
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF666666),
+              color: context.palette.bodyText,
               height: 1.1,
             ),
           ),

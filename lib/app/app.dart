@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:all_flutter0709/app/router/app_router.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
-import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
+import 'package:all_flutter0709/app/theme/app_theme.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
+import 'package:all_flutter0709/app/theme/app_theme_preference.dart';
 import 'package:all_flutter0709/app/theme/app_typography.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/bridge/native_events.dart';
@@ -22,10 +24,13 @@ class SocialApp extends ConsumerStatefulWidget {
   ConsumerState<SocialApp> createState() => _SocialAppState();
 }
 
-class _SocialAppState extends ConsumerState<SocialApp> {
+class _SocialAppState extends ConsumerState<SocialApp>
+    with WidgetsBindingObserver {
+  Brightness? _appliedSystemUiBrightness;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     //由于ref.read(getuiPushServiceProvider).initialize() 只能在 app 启动时候走一次就行了
     // 但是因为StatelessWidget没有 init 方法，只有 build 方法，但是 build 会经常触发，所以才改成 StatefulWidget借用initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -39,62 +44,35 @@ class _SocialAppState extends ConsumerState<SocialApp> {
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
+    final preference = ref.watch(appThemePreferenceProvider);
+    final platformBrightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final palette = AppPalette.forBrightness(
+      preference.resolve(platformBrightness),
+    );
+    AppSystemUi.themeBrightness = palette.brightness;
+    if (_appliedSystemUiBrightness != palette.brightness) {
+      _appliedSystemUiBrightness = palette.brightness;
+      AppSystemUi.apply(AppSystemUi.overlayForToolbar(palette.brightness));
+    }
     return MaterialApp.router(
       title: '梦缘AI',
       debugShowCheckedModeBanner: false,
       builder: AppTypography.wrapWithIosTextScale,
-      theme: AppTypography.decorateTheme(
-        ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.primary,
-            primary: AppColors.primary,
-            surface: AppColors.bodyBackground,
-          ),
-          scaffoldBackgroundColor: AppColors.bodyBackground,
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: AppColors.toolbar,
-            foregroundColor: AppColors.titleText,
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            centerTitle: true,
-            toolbarHeight: AppDimens.toolbarHeight,
-            titleTextStyle: TextStyle(
-              color: AppColors.titleText,
-              fontSize: AppDimens.toolbarTitleSize,
-              fontWeight: FontWeight.w400,
-            ),
-            iconTheme: IconThemeData(color: AppColors.titleText),
-            actionsIconTheme: IconThemeData(color: AppColors.titleText),
-            systemOverlayStyle: AppSystemUi.overlayStyle,
-          ),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: AppColors.tabBarBackground,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.tabUnselected,
-            selectedIconTheme: IconThemeData(
-              color: AppColors.primary,
-              size: 24,
-            ),
-            unselectedIconTheme: IconThemeData(
-              color: AppColors.tabUnselected,
-              size: 24,
-            ),
-            selectedLabelStyle: TextStyle(fontSize: 12),
-            unselectedLabelStyle: TextStyle(fontSize: 12),
-            type: BottomNavigationBarType.fixed,
-            elevation: 0,
-          ),
-          dividerTheme: const DividerThemeData(
-            color: AppColors.divider,
-            thickness: AppDimens.dividerThickness,
-            space: AppDimens.dividerThickness,
-          ),
-        ),
-      ),
+      theme: AppTheme.build(palette),
       routerConfig: router,
     );
   }

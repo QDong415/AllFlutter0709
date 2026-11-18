@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
@@ -49,9 +50,6 @@ class ConversationListItem extends StatefulWidget {
   /// 关闭当前已打开的左滑删除。
   static void closeOpenSwipe() => _SwipeOpenRegistry.closeCurrent();
 
-  static const _nameColor = Color(0xFF5B5B5B);
-  static const _secondaryColor = Color(0xFF888888);
-  static const _pressedColor = Color(0xFFF2F2F2);
   static const _unreadColor = Color(0xFFE64C64);
   static const _itemHeight = 66.0;
   static const _avatarSize = 45.0;
@@ -220,12 +218,13 @@ class _ConversationListTile extends StatelessWidget {
         ? '99+'
         : '${summaryModel.unreadCount}';
 
+    final palette = context.palette;
     return Material(
-      color: Colors.white,
+      color: palette.card,
       child: InkWell(
         onTap: onTap,
-        splashColor: ConversationListItem._pressedColor,
-        highlightColor: ConversationListItem._pressedColor,
+        splashColor: palette.pressed,
+        highlightColor: palette.pressed,
         child: SizedBox(
           height: ConversationListItem._itemHeight,
           child: Row(
@@ -258,8 +257,8 @@ class _ConversationListTile extends StatelessWidget {
                                     name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: ConversationListItem._nameColor,
+                                    style: TextStyle(
+                                      color: palette.bodyText,
                                       fontSize: 16,
                                       height: 1.2,
                                     ),
@@ -277,8 +276,8 @@ class _ConversationListTile extends StatelessWidget {
                             _formatConversationTime(
                               summaryModel.latestTimeSeconds,
                             ),
-                            style: const TextStyle(
-                              color: ConversationListItem._secondaryColor,
+                            style: TextStyle(
+                              color: palette.secondaryText,
                               fontSize: 13,
                               height: 1.2,
                             ),
@@ -295,9 +294,8 @@ class _ConversationListTile extends StatelessWidget {
                                 TextSpan(
                                   children: buildQqEmojiInlineSpans(
                                     text: summaryModel.latestMessage,
-                                    style: const TextStyle(
-                                      color:
-                                          ConversationListItem._secondaryColor,
+                                    style: TextStyle(
+                                      color: palette.secondaryText,
                                       fontSize: 14,
                                       height: 1.2,
                                     ),
@@ -305,8 +303,8 @@ class _ConversationListTile extends StatelessWidget {
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: ConversationListItem._secondaryColor,
+                                style: TextStyle(
+                                  color: palette.secondaryText,
                                   fontSize: 14,
                                   height: 1.2,
                                 ),

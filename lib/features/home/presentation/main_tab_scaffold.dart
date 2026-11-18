@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
@@ -22,6 +22,19 @@ const _kMainTabBarGlassSettings = LiquidGlassSettings(
   ambientStrength: 1,
   lightAngle: GlassDefaults.lightAngle,
   glassColor: Color(0x3DFFFFFF),
+);
+
+/// 深色底栏：压深玻璃，避免浅色图标叠在浅色页面上。
+const _kMainTabBarGlassSettingsDark = LiquidGlassSettings(
+  thickness: 30,
+  blur: 8,
+  chromaticAberration: 0,
+  lightIntensity: 0.15,
+  refractiveIndex: 1.59,
+  saturation: 0.2,
+  ambientStrength: 0.3,
+  lightAngle: GlassDefaults.lightAngle,
+  glassColor: Color(0xF21D1D1C),
 );
 
 /// 与 [GlassTabBar.bottom] 默认一致，便于叠字对齐。
@@ -70,20 +83,32 @@ class _MainTabScaffoldState extends ConsumerState<MainTabScaffold> {
     ref.listen<AccountModel?>(accountProvider, (previous, next) {
       if (next != null && previous == null) {
         _signPromptScheduled = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleDailySign());
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _scheduleDailySign(),
+        );
       }
     });
 
+    final palette = context.palette;
+    final isDark = palette.brightness == Brightness.dark;
     final controller = ref.read(conversationControllerProvider);
     final shellIndex = widget.navigationShell.currentIndex;
     final isRankTab = shellIndex == MainTabItem.rank.index;
+    // 榜单头是固定的浅色渐变，状态栏图标保持深色。导航栏仍跟随当前明暗。
     final systemOverlay = isRankTab
-        ? AppSystemUi.overlayStyleWithStatusBarIcons(darkIcons: true)
-        : AppSystemUi.overlayStyle;
+        ? AppSystemUi.overlayStyleWithStatusBarIcons(
+            darkIcons: true,
+            navigationBar: palette.brightness,
+          )
+        : AppSystemUi.overlayForToolbar(palette.brightness);
+    final shellIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+    if (shellIsCurrent) {
+      AppSystemUi.apply(systemOverlay);
+    }
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: systemOverlay,
       child: GlassScaffold(
-        backgroundColor: AppColors.bodyBackground,
+        backgroundColor: palette.bodyBackground,
         statusBarStyle: GlassStatusBarStyle.none,
         extendBody: true,
         // 各 Tab 页自带 Material AppBar，顶部不做 glass edge fade。
@@ -102,10 +127,14 @@ class _MainTabScaffoldState extends ConsumerState<MainTabScaffold> {
                 GlassTabBar.bottom(
                   key: ValueKey('main-tabs-unread-$unreadCount'),
                   selectedIndex: selectedIndex,
-                  selectedIconColor: AppColors.primary,
-                  unselectedIconColor: AppColors.tabUnselected,
-                  indicatorColor: const Color(0x1A000000),
-                  settings: _kMainTabBarGlassSettings,
+                  selectedIconColor: palette.primary,
+                  unselectedIconColor: palette.tabUnselected,
+                  indicatorColor: isDark
+                      ? const Color(0x33FFFFFF)
+                      : const Color(0x1A000000),
+                  settings: isDark
+                      ? _kMainTabBarGlassSettingsDark
+                      : _kMainTabBarGlassSettings,
                   indicatorSettings: const LiquidGlassSettings(
                     thickness: 20,
                     refractiveIndex: 1.10,
@@ -249,7 +278,9 @@ class _TabLabelOverlay extends StatelessWidget {
             fontSize: _kTabLabelFontSize,
             height: _kTabLabelLineHeight / _kTabLabelFontSize,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            color: selected ? AppColors.primary : AppColors.tabUnselected,
+            color: selected
+                ? context.palette.primary
+                : context.palette.tabUnselected,
             decoration: TextDecoration.none,
           ),
         ),

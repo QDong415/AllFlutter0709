@@ -1,5 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/auth/presentation/widgets/password_login_view.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
@@ -44,10 +44,12 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
     FocusScope.of(context).unfocus();
     setState(() => _isSubmitting = true);
     try {
-      await ref.read(accountProvider.notifier).login(
-        mobile: _mobileController.text.trim(),
-        password: _passwordController.text,
-      );
+      await ref
+          .read(accountProvider.notifier)
+          .login(
+            mobile: _mobileController.text.trim(),
+            password: _passwordController.text,
+          );
       if (mounted) {
         context.go(AppRoutes.topic);
       }
@@ -55,10 +57,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
       if (!mounted) {
         return;
       }
-      AppToast.show(
-        context,
-        error.toString().replaceFirst('Exception: ', ''),
-      );
+      AppToast.show(context, error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -69,7 +68,7 @@ class _PasswordLoginPageState extends ConsumerState<PasswordLoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: context.palette.plainBackground,
       body: SafeArea(
         child: PasswordLoginView(
           formKey: _formKey,

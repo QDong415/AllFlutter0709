@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/features/ai/data/ai_creation_repository.dart';
@@ -185,10 +186,11 @@ class _AiCreationPageState extends ConsumerState<AiCreationPage> {
     return PopScope(
       canPop: !_isBusy,
       child: Scaffold(
-        backgroundColor: AppColors.bodyBackground,
+        backgroundColor: context.palette.bodyBackground,
         appBar: AppBar(
           title: const Text('创建 AI 伙伴'),
-          backgroundColor: AppColors.toolbar,
+          backgroundColor: context.palette.toolbar,
+          foregroundColor: context.palette.titleText,
           surfaceTintColor: Colors.transparent,
         ),
         body: switch (_phase) {
@@ -226,8 +228,8 @@ class _AiCreationPageState extends ConsumerState<AiCreationPage> {
       children: [
         Text(
           '${creationModel.name} 已经准备好了',
-          style: const TextStyle(
-            color: AppColors.titleText,
+          style: TextStyle(
+            color: context.palette.titleText,
             fontSize: 22,
             fontWeight: FontWeight.w700,
           ),
@@ -237,7 +239,7 @@ class _AiCreationPageState extends ConsumerState<AiCreationPage> {
           AppConfig.instance.aiCreationCoinCost > 0
               ? '确认后角色会正式发布，并消耗 ${AppConfig.instance.aiCreationCoinCost} 金币。'
               : '确认后角色会正式发布，并出现在 AI 伙伴列表中。',
-          style: const TextStyle(color: Color(0xFF777777), fontSize: 14),
+          style: TextStyle(color: context.palette.secondaryText, fontSize: 14),
         ),
         const SizedBox(height: 20),
         Row(
@@ -291,10 +293,10 @@ class _AiCreationPageState extends ConsumerState<AiCreationPage> {
               color: AppColors.primary,
             ),
             const SizedBox(height: 18),
-            const Text(
+            Text(
               '这次生成没有完成',
               style: TextStyle(
-                color: AppColors.titleText,
+                color: context.palette.titleText,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
@@ -303,8 +305,8 @@ class _AiCreationPageState extends ConsumerState<AiCreationPage> {
             Text(
               _errorMessage,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF777777),
+              style: TextStyle(
+                color: context.palette.secondaryText,
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -340,8 +342,8 @@ class _PreviewImage extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: AppColors.titleText,
+          style: TextStyle(
+            color: context.palette.titleText,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -354,13 +356,16 @@ class _PreviewImage extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: imageUrl,
               fit: BoxFit.cover,
-              placeholder: (_, _) => const ColoredBox(
-                color: Color(0xFFE7E7E7),
-                child: Center(child: CircularProgressIndicator()),
+              placeholder: (_, _) => ColoredBox(
+                color: context.palette.pressed,
+                child: const Center(child: CircularProgressIndicator()),
               ),
-              errorWidget: (_, _, _) => const ColoredBox(
-                color: Color(0xFFE7E7E7),
-                child: Icon(Icons.broken_image_outlined),
+              errorWidget: (_, _, _) => ColoredBox(
+                color: context.palette.pressed,
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: context.palette.secondaryText,
+                ),
               ),
             ),
           ),

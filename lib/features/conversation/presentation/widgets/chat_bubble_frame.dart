@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 文本 / 语音气泡外壳：底色、圆角、小尾巴；[isSelected] 给长按高亮。
@@ -15,7 +16,7 @@ class ChatBubbleFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = isRight ? const Color(0xFF95EC69) : Colors.white;
+    final baseColor = isRight ? const Color(0xFF95EC69) : context.palette.card;
     final bubbleColor = isSelected
         ? Color.alphaBlend(const Color(0x33000000), baseColor)
         : baseColor;

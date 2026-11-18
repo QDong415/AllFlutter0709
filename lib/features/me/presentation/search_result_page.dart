@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_list_base_state.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
@@ -18,23 +19,28 @@ class SearchResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: palette.bodyBackground,
         appBar: CommonAppBar(
           title: keyword,
           leadingWidth: 88,
           leading: InkWell(
             onTap: () => context.pop(),
-            child: const Row(
+            child: Row(
               children: [
-                SizedBox(width: 8),
-                Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF333333)),
-                SizedBox(width: 2),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_back_ios_new,
+                  size: 18,
+                  color: palette.titleText,
+                ),
+                const SizedBox(width: 2),
                 Text(
                   '我的',
-                  style: TextStyle(fontSize: 16, color: Color(0xFF333333)),
+                  style: TextStyle(fontSize: 16, color: palette.titleText),
                 ),
               ],
             ),
@@ -42,17 +48,17 @@ class SearchResultPage extends StatelessWidget {
         ),
         body: Column(
           children: [
-            const SizedBox(
+            SizedBox(
               height: 40,
               child: TabBar(
                 labelColor: AppColors.link,
-                unselectedLabelColor: Color(0xFF333333),
+                unselectedLabelColor: palette.titleText,
                 indicatorColor: AppColors.link,
                 indicatorSize: TabBarIndicatorSize.label,
-                dividerColor: Color(0xFFE6E6E6),
-                labelStyle: TextStyle(fontSize: 16),
-                unselectedLabelStyle: TextStyle(fontSize: 16),
-                tabs: [
+                dividerColor: palette.divider,
+                labelStyle: const TextStyle(fontSize: 16),
+                unselectedLabelStyle: const TextStyle(fontSize: 16),
+                tabs: const [
                   Tab(text: '用户'),
                   Tab(text: '动态'),
                 ],
@@ -161,11 +167,11 @@ class _SearchUserTabState extends State<_SearchUserTab>
         emptyText: '没有相关用户',
         successWidget: ListView.separated(
           itemCount: _userModelList.length,
-          separatorBuilder: (_, _) => const Divider(
+          separatorBuilder: (_, _) => Divider(
             height: 0.5,
             thickness: 0.5,
             indent: 63,
-            color: Color(0xFFE6E6E6),
+            color: context.palette.divider,
           ),
           itemBuilder: (context, index) {
             final userModel = _userModelList[index];
@@ -228,7 +234,10 @@ class _SearchUserRow extends StatelessWidget {
                 userModel.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF333333)),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: context.palette.titleText,
+                ),
               ),
             ),
             Padding(
@@ -237,6 +246,9 @@ class _SearchUserRow extends StatelessWidget {
                 'assets/icons/me/arrow_right.png',
                 width: 16,
                 height: 16,
+                color: context.palette.brightness == Brightness.dark
+                    ? context.palette.chevron
+                    : null,
               ),
             ),
           ],

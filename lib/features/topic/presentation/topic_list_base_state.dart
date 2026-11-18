@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
@@ -347,10 +347,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
   @override
   void onShareTap(TopicModel topic) {
     unawaited(
-      const TopicShareToChatHelper().share(
-        context: context,
-        topicModel: topic,
-      ),
+      const TopicShareToChatHelper().share(context: context, topicModel: topic),
     );
   }
 
@@ -466,7 +463,7 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
 
     return Scaffold(
       appBar: buildAppBar(),
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       body: buildTopicListBody(),
     );
   }

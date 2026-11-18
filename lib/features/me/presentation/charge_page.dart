@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
@@ -131,7 +132,7 @@ class _ChargePageState extends ConsumerState<ChargePage> {
   Widget build(BuildContext context) {
     final guide = _guide;
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: context.palette.bodyBackground,
       appBar: CommonAppBar(title: widget.forVip ? '充值会员' : '充值金币'),
       body: ListView(
         children: [

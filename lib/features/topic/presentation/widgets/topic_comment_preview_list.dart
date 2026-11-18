@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:flutter/gestures.dart';
@@ -42,7 +43,7 @@ class TopicCommentPreviewList extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Material(
-        color: const Color(0xFFF5F5F7),
+        color: context.palette.inputExtendBackground,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
@@ -101,12 +102,6 @@ class _CommentPreviewText extends StatefulWidget {
 }
 
 class _CommentPreviewTextState extends State<_CommentPreviewText> {
-  static const TextStyle _baseStyle = TextStyle(
-    color: Color(0xFF333333),
-    fontSize: 14,
-    height: 1.45,
-  );
-
   static const TextStyle _highlightStyle = TextStyle(
     color: Color(0xFF3399FF),
     fontWeight: FontWeight.w500,
@@ -133,12 +128,17 @@ class _CommentPreviewTextState extends State<_CommentPreviewText> {
 
   @override
   Widget build(BuildContext context) {
+    final baseStyle = TextStyle(
+      color: context.palette.titleText,
+      fontSize: 14,
+      height: 1.45,
+    );
     return Text.rich(
-      TextSpan(style: _baseStyle, children: _buildSpans()),
+      TextSpan(style: baseStyle, children: _buildSpans(baseStyle)),
     );
   }
 
-  List<InlineSpan> _buildSpans() {
+  List<InlineSpan> _buildSpans(TextStyle baseStyle) {
     final comment = widget.comment;
     final spans = <InlineSpan>[
       _buildUserSpan(comment.userName, comment.userId, comment.avatar),
@@ -152,7 +152,7 @@ class _CommentPreviewTextState extends State<_CommentPreviewText> {
     }
 
     spans.add(const TextSpan(text: '：'));
-    spans.addAll(_buildContentSpans(comment.previewContent));
+    spans.addAll(_buildContentSpans(comment.previewContent, baseStyle));
     return spans;
   }
 
@@ -178,11 +178,11 @@ class _CommentPreviewTextState extends State<_CommentPreviewText> {
     );
   }
 
-  List<InlineSpan> _buildContentSpans(String text) {
+  List<InlineSpan> _buildContentSpans(String text, TextStyle baseStyle) {
     return buildTopicContentSpans(
       text: text,
       highlightStyle: _highlightStyle,
-      baseStyle: _baseStyle,
+      baseStyle: baseStyle,
       recognizers: _recognizers,
       onMentionTap: widget.onMentionTap,
       onHashtagTap: widget.onHashtagTap,

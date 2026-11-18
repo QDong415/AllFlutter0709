@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_match_user_item.dart';
 import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
@@ -102,7 +102,7 @@ class _UserMatchListPageState extends State<UserMatchListPage>
   Widget build(BuildContext context) {
     super.build(context);
     return ColoredBox(
-      color: AppColors.bodyBackground,
+      color: context.palette.bodyBackground,
       child: EasyRefresh.builder(
         header: const ClassicHeader(showMessage: false, showText: false),
         footer: const ClassicFooter(
@@ -127,10 +127,10 @@ class _UserMatchListPageState extends State<UserMatchListPage>
               slivers: [
                 SliverList.separated(
                   itemCount: _userModelList.length,
-                  separatorBuilder: (context, index) => const Divider(
+                  separatorBuilder: (context, index) => Divider(
                     height: AppDimens.dividerThickness,
                     thickness: AppDimens.dividerThickness,
-                    color: AppColors.divider,
+                    color: context.palette.divider,
                   ),
                   itemBuilder: (context, index) {
                     final userModel = _userModelList[index];

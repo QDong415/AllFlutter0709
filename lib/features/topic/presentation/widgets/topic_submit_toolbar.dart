@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 发布页 @、表情图标，来自 Android `submit_at_normal` / `comment_emoji_black_normal`。
@@ -19,6 +20,10 @@ class TopicSubmitToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final iconColor = palette.brightness == Brightness.dark
+        ? palette.titleText
+        : null;
     return Padding(
       padding: const EdgeInsets.only(right: 4, bottom: 4),
       child: Row(
@@ -28,7 +33,12 @@ class TopicSubmitToolbar extends StatelessWidget {
             onPressed: onAtTap,
             visualDensity: VisualDensity.compact,
             padding: const EdgeInsets.all(6),
-            icon: Image.asset(TopicSubmitAssets.at, width: 30, height: 30),
+            icon: Image.asset(
+              TopicSubmitAssets.at,
+              width: 30,
+              height: 30,
+              color: iconColor,
+            ),
           ),
           IconButton(
             onPressed: onEmojiTap,
@@ -38,6 +48,7 @@ class TopicSubmitToolbar extends StatelessWidget {
               TopicSubmitAssets.emoji,
               width: 35,
               height: 35,
+              color: iconColor,
             ),
           ),
         ],

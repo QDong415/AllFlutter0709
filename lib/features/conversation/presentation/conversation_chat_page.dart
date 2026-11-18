@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
@@ -110,8 +111,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   bool _isSubmitting = false;
   int _peerGender = 0;
 
-  VipChatGuard get _vipChatGuard =>
-      VipChatGuard(appConfig: AppConfig.instance);
+  VipChatGuard get _vipChatGuard => VipChatGuard(appConfig: AppConfig.instance);
 
   @override
   void initState() {
@@ -379,10 +379,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
       return;
     }
     if (ChatSendHelper.isTextTooLong(text)) {
-      AppToast.show(
-        context,
-        '消息最多${ChatSendHelper.maxTextCharacterCount}字',
-      );
+      AppToast.show(context, '消息最多${ChatSendHelper.maxTextCharacterCount}字');
       return;
     }
     if (!context.ensureLoggedIn()) {
@@ -681,7 +678,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         _panelHelper.hidePanel();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFEDEDED),
+        backgroundColor: context.palette.chatBackground,
         resizeToAvoidBottomInset: false,
         appBar: ConversationChatAppBar(
           messagesListenable: messagesListenable,

@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -42,14 +43,14 @@ class _SignupPasswordPageState extends State<SignupPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: context.palette.plainBackground,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             IconButton(
               onPressed: () => context.pop(),
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(Icons.arrow_back, color: context.palette.titleText),
             ),
             Expanded(
               child: Center(
@@ -62,14 +63,14 @@ class _SignupPasswordPageState extends State<SignupPasswordPage> {
                         '设置密码',
                         style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(
-                              color: AppColors.titleText,
+                              color: context.palette.titleText,
                               fontWeight: FontWeight.w700,
                             ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '手机号 ${widget.args.mobile} 还未注册',
-                        style: const TextStyle(color: Color(0xFF8A8A8A)),
+                        style: TextStyle(color: context.palette.secondaryText),
                       ),
                       const SizedBox(height: 32),
                       Form(
@@ -78,9 +79,13 @@ class _SignupPasswordPageState extends State<SignupPasswordPage> {
                           controller: _passwordController,
                           obscureText: true,
                           autofocus: true,
-                          decoration: const InputDecoration(
+                          style: TextStyle(color: context.palette.titleText),
+                          decoration: InputDecoration(
                             labelText: '密码',
-                            border: OutlineInputBorder(),
+                            labelStyle: TextStyle(
+                              color: context.palette.secondaryText,
+                            ),
+                            border: const OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {

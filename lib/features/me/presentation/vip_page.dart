@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
@@ -140,8 +141,9 @@ class _VipPageState extends ConsumerState<VipPage> {
     final offer = _offer;
     final isVip = (offer?.vip ?? 0) > 0;
     final cost = offer?.monthCoinCost ?? VipOfferModel.defaultMonthCoinCost;
+    final palette = context.palette;
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: palette.bodyBackground,
       appBar: const CommonAppBar(title: '我的Vip'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(14, 20, 14, 24),
@@ -150,23 +152,23 @@ class _VipPageState extends ConsumerState<VipPage> {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 28, 16, 22),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.card,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               children: [
                 Text(
                   _loading ? '…' : '$cost',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF333333),
+                    color: palette.titleText,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   '金币/月',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF888888)),
+                  style: TextStyle(fontSize: 13, color: palette.secondaryText),
                 ),
                 const SizedBox(height: 18),
                 SizedBox(
@@ -177,11 +179,7 @@ class _VipPageState extends ConsumerState<VipPage> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
-                    child: Text(
-                      _buying
-                          ? '处理中…'
-                          : (isVip ? '续费' : '充值会员'),
-                    ),
+                    child: Text(_buying ? '处理中…' : (isVip ? '续费' : '充值会员')),
                   ),
                 ),
               ],
@@ -189,21 +187,21 @@ class _VipPageState extends ConsumerState<VipPage> {
           ),
           if (isVip) ...[
             const SizedBox(height: 18),
-            const Text(
+            Text(
               '我的Vip',
-              style: TextStyle(fontSize: 14, color: Color(0xFF888888)),
+              style: TextStyle(fontSize: 14, color: palette.secondaryText),
             ),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: palette.card,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 offer == null ? '' : _expireText(offer),
-                style: const TextStyle(fontSize: 15, color: Color(0xFF333333)),
+                style: TextStyle(fontSize: 15, color: palette.titleText),
               ),
             ),
           ],
@@ -212,10 +210,10 @@ class _VipPageState extends ConsumerState<VipPage> {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.card,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
@@ -224,24 +222,24 @@ class _VipPageState extends ConsumerState<VipPage> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF333333),
+                      color: palette.titleText,
                     ),
                   ),
                 ),
-                SizedBox(height: 22),
+                const SizedBox(height: 22),
                 Text(
                   '聊天条数不受限制',
-                  style: TextStyle(fontSize: 15, color: Color(0xFF333333)),
+                  style: TextStyle(fontSize: 15, color: palette.titleText),
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 Text(
                   '聊天可发图片语音视频',
-                  style: TextStyle(fontSize: 15, color: Color(0xFF333333)),
+                  style: TextStyle(fontSize: 15, color: palette.titleText),
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 Text(
                   '对附近的人优先显示',
-                  style: TextStyle(fontSize: 15, color: Color(0xFF333333)),
+                  style: TextStyle(fontSize: 15, color: palette.titleText),
                 ),
               ],
             ),

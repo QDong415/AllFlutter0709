@@ -1,5 +1,5 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_shadows.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:flutter/material.dart';
@@ -41,16 +41,22 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    AppSystemUi.apply(AppSystemUi.overlayForToolbar(palette.brightness));
+    final titleStyle = TextStyle(
+      color: palette.titleText,
+      fontSize: AppDimens.toolbarTitleSize,
+    );
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.toolbar,
+      decoration: BoxDecoration(
+        color: palette.toolbar,
         boxShadow: AppShadows.downward,
       ),
       child: AppBar(
         toolbarHeight: AppDimens.toolbarHeight,
         centerTitle: true,
         backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.titleText,
+        foregroundColor: palette.titleText,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -68,17 +74,11 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ).backButtonTooltip,
                     onPressed: onLeadingPressed,
                   )),
-        systemOverlayStyle: AppSystemUi.overlayStyle,
+        systemOverlayStyle: AppSystemUi.overlayForToolbar(palette.brightness),
         title:
             titleWidget ??
             (titleTrailing == null
-                ? Text(
-                    title,
-                    style: const TextStyle(
-                      color: AppColors.titleText,
-                      fontSize: AppDimens.toolbarTitleSize,
-                    ),
-                  )
+                ? Text(title, style: titleStyle)
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -86,10 +86,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                         child: Text(
                           title,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.titleText,
-                            fontSize: AppDimens.toolbarTitleSize,
-                          ),
+                          style: titleStyle,
                         ),
                       ),
                       const SizedBox(width: 6),

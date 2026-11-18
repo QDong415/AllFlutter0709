@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
@@ -113,15 +114,16 @@ class _WarningReportPageState extends ConsumerState<WarningReportPage> {
   Widget build(BuildContext context) {
     final canAddMore =
         _mediaList.length < OpinionPhotoSubmitHelper.maxImageCount;
+    final palette = context.palette;
 
     return Scaffold(
       appBar: const CommonAppBar(title: '意见或举报'),
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: palette.bodyBackground,
       body: Column(
         children: [
-          const Divider(height: 0.5, thickness: 0.5, color: AppColors.divider),
+          Divider(height: 0.5, thickness: 0.5, color: palette.divider),
           ColoredBox(
-            color: Colors.white,
+            color: palette.card,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -132,14 +134,18 @@ class _WarningReportPageState extends ConsumerState<WarningReportPage> {
                   maxLines: 8,
                   maxLength: 200,
                   keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
+                  cursorColor: palette.ink,
+                  decoration: InputDecoration(
                     hintText: '说点什么吧',
-                    hintStyle: TextStyle(color: Color(0xFFB3B3B8), fontSize: 16),
+                    hintStyle: TextStyle(
+                      color: palette.secondaryText,
+                      fontSize: 16,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(8),
+                    contentPadding: const EdgeInsets.all(8),
                     counterText: '',
                   ),
-                  style: const TextStyle(fontSize: 16, color: Color(0xFF333333)),
+                  style: TextStyle(fontSize: 16, color: palette.titleText),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
@@ -147,7 +153,7 @@ class _WarningReportPageState extends ConsumerState<WarningReportPage> {
                     '可以添加多张图片',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey.shade600,
+                      color: palette.secondaryText,
                     ),
                   ),
                 ),
@@ -164,7 +170,7 @@ class _WarningReportPageState extends ConsumerState<WarningReportPage> {
               ],
             ),
           ),
-          const Divider(height: 0.5, thickness: 0.5, color: AppColors.divider),
+          Divider(height: 0.5, thickness: 0.5, color: palette.divider),
           Padding(
             padding: const EdgeInsets.fromLTRB(40, 28, 40, 28),
             child: SizedBox(

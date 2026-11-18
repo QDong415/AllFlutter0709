@@ -1,6 +1,6 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
@@ -73,7 +73,7 @@ class ConversationPage extends ConsumerWidget {
     final remarkStore = ref.watch(userRemarkStoreProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       appBar: const CommonAppBar(title: '聊天'),
       body: currentAccount == null
           ? CommonStatePlaceholder(
@@ -151,10 +151,10 @@ class ConversationPage extends ConsumerWidget {
                               },
                             );
                           },
-                          separatorBuilder: (_, _) => const Divider(
+                          separatorBuilder: (_, _) => Divider(
                             height: AppDimens.dividerThickness,
                             thickness: AppDimens.dividerThickness,
-                            color: AppColors.divider,
+                            color: context.palette.divider,
                           ),
                           itemCount:
                               _remindEntries.length + conversations.length,

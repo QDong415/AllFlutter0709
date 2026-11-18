@@ -21,7 +21,8 @@ class CommentListLocalHelper {
     }
 
     final rootIndex = items.indexWhere(
-      (item) => item.isComment && item.comment!.effectiveId == comment.parentCid,
+      (item) =>
+          item.isComment && item.comment!.effectiveId == comment.parentCid,
     );
     if (rootIndex == -1) {
       items.insert(
@@ -77,7 +78,8 @@ class CommentListLocalHelper {
     }
 
     final rootIndex = items.indexWhere(
-      (item) => item.isComment && item.comment!.effectiveId == comment.parentCid,
+      (item) =>
+          item.isComment && item.comment!.effectiveId == comment.parentCid,
     );
     items.removeAt(index);
 

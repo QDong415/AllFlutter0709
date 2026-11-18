@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bubble_frame.dart';
@@ -17,6 +18,9 @@ class ChatTextBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final glyphColor = item.isRight
+        ? const Color(0xFF191919)
+        : context.palette.titleText;
     final spans = <InlineSpan>[];
     final segments = item.text.split('\n');
 
@@ -27,7 +31,7 @@ class ChatTextBubble extends StatelessWidget {
       final segmentStyle = TextStyle(
         fontSize: ChatBubbleMetrics.fontSize,
         height: ChatBubbleMetrics.lineHeight,
-        color: isUrl ? const Color(0xFF576B95) : const Color(0xFF191919),
+        color: isUrl ? const Color(0xFF576B95) : glyphColor,
         decoration: isUrl ? TextDecoration.underline : TextDecoration.none,
         decorationColor: const Color(0xFF576B95),
       );
@@ -50,10 +54,10 @@ class ChatTextBubble extends StatelessWidget {
           child: Text.rich(
             TextSpan(children: spans),
             textWidthBasis: TextWidthBasis.longestLine,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: ChatBubbleMetrics.fontSize,
               height: ChatBubbleMetrics.lineHeight,
-              color: Color(0xFF191919),
+              color: glyphColor,
               leadingDistribution: TextLeadingDistribution.even,
             ),
             strutStyle: const StrutStyle(

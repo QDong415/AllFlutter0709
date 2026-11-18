@@ -8,7 +8,9 @@ abstract final class TopicAudioFileStore {
   /// 返回 [filename] 对应的本地文件。目录不存在时会创建。
   static Future<File> fileForName(String filename) async {
     final directory = await getApplicationSupportDirectory();
-    final folder = Directory('${directory.path}${Platform.pathSeparator}topic_audio');
+    final folder = Directory(
+      '${directory.path}${Platform.pathSeparator}topic_audio',
+    );
     if (!await folder.exists()) {
       await folder.create(recursive: true);
     }
@@ -26,6 +28,34 @@ abstract final class TopicAudioFileStore {
       return file;
     }
     return null;
+  }
+
+  /// 把刚录制并已上传的文件移入动态语音共享缓存。
+  ///
+  /// 优先 rename；跨目录无法 rename 时回退 copy，并删除原临时文件。
+  static Future<File> persistLocalFile({
+    required File source,
+    required String filename,
+  }) async {
+    final target = await fileForName(filename);
+    if (source.path == target.path) {
+      return target;
+    }
+    if (await target.exists() && await target.length() > 0) {
+      if (await source.exists()) {
+        await source.delete();
+      }
+      return target;
+    }
+    try {
+      return await source.rename(target.path);
+    } catch (_) {
+      final copied = await source.copy(target.path);
+      if (await source.exists()) {
+        await source.delete();
+      }
+      return copied;
+    }
   }
 
   /// 对象名或 URL 的文件名部分。

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bubble_frame.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bubble_metrics.dart';
@@ -22,9 +23,13 @@ class ChatVoiceBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = math.max(82.0, math.min(168.0, 64.0 + item.seconds * 16.0));
+    final glyphColor = item.isRight
+        ? const Color(0xFF191919)
+        : context.palette.titleText;
     final playIcon = ChatVoicePlayIcon(
       isRight: item.isRight,
       isPlaying: isPlaying,
+      color: glyphColor,
     );
 
     final bubble = ChatBubbleFrame(
@@ -43,10 +48,10 @@ class ChatVoiceBubble extends StatelessWidget {
                 ? [
                     Text(
                       '${item.seconds}"',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         height: 1.2,
-                        color: Color(0xFF191919),
+                        color: glyphColor,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -57,10 +62,10 @@ class ChatVoiceBubble extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${item.seconds}"',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         height: 1.2,
-                        color: Color(0xFF191919),
+                        color: glyphColor,
                       ),
                     ),
                   ],

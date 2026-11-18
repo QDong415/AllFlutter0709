@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
@@ -204,28 +204,35 @@ class _TopicUserSelectPageState extends ConsumerState<TopicUserSelectPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: palette.bodyBackground,
       appBar: const CommonAppBar(title: '选择好友'),
       body: Column(
         children: [
           ColoredBox(
-            color: AppColors.bodyBackground,
+            color: palette.bodyBackground,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
               child: TextField(
                 controller: _keywordController,
                 textInputAction: TextInputAction.search,
+                style: TextStyle(fontSize: 14, color: palette.titleText),
+                cursorColor: palette.ink,
                 decoration: InputDecoration(
                   hintText: '搜索好友昵称',
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF9B9B9B),
+                    color: palette.secondaryText,
                   ),
                   isDense: true,
                   filled: true,
-                  fillColor: Colors.white,
-                  prefixIcon: const Icon(Icons.search, size: 18),
+                  fillColor: palette.card,
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: 18,
+                    color: palette.secondaryText,
+                  ),
                   prefixIconConstraints: const BoxConstraints(
                     minWidth: 36,
                     minHeight: 28,
@@ -254,7 +261,7 @@ class _TopicUserSelectPageState extends ConsumerState<TopicUserSelectPage> {
                 successWidget: ListView.separated(
                   itemCount: _userModelList.length,
                   separatorBuilder: (context, index) =>
-                      const Divider(height: 0.5),
+                      Divider(height: 0.5, color: palette.divider),
                   itemBuilder: (context, index) {
                     final userModel = _userModelList[index];
                     final avatarUrl =
@@ -265,12 +272,15 @@ class _TopicUserSelectPageState extends ConsumerState<TopicUserSelectPage> {
                         '';
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFFE8E8E8),
+                        backgroundColor: palette.pressed,
                         backgroundImage: avatarUrl.isNotEmpty
                             ? CachedNetworkImageProvider(avatarUrl)
                             : null,
                       ),
-                      title: Text(userModel.name),
+                      title: Text(
+                        userModel.name,
+                        style: TextStyle(color: palette.titleText),
+                      ),
                       onTap: () => context.pop(userModel),
                     );
                   },

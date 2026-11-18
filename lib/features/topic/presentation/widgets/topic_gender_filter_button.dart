@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_gender.dart';
 import 'package:all_flutter0709/shared/widgets/gender_pick_menu.dart';
 import 'package:flutter/material.dart';
@@ -36,8 +36,12 @@ class TopicGenderFilterButton extends StatelessWidget {
         height: 45,
         child: Stack(
           children: [
-            const Positioned.fill(
-              child: Icon(Icons.tune, color: AppColors.titleText, size: 22),
+            Positioned.fill(
+              child: Icon(
+                Icons.tune,
+                color: context.palette.titleText,
+                size: 22,
+              ),
             ),
             if (gender == TopicGender.male || gender == TopicGender.female)
               Positioned(

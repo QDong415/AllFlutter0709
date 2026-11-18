@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_show_menu/flutter_show_menu.dart';
 
@@ -14,11 +15,6 @@ class CommentLongPressMenu {
   static const double _itemHeight = 38;
   static const double _gap = 8;
   static const double _estimatedMenuHeight = _itemHeight * 3 + 8;
-
-  static const TextStyle _itemTextStyle = TextStyle(
-    fontSize: 17,
-    color: Color(0xFF333333),
-  );
 
   /// 在 [anchorContext] 对应的评论条目旁弹出菜单。
   ///
@@ -41,6 +37,9 @@ class CommentLongPressMenu {
     final showBelow =
         spaceBelow >= _estimatedMenuHeight + _gap || spaceBelow >= spaceAbove;
 
+    final palette = anchorContext.palette;
+    final itemTextStyle = TextStyle(fontSize: 17, color: palette.titleText);
+
     return showOverlayMenu<CommentLongPressAction>(
       context: anchorContext,
       placement: OverlayMenuPlacement(
@@ -48,24 +47,24 @@ class CommentLongPressMenu {
         alignment: MenuAlignment.center,
         offset: Offset(0, showBelow ? _gap : -_gap),
       ),
-      style: const OverlayMenuStyle(
-        backgroundColor: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(4)),
+      style: OverlayMenuStyle(
+        backgroundColor: palette.card,
+        borderRadius: const BorderRadius.all(Radius.circular(4)),
         width: _menuWidth,
-        padding: EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         itemStyle: OverlayMenuItemStyle(
           height: _itemHeight,
-          highlightColor: Color(0xFFF2F2F2),
-          splashColor: Color(0xFFF2F2F2),
+          highlightColor: palette.pressed,
+          splashColor: palette.pressed,
         ),
       ),
       items: [
-        const OverlayMenuItem<CommentLongPressAction>(
+        OverlayMenuItem<CommentLongPressAction>(
           value: CommentLongPressAction.copy,
           height: _itemHeight,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text('复制内容', style: _itemTextStyle),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text('复制内容', style: itemTextStyle),
           ),
         ),
         OverlayMenuItem<CommentLongPressAction>(
@@ -75,15 +74,15 @@ class CommentLongPressMenu {
           height: _itemHeight,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(canDelete ? '删除' : '举报', style: _itemTextStyle),
+            child: Text(canDelete ? '删除' : '举报', style: itemTextStyle),
           ),
         ),
-        const OverlayMenuItem<CommentLongPressAction>(
+        OverlayMenuItem<CommentLongPressAction>(
           value: CommentLongPressAction.reply,
           height: _itemHeight,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text('回复', style: _itemTextStyle),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text('回复', style: itemTextStyle),
           ),
         ),
       ],

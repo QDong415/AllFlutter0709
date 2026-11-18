@@ -1,5 +1,5 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 个人主页双层导航：透明层与实色层按滚动比例渐变。
@@ -27,6 +27,7 @@ class UserDetailNavBar extends StatelessWidget {
     final solidOpacity = progress.clamp(0.0, 1.0);
     final clearOpacity = (1.0 - solidOpacity).clamp(0.0, 1.0);
 
+    final palette = context.palette;
     return SizedBox(
       height: barHeight,
       child: Stack(
@@ -48,10 +49,10 @@ class UserDetailNavBar extends StatelessWidget {
             opacity: solidOpacity,
             child: _NavBarContent(
               statusBarHeight: statusBarHeight,
-              backgroundColor: AppColors.toolbar,
+              backgroundColor: palette.toolbar,
               title: title,
-              titleColor: AppColors.titleText,
-              iconColor: AppColors.titleText,
+              titleColor: palette.titleText,
+              iconColor: palette.titleText,
               onBack: onBack,
               onMore: onMore,
               useShadowIcon: false,
@@ -101,12 +102,7 @@ class _NavBarContent extends StatelessWidget {
                   size: 20,
                   color: iconColor,
                   shadows: useShadowIcon
-                      ? const [
-                          Shadow(
-                            color: Color(0x66000000),
-                            blurRadius: 4,
-                          ),
-                        ]
+                      ? const [Shadow(color: Color(0x66000000), blurRadius: 4)]
                       : null,
                 ),
               ),
@@ -133,10 +129,7 @@ class _NavBarContent extends StatelessWidget {
                       color: iconColor,
                       shadows: useShadowIcon
                           ? const [
-                              Shadow(
-                                color: Color(0x66000000),
-                                blurRadius: 4,
-                              ),
+                              Shadow(color: Color(0x66000000), blurRadius: 4),
                             ]
                           : null,
                     ),

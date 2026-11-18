@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -30,8 +31,6 @@ class ChargeMethodsCard extends StatelessWidget {
   final VoidCallback? onContactTap;
   final VoidCallback? onRedeemTap;
 
-  static const _blackGray = Color(0xFF000000);
-  static const _textBlack = Color(0xFF5B5B5B);
   static const _orange = Color(0xFFFC6F1D);
 
   @override
@@ -40,38 +39,41 @@ class ChargeMethodsCard extends StatelessWidget {
       secretaryAvatar,
       limitPx: 128,
     );
-    final displayName =
-        secretaryName.trim().isEmpty ? '小秘书' : secretaryName.trim();
+    final palette = context.palette;
+    final displayName = secretaryName.trim().isEmpty
+        ? '小秘书'
+        : secretaryName.trim();
+    final titleStyle = TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.w700,
+      color: palette.ink,
+    );
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(14, 20, 14, 24),
       padding: const EdgeInsets.fromLTRB(0, 16, 0, 18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(5),
       ),
       child: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 12),
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
             child: Text(
               '充值方式1',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: _blackGray,
-              ),
+              style: titleStyle,
             ),
           ),
           Container(
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F3),
+              color: palette.pressed,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE3E3E3), width: 1),
+              border: Border.all(color: palette.divider, width: 1),
             ),
             child: Row(
               children: [
@@ -87,7 +89,7 @@ class ChargeMethodsCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     displayName,
-                    style: const TextStyle(fontSize: 16, color: _blackGray),
+                    style: TextStyle(fontSize: 16, color: palette.ink),
                   ),
                 ),
                 Padding(
@@ -105,10 +107,7 @@ class ChargeMethodsCard extends StatelessWidget {
                         ),
                         child: Text(
                           '去联系',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 15),
                         ),
                       ),
                     ),
@@ -117,16 +116,12 @@ class ChargeMethodsCard extends StatelessWidget {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(top: 40),
+          Padding(
+            padding: const EdgeInsets.only(top: 40),
             child: Text(
               '充值方式2',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: _blackGray,
-              ),
+              style: titleStyle,
             ),
           ),
           Padding(
@@ -134,19 +129,15 @@ class ChargeMethodsCard extends StatelessWidget {
             child: Text(
               way2Text,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: _textBlack),
+              style: TextStyle(fontSize: 16, color: palette.bodyText),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(top: 40),
+          Padding(
+            padding: const EdgeInsets.only(top: 40),
             child: Text(
               '充值方式3',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: _blackGray,
-              ),
+              style: titleStyle,
             ),
           ),
           Padding(
@@ -161,22 +152,27 @@ class ChargeMethodsCard extends StatelessWidget {
                 FilteringTextInputFormatter.deny(RegExp(r'[\r\n]')),
                 LengthLimitingTextInputFormatter(32),
               ],
+              style: TextStyle(fontSize: 15, color: palette.ink),
+              cursorColor: palette.ink,
               decoration: InputDecoration(
                 hintText: '兑换码',
-                hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
+                hintStyle: TextStyle(
+                  color: palette.secondaryText,
+                  fontSize: 15,
+                ),
                 filled: true,
-                fillColor: const Color(0xFFF3F3F3),
+                fillColor: palette.inputExtendBackground,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 12,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFE3E3E3)),
+                  borderSide: BorderSide(color: palette.divider),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Color(0xFFE3E3E3)),
+                  borderSide: BorderSide(color: palette.divider),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -224,18 +220,13 @@ class ChargeMethodsCard extends StatelessWidget {
 
   Widget _avatar(String? avatarUrl) {
     if (avatarUrl == null || avatarUrl.isEmpty) {
-      return Image.asset(
-        'assets/icons/me/user_photo.png',
-        fit: BoxFit.cover,
-      );
+      return Image.asset('assets/icons/me/user_photo.png', fit: BoxFit.cover);
     }
     return CachedNetworkImage(
       imageUrl: avatarUrl,
       fit: BoxFit.cover,
-      errorWidget: (_, _, _) => Image.asset(
-        'assets/icons/me/user_photo.png',
-        fit: BoxFit.cover,
-      ),
+      errorWidget: (_, _, _) =>
+          Image.asset('assets/icons/me/user_photo.png', fit: BoxFit.cover),
     );
   }
 }

@@ -4,12 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 动态互动提醒类型，对齐 Android `ChatManager.REMIND_SUBTYPE_*`。
-enum RemindKind {
-  praise,
-  comment,
-  fans,
-  at,
-}
+enum RemindKind { praise, comment, fans, at }
 
 /// 会话列表顶部四条提醒的本地未读。
 ///

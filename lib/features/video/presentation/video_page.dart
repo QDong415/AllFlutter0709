@@ -1,5 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/features/video/data/models/video_model.dart';
 import 'package:all_flutter0709/features/video/data/video_repository.dart';
@@ -118,7 +118,7 @@ class _VideoPageState extends State<VideoPage> {
           ),
         ],
       ),
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       body: EasyRefresh(
         header: const ClassicHeader(showMessage: false, showText: false),
         onRefresh: _onRefresh,

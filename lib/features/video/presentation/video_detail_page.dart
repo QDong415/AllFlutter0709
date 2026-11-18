@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
+import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_section.dart';
@@ -32,6 +33,14 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
   void initState() {
     super.initState();
     _video = widget.video;
+  }
+
+  @override
+  void dispose() {
+    AppSystemUi.apply(
+      AppSystemUi.overlayForToolbar(AppSystemUi.themeBrightness),
+    );
+    super.dispose();
   }
 
   double _playerHeight(BuildContext context) {
@@ -117,7 +126,7 @@ class _VideoDetailPageState extends State<VideoDetailPage> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: context.palette.bodyBackground,
       body: Stack(
         children: [
           NotificationListener<ScrollNotification>(

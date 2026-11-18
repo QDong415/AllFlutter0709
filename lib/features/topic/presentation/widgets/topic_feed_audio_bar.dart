@@ -14,11 +14,11 @@ import 'package:visibility_detector/visibility_detector.dart';
 class TopicAudioVisibility extends ConsumerStatefulWidget {
   const TopicAudioVisibility({
     super.key,
-    required this.tid,
+    required this.playKey,
     required this.child,
   });
 
-  final String tid;
+  final String playKey;
   final Widget child;
 
   @override
@@ -44,7 +44,7 @@ class _TopicAudioVisibilityState extends ConsumerState<TopicAudioVisibility> {
 
   @override
   void dispose() {
-    ref.read(topicAudioPlayControllerProvider).onHidden(widget.tid);
+    ref.read(topicAudioPlayControllerProvider).onHidden(widget.playKey);
     _router?.routerDelegate.removeListener(_onRoute);
     super.dispose();
   }
@@ -58,13 +58,13 @@ class _TopicAudioVisibilityState extends ConsumerState<TopicAudioVisibility> {
       return;
     }
     _wasOnScreen = false;
-    ref.read(topicAudioPlayControllerProvider).onHidden(widget.tid);
+    ref.read(topicAudioPlayControllerProvider).onHidden(widget.playKey);
   }
 
   /// 路由变化时复用视频播放器的表面可见性判断。
   void _onRoute() {
     if (!_isSurfaceActive()) {
-      ref.read(topicAudioPlayControllerProvider).onHidden(widget.tid);
+      ref.read(topicAudioPlayControllerProvider).onHidden(widget.playKey);
     }
   }
 
@@ -96,12 +96,12 @@ class _TopicAudioVisibilityState extends ConsumerState<TopicAudioVisibility> {
           if (!mounted) {
             return;
           }
-          ref.read(topicAudioPlayControllerProvider).onHidden(widget.tid);
+          ref.read(topicAudioPlayControllerProvider).onHidden(widget.playKey);
         });
       }
     }
     return VisibilityDetector(
-      key: Key('topic-audio-cell-${widget.tid}'),
+      key: Key('topic-audio-cell-${widget.playKey}'),
       onVisibilityChanged: _handleVisibility,
       child: widget.child,
     );
@@ -117,7 +117,7 @@ class TopicFeedAudioBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(topicAudioPlayControllerProvider);
-    final active = controller.targetTid == topicModel.tid;
+    final active = controller.targetPlayKey == topicModel.tid;
     final loading = active && controller.phase == TopicAudioPhase.loading;
     final playing = active && controller.phase == TopicAudioPhase.playing;
     final showProgress =

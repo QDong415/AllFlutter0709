@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,12 +20,13 @@ class ChatTopicBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final card = Container(
       width: _cardWidth,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: palette.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,9 +50,9 @@ class ChatTopicBubble extends StatelessWidget {
                               item.authorName.isEmpty ? '用户' : item.authorName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF888888),
+                                color: palette.secondaryText,
                                 height: 1.2,
                               ),
                             ),
@@ -64,18 +66,18 @@ class ChatTopicBubble extends StatelessWidget {
                             text: item.content.isEmpty
                                 ? '[图片动态]'
                                 : item.content,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF333333),
+                              color: palette.titleText,
                               height: 1.35,
                             ),
                           ),
                         ),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF333333),
+                          color: palette.titleText,
                           height: 1.35,
                         ),
                       ),
@@ -92,14 +94,14 @@ class ChatTopicBubble extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE)),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          Divider(height: 1, thickness: 0.5, color: palette.divider),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             child: Text(
               '动态',
               style: TextStyle(
                 fontSize: 11,
-                color: Color(0xFF9B9B9B),
+                color: palette.secondaryText,
                 height: 1,
               ),
             ),
@@ -127,7 +129,7 @@ class _AuthorAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: 9,
-      backgroundColor: const Color(0xFFE8E8E8),
+      backgroundColor: context.palette.pressed,
       backgroundImage: avatarUrl.isNotEmpty
           ? CachedNetworkImageProvider(avatarUrl)
           : null,
@@ -156,20 +158,20 @@ class _CoverThumb extends StatelessWidget {
               fit: BoxFit.cover,
               placeholderFadeInDuration: Duration.zero,
               fadeInDuration: Duration.zero,
-              placeholder: (_, _) => const ColoredBox(
-                color: Color(0xFFF2F2F2),
+              placeholder: (_, _) => ColoredBox(
+                color: context.palette.pressed,
                 child: Icon(
                   Icons.image_outlined,
                   size: 22,
-                  color: Color(0xFFBDBDBD),
+                  color: context.palette.secondaryText,
                 ),
               ),
-              errorWidget: (_, _, _) => const ColoredBox(
-                color: Color(0xFFF2F2F2),
+              errorWidget: (_, _, _) => ColoredBox(
+                color: context.palette.pressed,
                 child: Icon(
                   Icons.image_outlined,
                   size: 22,
-                  color: Color(0xFFBDBDBD),
+                  color: context.palette.secondaryText,
                 ),
               ),
             ),

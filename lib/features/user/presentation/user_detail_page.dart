@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
@@ -79,6 +80,14 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   }
 
   @override
+  void dispose() {
+    AppSystemUi.apply(
+      AppSystemUi.overlayForToolbar(AppSystemUi.themeBrightness),
+    );
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     _profileModel = UserProfileModel(
@@ -127,10 +136,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
           onFollowTap: _onFollowTap,
           onEditTap: _onEditTap,
         ),
-        ReceivedGiftSection(
-          key: _giftSectionKey,
-          userId: widget.userId,
-        ),
+        ReceivedGiftSection(key: _giftSectionKey, userId: widget.userId),
       ],
     );
   }
@@ -221,8 +227,11 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
   }
 
   SystemUiOverlayStyle get _systemUiOverlayStyle {
+    final collapsed = _collapseProgress.clamp(0.0, 1.0) > 0.5;
+    final darkToolbar = context.palette.brightness == Brightness.dark;
     return AppSystemUi.overlayStyleWithStatusBarIcons(
-      darkIcons: _collapseProgress.clamp(0.0, 1.0) > 0.5,
+      darkIcons: collapsed && !darkToolbar,
+      navigationBar: context.palette.brightness,
     );
   }
 
@@ -397,10 +406,12 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final overlayStyle = _systemUiOverlayStyle;
+    AppSystemUi.apply(overlayStyle);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: _systemUiOverlayStyle,
+      value: overlayStyle,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F8F8),
+        backgroundColor: context.palette.bodyBackground,
         body: Stack(
           children: [
             EasyRefresh.builder(

@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_ai_typing_helper.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
@@ -55,10 +55,10 @@ class ConversationChatAppBar extends StatelessWidget
               padding: const EdgeInsets.symmetric(horizontal: 12),
               constraints: const BoxConstraints(minWidth: 44, minHeight: 45),
               onPressed: onPeerPressed,
-              icon: const Icon(
+              icon: Icon(
                 Icons.person_outline,
                 size: 22,
-                color: AppColors.titleText,
+                color: context.palette.titleText,
               ),
             ),
           ],

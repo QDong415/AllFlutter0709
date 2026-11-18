@@ -30,13 +30,17 @@ abstract final class UserFollowHelper {
         followStatus == FollowRelation.fans;
   }
 
-  /// 关注按钮左侧图标。
-  static String iconAssetOf(int followStatus) {
+  /// 关注按钮左侧图标。未关注态是白图标，压在橙色按钮上，两种模式共用。
+  static String iconAssetOf(int followStatus, {bool dark = false}) {
     switch (followStatus) {
       case FollowRelation.following:
-        return 'assets/icons/user/profile_icon_followed_black_m_normal.png';
+        return dark
+            ? 'assets/icons/user/profile_icon_followed_black_m_dark.png'
+            : 'assets/icons/user/profile_icon_followed_black_m_normal.png';
       case FollowRelation.each:
-        return 'assets/icons/user/profile_icon_followeachother_black_m_normal.png';
+        return dark
+            ? 'assets/icons/user/profile_icon_followeachother_black_m_dark.png'
+            : 'assets/icons/user/profile_icon_followeachother_black_m_normal.png';
       case FollowRelation.fans:
       case FollowRelation.none:
       default:

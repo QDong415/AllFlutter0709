@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_follow_helper.dart';
 import 'package:flutter/material.dart';
 
@@ -23,10 +24,14 @@ class UserDetailActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = context.palette.brightness == Brightness.dark;
     if (isSelf) {
       return _OutlineActionButton(
         label: '编辑资料',
-        iconAsset: 'assets/icons/user/profile_icon_edit_normal.png',
+        iconAsset: context.themedAsset(
+          'assets/icons/user/profile_icon_edit_normal.png',
+          'assets/icons/user/profile_icon_edit_dark.png',
+        ),
         onTap: onEditTap,
       );
     }
@@ -38,7 +43,10 @@ class UserDetailActionButtons extends StatelessWidget {
         Expanded(
           child: _OutlineActionButton(
             label: '私信',
-            iconAsset: 'assets/icons/user/profile_icon_chat_normal.png',
+            iconAsset: context.themedAsset(
+              'assets/icons/user/profile_icon_chat_normal.png',
+              'assets/icons/user/profile_icon_chat_dark.png',
+            ),
             onTap: onChatTap,
           ),
         ),
@@ -48,6 +56,7 @@ class UserDetailActionButtons extends StatelessWidget {
             followStatus: followStatus,
             isLoading: isFollowLoading,
             isFollowAction: isFollowAction,
+            isDark: dark,
             onTap: onFollowTap,
           ),
         ),
@@ -69,8 +78,9 @@ class _OutlineActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Material(
-      color: Colors.white,
+      color: palette.card,
       borderRadius: BorderRadius.circular(4),
       child: InkWell(
         onTap: onTap,
@@ -80,7 +90,7 @@ class _OutlineActionButton extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: const Color(0xFFDDDDDD)),
+            border: Border.all(color: palette.divider),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -89,7 +99,7 @@ class _OutlineActionButton extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 label,
-                style: const TextStyle(fontSize: 14, color: AppColors.black),
+                style: TextStyle(fontSize: 14, color: palette.titleText),
               ),
             ],
           ),
@@ -104,18 +114,21 @@ class _FollowActionButton extends StatelessWidget {
     required this.followStatus,
     required this.isLoading,
     required this.isFollowAction,
+    required this.isDark,
     required this.onTap,
   });
 
   final int followStatus;
   final bool isLoading;
   final bool isFollowAction;
+  final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final background = isFollowAction ? AppColors.accent : Colors.white;
-    final textColor = isFollowAction ? Colors.white : AppColors.black;
+    final palette = context.palette;
+    final background = isFollowAction ? AppColors.accent : palette.card;
+    final textColor = isFollowAction ? Colors.white : palette.titleText;
 
     return Material(
       color: background,
@@ -128,9 +141,7 @@ class _FollowActionButton extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
-            border: isFollowAction
-                ? null
-                : Border.all(color: const Color(0xFFDDDDDD)),
+            border: isFollowAction ? null : Border.all(color: palette.divider),
           ),
           child: isLoading
               ? SizedBox(
@@ -145,7 +156,7 @@ class _FollowActionButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      UserFollowHelper.iconAssetOf(followStatus),
+                      UserFollowHelper.iconAssetOf(followStatus, dark: isDark),
                       width: 16,
                       height: 16,
                     ),

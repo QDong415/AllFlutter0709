@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/gift/data/gift_list_errors.dart';
 import 'package:all_flutter0709/features/gift/data/gift_model.dart';
 import 'package:all_flutter0709/features/gift/data/gift_repository.dart';
@@ -169,19 +170,24 @@ class ReceivedGiftSectionState extends State<ReceivedGiftSection>
   }
 
   Widget _buildCard(BuildContext context) {
+    final palette = context.palette;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 16, 12, 12),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '收到的礼物',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: palette.titleText,
+            ),
           ),
           const SizedBox(height: 20),
           GridView.builder(
@@ -209,12 +215,10 @@ class ReceivedGiftSectionState extends State<ReceivedGiftSection>
                             fit: BoxFit.contain,
                             fadeInDuration: const Duration(milliseconds: 220),
                             fadeOutDuration: const Duration(milliseconds: 120),
-                            placeholder: (_, _) => const ColoredBox(
-                              color: Color(0xFFF3F3F5),
-                            ),
-                            errorWidget: (_, _, _) => const ColoredBox(
-                              color: Color(0xFFF3F3F5),
-                            ),
+                            placeholder: (_, _) =>
+                                ColoredBox(color: palette.pressed),
+                            errorWidget: (_, _, _) =>
+                                ColoredBox(color: palette.pressed),
                           ),
                   ),
                   const SizedBox(height: 2),
@@ -222,18 +226,15 @@ class ReceivedGiftSectionState extends State<ReceivedGiftSection>
                     gift.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF444444),
-                    ),
+                    style: TextStyle(fontSize: 11, color: palette.titleText),
                   ),
                   Text(
                     'x${gift.totalCount}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF666666),
+                      color: palette.secondaryText,
                     ),
                   ),
                 ],
@@ -246,11 +247,12 @@ class ReceivedGiftSectionState extends State<ReceivedGiftSection>
               onTap: () => openGiftSenderPage(context, toUserId: widget.userId),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     '送礼的人',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
+                      color: palette.titleText,
                     ),
                   ),
                   const Spacer(),
@@ -268,11 +270,7 @@ class ReceivedGiftSectionState extends State<ReceivedGiftSection>
                         ],
                       ),
                     ),
-                  const Icon(
-                    Icons.chevron_right,
-                    size: 20,
-                    color: Color(0xFF8B8B90),
-                  ),
+                  Icon(Icons.chevron_right, size: 20, color: palette.chevron),
                 ],
               ),
             ),
@@ -295,7 +293,7 @@ class _SenderAvatar extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 1.5),
+        border: Border.all(color: context.palette.card, width: 1.5),
       ),
       clipBehavior: Clip.antiAlias,
       child: GiftUserAvatar(url: url, size: 28),

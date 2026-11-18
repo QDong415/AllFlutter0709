@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -16,16 +17,19 @@ class GiftUserAvatar extends StatelessWidget {
         width: size,
         height: size,
         child: imageUrl.isEmpty
-            ? const ColoredBox(
-                color: Color(0xFFE8E8ED),
-                child: Icon(Icons.person, color: Color(0xFFB0B0B6)),
+            ? ColoredBox(
+                color: context.palette.pressed,
+                child: Icon(Icons.person, color: context.palette.secondaryText),
               )
             : CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                errorWidget: (_, _, _) => const ColoredBox(
-                  color: Color(0xFFE8E8ED),
-                  child: Icon(Icons.person, color: Color(0xFFB0B0B6)),
+                errorWidget: (_, _, _) => ColoredBox(
+                  color: context.palette.pressed,
+                  child: Icon(
+                    Icons.person,
+                    color: context.palette.secondaryText,
+                  ),
                 ),
               ),
       ),

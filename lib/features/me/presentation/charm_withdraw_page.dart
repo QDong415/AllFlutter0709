@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/me/data/wallet_model.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
@@ -123,9 +124,9 @@ class _CharmWithdrawPageState extends ConsumerState<CharmWithdrawPage> {
       );
       final loggedIn = ref.read(accountProvider);
       if (loggedIn != null) {
-        await ref.read(accountProvider.notifier).setAccount(
-              loggedIn.copyWith(charm: cash.charm - charm),
-            );
+        await ref
+            .read(accountProvider.notifier)
+            .setAccount(loggedIn.copyWith(charm: cash.charm - charm));
       }
       if (!mounted) {
         return;
@@ -158,7 +159,7 @@ class _CharmWithdrawPageState extends ConsumerState<CharmWithdrawPage> {
     final canSubmit = !_loading && !_submitting && cash != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: context.palette.bodyBackground,
       appBar: const CommonAppBar(title: '申请提现'),
       body: ListView(
         children: [
@@ -187,12 +188,12 @@ class _CharmWithdrawPageState extends ConsumerState<CharmWithdrawPage> {
           Container(
             height: 44,
             width: double.infinity,
-            color: const Color(0xFFEEEEEE),
+            color: context.palette.pressed,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
               _inputYuanLabel(scale),
-              style: const TextStyle(fontSize: 16, color: Colors.black),
+              style: TextStyle(fontSize: 16, color: context.palette.ink),
             ),
           ),
           const CharmWithdrawDivider(),

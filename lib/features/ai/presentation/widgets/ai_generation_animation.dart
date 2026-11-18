@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// AI 生图等待动效：粒子轨道、脉冲光环与阶段文案。
@@ -64,7 +65,7 @@ class _AiGenerationAnimationState extends State<AiGenerationAnimation>
                       width: 88,
                       height: 112,
                       decoration: BoxDecoration(
-                        color: AppColors.white.withValues(alpha: 0.82),
+                        color: context.palette.card.withValues(alpha: 0.92),
                         borderRadius: BorderRadius.circular(44),
                         border: Border.all(
                           color: AppColors.primary.withValues(alpha: 0.32),
@@ -87,8 +88,8 @@ class _AiGenerationAnimationState extends State<AiGenerationAnimation>
             child: Text(
               widget.title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.titleText,
+              style: TextStyle(
+                color: context.palette.titleText,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
@@ -102,8 +103,8 @@ class _AiGenerationAnimationState extends State<AiGenerationAnimation>
               child: Text(
                 widget.detail,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF777777),
+                style: TextStyle(
+                  color: context.palette.secondaryText,
                   fontSize: 14,
                   height: 1.5,
                 ),

@@ -9,10 +9,12 @@ class ChatVoicePlayIcon extends StatefulWidget {
     super.key,
     required this.isRight,
     required this.isPlaying,
+    this.color = const Color(0xFF111111),
   });
 
   final bool isRight;
   final bool isPlaying;
+  final Color color;
 
   @override
   State<ChatVoicePlayIcon> createState() => _ChatVoicePlayIconState();
@@ -88,7 +90,10 @@ class _ChatVoicePlayIconState extends State<ChatVoicePlayIcon> {
         alignment: Alignment.center,
         transform: Matrix4.diagonal3Values(widget.isRight ? 1 : -1, 1, 1),
         child: CustomPaint(
-          painter: _WechatVoiceWavePainter(arcCount: _arcCount),
+          painter: _WechatVoiceWavePainter(
+            arcCount: _arcCount,
+            color: widget.color,
+          ),
         ),
       ),
     );
@@ -97,17 +102,16 @@ class _ChatVoicePlayIconState extends State<ChatVoicePlayIcon> {
 
 /// 微信语音条喇叭：实心喇叭头 + 两道圆声波，颜色接近微信黑。
 class _WechatVoiceWavePainter extends CustomPainter {
-  const _WechatVoiceWavePainter({required this.arcCount});
+  const _WechatVoiceWavePainter({required this.arcCount, required this.color});
 
   final int arcCount;
-
-  static const _color = Color(0xFF111111);
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
     final cy = size.height / 2;
     final fillPaint = Paint()
-      ..color = _color
+      ..color = color
       ..style = PaintingStyle.fill
       ..isAntiAlias = true;
 
@@ -132,7 +136,7 @@ class _WechatVoiceWavePainter extends CustomPainter {
     }
 
     final wavePaint = Paint()
-      ..color = _color
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.105
       ..strokeCap = StrokeCap.round
@@ -155,6 +159,6 @@ class _WechatVoiceWavePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _WechatVoiceWavePainter oldDelegate) {
-    return oldDelegate.arcCount != arcCount;
+    return oldDelegate.arcCount != arcCount || oldDelegate.color != color;
   }
 }

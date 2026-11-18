@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
@@ -173,19 +174,21 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
     _panelHelper.hidePanel();
     final canPickImage = _mediaPickHelper.remainImageCount(_mediaList) > 0;
     final canPickVideo = _mediaList.isEmpty;
+    final sheetPalette = context.palette;
+    final sheetTitle = TextStyle(fontSize: 16, color: sheetPalette.titleText);
     final action = await showModalBottomSheet<TopicMediaPickAction>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: sheetPalette.card,
       builder: (sheetContext) {
         return ColoredBox(
-          color: Colors.white,
+          color: sheetPalette.card,
           child: SafeArea(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (canPickImage)
                   ListTile(
-                    title: const Center(child: Text('从相册选择图片')),
+                    title: Center(child: Text('从相册选择图片', style: sheetTitle)),
                     onTap: () => Navigator.pop(
                       sheetContext,
                       TopicMediaPickAction.pickImages,
@@ -193,15 +196,15 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                   ),
                 if (canPickVideo)
                   ListTile(
-                    title: const Center(child: Text('从相册选择视频')),
+                    title: Center(child: Text('从相册选择视频', style: sheetTitle)),
                     onTap: () => Navigator.pop(
                       sheetContext,
                       TopicMediaPickAction.pickVideo,
                     ),
                   ),
-                const Divider(height: 1),
+                Divider(height: 1, color: sheetPalette.divider),
                 ListTile(
-                  title: const Center(child: Text('取消')),
+                  title: Center(child: Text('取消', style: sheetTitle)),
                   onTap: () => Navigator.pop(sheetContext),
                 ),
               ],
@@ -299,8 +302,9 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Scaffold(
-      backgroundColor: AppColors.bodyBackground,
+      backgroundColor: palette.bodyBackground,
       resizeToAvoidBottomInset: false,
       appBar: CommonAppBar(
         title: '发布动态',
@@ -317,7 +321,7 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
               child: ListView(
                 children: [
                   ColoredBox(
-                    color: Colors.white,
+                    color: palette.card,
                     child: Column(
                       children: [
                         AnimatedBuilder(
@@ -341,7 +345,8 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                                 ExtendedTextField(
                                   controller: _textController,
                                   focusNode: _focusNode,
-                                  readOnly: _panelHelper.readOnly ||
+                                  readOnly:
+                                      _panelHelper.readOnly ||
                                       _voiceRecorder.isRecording,
                                   showCursor: !_voiceRecorder.isRecording,
                                   specialTextSpanBuilder: _emojiSpanBuilder,
@@ -349,18 +354,21 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                                       const NeverScrollableScrollPhysics(),
                                   maxLines: null,
                                   minLines: 6,
+                                  cursorColor: palette.ink,
                                   style: TextStyle(
                                     fontSize: 15,
                                     color: _voiceRecorder.isRecording
-                                        ? const Color(0x335B5B5B)
-                                        : const Color(0xFF5B5B5B),
+                                        ? palette.bodyText.withValues(
+                                            alpha: 0.2,
+                                          )
+                                        : palette.bodyText,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: _voiceRecorder.isRecording
                                         ? ''
                                         : '输入动态内容',
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFFB0B0B0),
+                                    hintStyle: TextStyle(
+                                      color: palette.secondaryText,
                                     ),
                                     border: InputBorder.none,
                                     contentPadding: const EdgeInsets.fromLTRB(
@@ -391,9 +399,9 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                                         const SizedBox(height: 8),
                                         Text(
                                           '${_voiceRecorder.seconds}"',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 14,
-                                            color: Color(0xFF888888),
+                                            color: palette.secondaryText,
                                             fontFeatures: [
                                               FontFeature.tabularFigures(),
                                             ],
@@ -417,7 +425,8 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                               ? _RecordHoldButton(
                                   recording: _voiceRecorder.isRecording,
                                   seconds: _voiceRecorder.seconds,
-                                  onPointerDown: () => unawaited(_startRecord()),
+                                  onPointerDown: () =>
+                                      unawaited(_startRecord()),
                                   onPointerUp: () => unawaited(_stopRecord()),
                                   onPointerCancel: () =>
                                       unawaited(_voiceRecorder.cancel()),
@@ -436,11 +445,11 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                       ],
                     ),
                   ),
-                  const Divider(height: 0.5),
+                  Divider(height: 0.5, color: palette.divider),
                   const SizedBox(height: 12),
-                  const Divider(height: 0.5),
+                  Divider(height: 0.5, color: palette.divider),
                   ColoredBox(
-                    color: Colors.white,
+                    color: palette.card,
                     child: TopicSubmitMediaGrid(
                       mediaList: _mediaList,
                       canAddMore: _mediaPickHelper.canAddMore(_mediaList),
@@ -460,7 +469,7 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
                       },
                     ),
                   ),
-                  const Divider(height: 0.5),
+                  Divider(height: 0.5, color: palette.divider),
                   const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(40, 30, 40, 24),
@@ -488,7 +497,7 @@ class _TopicSubmitPageState extends ConsumerState<TopicSubmitPage>
           ChatBottomPanelContainer<ChatPanelType>(
             controller: _panelHelper.controller,
             inputFocusNode: _focusNode,
-            panelBgColor: QInputBarColors.extendBackground,
+            panelBgColor: QInputBarColors.extendBackground(context.palette),
             onPanelTypeChange: _panelHelper.onPanelTypeChange,
             otherPanelWidget: (type) {
               if (type != ChatPanelType.emoji) {
@@ -535,12 +544,14 @@ class _RecordHoldButton extends StatelessWidget {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: recording ? const Color(0xFFE4E6EA) : const Color(0xFFF4F5F7),
+          color: recording
+              ? context.palette.pressed
+              : context.palette.inputExtendBackground,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           recording ? '松开结束 $seconds"' : '按住录音',
-          style: const TextStyle(fontSize: 15, color: Color(0xFF333333)),
+          style: TextStyle(fontSize: 15, color: context.palette.titleText),
         ),
       ),
     );

@@ -95,6 +95,8 @@ class TopicCommentModel {
     this.avatar,
     this.toAvatar,
     this.userType = UserType.human,
+    this.audioFileName = '',
+    this.audioDurationSeconds = 0,
   });
 
   final String cid;
@@ -119,7 +121,20 @@ class TopicCommentModel {
 
   bool get hasReplyTarget =>
       toUserId.isNotEmpty && toUserId != '0' && toUserName.isNotEmpty;
-  String get previewContent => content.isNotEmpty ? content : '[图片]';
+  final String audioFileName;
+  final int audioDurationSeconds;
+
+  bool get hasAudio => audioFileName.trim().isNotEmpty;
+
+  String get previewContent {
+    if (content.isNotEmpty) return content;
+    if (hasAudio) {
+      final seconds = audioDurationSeconds > 0 ? audioDurationSeconds : 1;
+      return "$seconds'' 语音";
+    }
+    if (pictures.isNotEmpty) return '[图片]';
+    return '';
+  }
 
   factory TopicCommentModel.fromJson(Object? json) {
     if (json is! Map) {
@@ -138,6 +153,8 @@ class TopicCommentModel {
         avatar: null,
         toAvatar: null,
         userType: UserType.human,
+        audioFileName: '',
+        audioDurationSeconds: 0,
       );
     }
 
@@ -156,6 +173,9 @@ class TopicCommentModel {
       avatar: ValueUtil.getQiniuUrlByFileName(json['avatar']?.toString()),
       toAvatar: ValueUtil.getQiniuUrlByFileName(json['to_avatar']?.toString()),
       userType: UserType.parse(json['user_type']),
+      audioFileName:
+          _TopicJsonParser.parseNullableString(json['audio']) ?? '',
+      audioDurationSeconds: _TopicJsonParser.parseInt(json['duration']),
     );
   }
 }

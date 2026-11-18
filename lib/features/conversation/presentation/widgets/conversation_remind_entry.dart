@@ -1,4 +1,4 @@
-import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 
 /// 会话列表顶部的固定提醒入口（赞 / 评论 / 新粉丝 / @我）。
@@ -21,8 +21,9 @@ class ConversationRemindEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badgeText = unreadCount > 99 ? '99+' : '$unreadCount';
+    final palette = context.palette;
     return Material(
-      color: Colors.white,
+      color: palette.card,
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
@@ -51,10 +52,7 @@ class ConversationRemindEntry extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 7, right: 7),
                   child: Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.titleText,
-                    ),
+                    style: TextStyle(fontSize: 16, color: palette.titleText),
                   ),
                 ),
               ),
@@ -62,7 +60,7 @@ class ConversationRemindEntry extends StatelessWidget {
                 _UnreadBadge(text: badgeText),
                 const SizedBox(width: 4),
               ],
-              const Icon(Icons.chevron_right, color: Color(0xFFC8C8C8)),
+              Icon(Icons.chevron_right, color: palette.chevron),
               const SizedBox(width: 8),
             ],
           ),

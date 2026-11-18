@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_bubble_metrics.dart';
@@ -165,28 +166,28 @@ class _ChatAvatar extends StatelessWidget {
                 fadeInDuration: Duration.zero,
                 fadeOutDuration: Duration.zero,
                 placeholderFadeInDuration: Duration.zero,
-                placeholder: (_, _) => const ColoredBox(
-                  color: Color(0xFFF0F0F0),
+                placeholder: (_, _) => ColoredBox(
+                  color: context.palette.pressed,
                   child: Icon(
                     Icons.person_outline_rounded,
-                    color: Color(0xFF999999),
+                    color: context.palette.secondaryText,
                     size: 22,
                   ),
                 ),
-                errorWidget: (_, _, _) => const ColoredBox(
-                  color: Color(0xFFF0F0F0),
+                errorWidget: (_, _, _) => ColoredBox(
+                  color: context.palette.pressed,
                   child: Icon(
                     Icons.person_outline_rounded,
-                    color: Color(0xFF999999),
+                    color: context.palette.secondaryText,
                     size: 22,
                   ),
                 ),
               )
-            : const ColoredBox(
-                color: Color(0xFFF0F0F0),
+            : ColoredBox(
+                color: context.palette.pressed,
                 child: Icon(
                   Icons.person_outline_rounded,
-                  color: Color(0xFF999999),
+                  color: context.palette.secondaryText,
                   size: 22,
                 ),
               ),

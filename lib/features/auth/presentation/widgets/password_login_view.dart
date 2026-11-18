@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,7 +27,10 @@ class PasswordLoginView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        IconButton(onPressed: onBack, icon: const Icon(Icons.arrow_back)),
+        IconButton(
+          onPressed: onBack,
+          icon: Icon(Icons.arrow_back, color: context.palette.titleText),
+        ),
         Expanded(
           child: Center(
             child: ConstrainedBox(
@@ -37,14 +41,14 @@ class PasswordLoginView extends StatelessWidget {
                   Text(
                     '密码登录',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppColors.titleText,
+                      color: context.palette.titleText,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '使用已注册的手机号和密码',
-                    style: TextStyle(color: Color(0xFF8A8A8A)),
+                    style: TextStyle(color: context.palette.secondaryText),
                   ),
                   const SizedBox(height: 32),
                   Form(
@@ -55,14 +59,18 @@ class PasswordLoginView extends StatelessWidget {
                         TextFormField(
                           controller: mobileController,
                           keyboardType: TextInputType.phone,
+                          style: TextStyle(color: context.palette.titleText),
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                             LengthLimitingTextInputFormatter(11),
                           ],
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: '手机号',
                             hintText: '请输入手机号',
-                            border: OutlineInputBorder(),
+                            labelStyle: TextStyle(
+                              color: context.palette.secondaryText,
+                            ),
+                            border: const OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if ((value?.trim() ?? '').isEmpty) {
@@ -75,9 +83,13 @@ class PasswordLoginView extends StatelessWidget {
                         TextFormField(
                           controller: passwordController,
                           obscureText: true,
-                          decoration: const InputDecoration(
+                          style: TextStyle(color: context.palette.titleText),
+                          decoration: InputDecoration(
                             labelText: '密码',
-                            border: OutlineInputBorder(),
+                            labelStyle: TextStyle(
+                              color: context.palette.secondaryText,
+                            ),
+                            border: const OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {

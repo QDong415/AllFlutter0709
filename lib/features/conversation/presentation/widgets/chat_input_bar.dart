@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
 import 'package:extended_text_field/extended_text_field.dart';
 import 'package:flutter/material.dart';
@@ -5,34 +6,47 @@ import 'package:flutter/material.dart';
 /// QInputBarView 资源（来自 QKeyboardEmotionView）。
 abstract final class ChatInputAssets {
   static const voice = 'assets/icons/chat/qinput/q_chat_voice.png';
+  static const voiceDark = 'assets/icons/chat/qinput/q_chat_voice_dark.png';
   static const keyboard = 'assets/icons/chat/qinput/q_chat_keyboard.png';
+  static const keyboardDark =
+      'assets/icons/chat/qinput/q_chat_keyboard_dark.png';
   static const emoji = 'assets/icons/chat/qinput/q_chat_emoji.png';
+  static const emojiDark = 'assets/icons/chat/qinput/q_chat_emoji_dark.png';
   static const extend = 'assets/icons/chat/qinput/q_chat_extend.png';
+  static const extendDark = 'assets/icons/chat/qinput/q_chat_extend_dark.png';
   static const morePic = 'assets/icons/chat/qinput/message_more_pic.png';
+  static const morePicDark =
+      'assets/icons/chat/qinput/message_more_pic_dark.png';
   static const recordNormal = 'assets/icons/chat/qinput/q_white_input_btn.png';
+  static const recordNormalDark =
+      'assets/icons/chat/qinput/q_white_input_btn_dark.png';
   static const recordPressed =
       'assets/icons/chat/qinput/q_white_input_press_btn.png';
+  static const recordPressedDark =
+      'assets/icons/chat/qinput/q_white_input_press_btn_dark.png';
 }
 
-/// QInputBarViewConfiguration 默认色（浅色）。
+/// QInputBarViewConfiguration 色，随壳层明暗切换。
 abstract final class QInputBarColors {
   /// q_input_gray_bg
-  static const barBackground = Color(0xFFF6F6F6);
+  static Color barBackground(AppPalette palette) => palette.toolbar;
 
   /// q_border223
-  static const barBorder = Color(0xFFDFDFDF);
+  static Color barBorder(AppPalette palette) => palette.divider;
 
   /// q_black_gray
-  static const text = Color(0xFF000000);
+  static Color text(AppPalette palette) => palette.ink;
 
   /// q_input
-  static const textViewBackground = Color(0xFFFFFFFF);
+  static Color textViewBackground(AppPalette palette) =>
+      palette.inputBackground;
 
   /// q_input_extend_bg
-  static const extendBackground = Color(0xFFF1F1F1);
+  static Color extendBackground(AppPalette palette) =>
+      palette.inputExtendBackground;
 
   /// q_black_white
-  static const recordTitle = Color(0xFF000000);
+  static Color recordTitle(AppPalette palette) => palette.titleText;
 }
 
 /// 对齐 QInputBarView.m 的尺寸常量。
@@ -95,13 +109,17 @@ class ChatInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     final hairline = 1 / MediaQuery.devicePixelRatioOf(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: QInputBarColors.barBackground,
+        color: QInputBarColors.barBackground(palette),
         border: Border(
-          top: BorderSide(color: QInputBarColors.barBorder, width: hairline),
+          top: BorderSide(
+            color: QInputBarColors.barBorder(palette),
+            width: hairline,
+          ),
         ),
       ),
       child: Padding(
@@ -115,9 +133,12 @@ class ChatInputBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             _SwitchIconButton(
-              asset: isVoiceMode
-                  ? ChatInputAssets.keyboard
-                  : ChatInputAssets.voice,
+              asset: context.themedAsset(
+                isVoiceMode ? ChatInputAssets.keyboard : ChatInputAssets.voice,
+                isVoiceMode
+                    ? ChatInputAssets.keyboardDark
+                    : ChatInputAssets.voiceDark,
+              ),
               onTap: onToggleVoiceMode,
             ),
             const SizedBox(width: QInputBarMetrics.textViewHorizontalMargin),
@@ -146,9 +167,12 @@ class ChatInputBar extends StatelessWidget {
             ),
             const SizedBox(width: QInputBarMetrics.textViewHorizontalMargin),
             _SwitchIconButton(
-              asset: isEmojiPanel
-                  ? ChatInputAssets.keyboard
-                  : ChatInputAssets.emoji,
+              asset: context.themedAsset(
+                isEmojiPanel ? ChatInputAssets.keyboard : ChatInputAssets.emoji,
+                isEmojiPanel
+                    ? ChatInputAssets.keyboardDark
+                    : ChatInputAssets.emojiDark,
+              ),
               onTap: onToggleEmoji,
               usePointerDown: true,
             ),
@@ -161,7 +185,10 @@ class ChatInputBar extends StatelessWidget {
                   action = _SendTextButton(onTap: onSendText);
                 } else {
                   action = _SwitchIconButton(
-                    asset: ChatInputAssets.extend,
+                    asset: context.themedAsset(
+                      ChatInputAssets.extend,
+                      ChatInputAssets.extendDark,
+                    ),
                     onTap: onTogglePanel,
                     usePointerDown: true,
                   );
@@ -194,7 +221,7 @@ class ChatFuncPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: QInputBarColors.extendBackground,
+      color: QInputBarColors.extendBackground(context.palette),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
         child: Align(
@@ -202,7 +229,10 @@ class ChatFuncPanel extends StatelessWidget {
           child: Row(
             children: [
               _PanelActionButton(
-                asset: ChatInputAssets.morePic,
+                asset: context.themedAsset(
+                  ChatInputAssets.morePic,
+                  ChatInputAssets.morePicDark,
+                ),
                 label: '图片',
                 onTap: onSendImage,
               ),
@@ -241,7 +271,7 @@ class _SwitchIconButton extends StatelessWidget {
       height: QInputBarMetrics.switchButtonSize,
       child: asset != null
           ? Image.asset(asset!, fit: BoxFit.contain)
-          : Icon(icon, size: 28, color: QInputBarColors.text),
+          : Icon(icon, size: 28, color: QInputBarColors.text(context.palette)),
     );
 
     if (usePointerDown) {
@@ -333,7 +363,7 @@ class _VoiceHoldButtonState extends State<_VoiceHoldButton> {
         : (widget.isRecording ? '松开 结束' : '按住说话');
     final titleColor = widget.willCancelRecording
         ? const Color(0xFFD93025)
-        : QInputBarColors.recordTitle;
+        : QInputBarColors.recordTitle(context.palette);
 
     return Listener(
       behavior: HitTestBehavior.opaque,
@@ -370,12 +400,12 @@ class _VoiceHoldButtonState extends State<_VoiceHoldButton> {
           decoration: BoxDecoration(
             color: widget.willCancelRecording
                 ? const Color(0xFFFCE8E6)
-                : QInputBarColors.textViewBackground,
+                : QInputBarColors.textViewBackground(context.palette),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: widget.willCancelRecording
                   ? const Color(0xFFD93025)
-                  : QInputBarColors.barBorder,
+                  : QInputBarColors.barBorder(context.palette),
             ),
           ),
           child: Center(
@@ -413,6 +443,7 @@ class _TextInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return ConstrainedBox(
       constraints: const BoxConstraints(
         minHeight: QInputBarMetrics.textMinHeight,
@@ -432,19 +463,19 @@ class _TextInputField extends StatelessWidget {
           textInputAction: TextInputAction.send,
           onSubmitted: (_) => onSendText(),
           onTapOutside: (_) {},
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 17.5,
-            color: QInputBarColors.text,
+            color: QInputBarColors.text(palette),
             height: 1.25,
           ),
           decoration: InputDecoration(
             hintText: '发消息',
-            hintStyle: const TextStyle(
-              color: Color(0x59000000),
+            hintStyle: TextStyle(
+              color: palette.secondaryText.withValues(alpha: 0.7),
               fontSize: 17.5,
             ),
             filled: true,
-            fillColor: QInputBarColors.textViewBackground,
+            fillColor: QInputBarColors.textViewBackground(palette),
             isDense: true,
             contentPadding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
             border: OutlineInputBorder(
@@ -481,6 +512,7 @@ class _PanelActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -490,7 +522,7 @@ class _PanelActionButton extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.card,
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
@@ -506,7 +538,7 @@ class _PanelActionButton extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF666666)),
+            style: TextStyle(fontSize: 13, color: palette.secondaryText),
           ),
         ],
       ),

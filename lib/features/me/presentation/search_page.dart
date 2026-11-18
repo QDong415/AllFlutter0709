@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/router/app_routes.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,8 +62,9 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: palette.plainBackground,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,15 +78,15 @@ class _SearchPageState extends State<SearchPage> {
                       height: 36,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F2),
+                        color: palette.pressed,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
-                          Image.asset(
+                          _tintedIcon(
                             'assets/icons/me/searchbar_textfield_search_icon.png',
-                            width: 16,
-                            height: 16,
+                            16,
+                            palette,
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -93,17 +95,18 @@ class _SearchPageState extends State<SearchPage> {
                               focusNode: _focusNode,
                               autofocus: true,
                               textInputAction: TextInputAction.search,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
-                                color: Color(0xFF333333),
+                                color: palette.titleText,
                               ),
-                              decoration: const InputDecoration(
+                              cursorColor: palette.ink,
+                              decoration: InputDecoration(
                                 isCollapsed: true,
                                 border: InputBorder.none,
                                 hintText: '输入关键词',
                                 hintStyle: TextStyle(
                                   fontSize: 15,
-                                  color: Color(0xFFB0B0B0),
+                                  color: palette.secondaryText,
                                 ),
                               ),
                               onSubmitted: _search,
@@ -115,20 +118,20 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                   TextButton(
                     onPressed: () => context.pop(),
-                    child: const Text(
+                    child: Text(
                       '取消',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF333333)),
+                      style: TextStyle(fontSize: 16, color: palette.titleText),
                     ),
                   ),
                 ],
               ),
             ),
             if (_historyList.isNotEmpty) ...[
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                 child: Text(
                   '搜索历史',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF979797)),
+                  style: TextStyle(fontSize: 13, color: palette.secondaryText),
                 ),
               ),
               Expanded(
@@ -138,11 +141,11 @@ class _SearchPageState extends State<SearchPage> {
                     if (index == _historyList.length) {
                       return TextButton(
                         onPressed: () => _saveHistory(<String>[]),
-                        child: const Text(
+                        child: Text(
                           '清空搜索历史',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFFB0B0B0),
+                            color: palette.secondaryText,
                           ),
                         ),
                       );
@@ -155,10 +158,10 @@ class _SearchPageState extends State<SearchPage> {
                         child: Row(
                           children: [
                             const SizedBox(width: 16),
-                            Image.asset(
+                            _tintedIcon(
                               'assets/icons/me/search_left_history.png',
-                              width: 18,
-                              height: 18,
+                              18,
+                              palette,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -166,9 +169,9 @@ class _SearchPageState extends State<SearchPage> {
                                 keyword,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
-                                  color: Color(0xFF666666),
+                                  color: palette.bodyText,
                                 ),
                               ),
                             ),
@@ -178,10 +181,10 @@ class _SearchPageState extends State<SearchPage> {
                                   ..removeAt(index);
                                 _saveHistory(next);
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.close,
                                 size: 18,
-                                color: Color(0xFFB0B0B0),
+                                color: palette.secondaryText,
                               ),
                             ),
                           ],
@@ -197,4 +200,16 @@ class _SearchPageState extends State<SearchPage> {
       ),
     );
   }
+}
+
+/// 浅色保留原图。深色把单色图标染成次要文字色，避免灰图标沉进深色底。
+Widget _tintedIcon(String asset, double size, AppPalette palette) {
+  final image = Image.asset(asset, width: size, height: size);
+  if (palette.brightness != Brightness.dark) {
+    return image;
+  }
+  return ColorFiltered(
+    colorFilter: ColorFilter.mode(palette.secondaryText, BlendMode.srcIn),
+    child: image,
+  );
 }
