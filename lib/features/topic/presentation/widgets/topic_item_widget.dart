@@ -169,6 +169,7 @@ class TopicItemWidget extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: TopicContentText(
                     text: content,
+                    copyOnLongPress: true,
                     style: TextStyle(fontSize: 18, color: palette.titleText),
                     onMentionTap: (mention) =>
                         listener?.onMentionTap(topicModel, mention),

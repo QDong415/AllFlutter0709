@@ -459,6 +459,7 @@ class _TopicDetailHeader extends StatelessWidget {
             const SizedBox(height: 14),
             TopicContentText(
               text: content,
+              copyOnLongPress: true,
               style: TextStyle(
                 fontSize: 17,
                 height: 1.6,

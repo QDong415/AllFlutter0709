@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_span.dart';
+import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 final RegExp topicContentTokenPattern = RegExp(
   r'(https?:\/\/[^\s]+)|(@[A-Za-z0-9_\-\u4e00-\u9fa5]+)|(#[^#\s]+#?)|(\[[0-9A-Za-z\u4e00-\u9fa5]+\])',
@@ -111,6 +114,7 @@ class TopicContentText extends StatefulWidget {
     this.onHashtagTap,
     this.onLinkTap,
     this.maxLines,
+    this.copyOnLongPress = false,
   });
 
   final String text;
@@ -120,6 +124,9 @@ class TopicContentText extends StatefulWidget {
   final FutureOr<void> Function(String hashtag)? onHashtagTap;
   final FutureOr<void> Function(String url)? onLinkTap;
   final int? maxLines;
+
+  /// 为 true 时长按正文，在文字中间上方弹出「复制」并复制 [text]。
+  final bool copyOnLongPress;
 
   @override
   State<TopicContentText> createState() => _TopicContentTextState();
@@ -155,7 +162,7 @@ class _TopicContentTextState extends State<TopicContentText> {
           fontWeight: FontWeight.w500,
         );
 
-    return Text.rich(
+    final richText = Text.rich(
       TextSpan(
         style: baseStyle.copyWith(color: baseStyle.color ?? Colors.black87),
         children: _buildSpans(activeStyle, baseStyle),
@@ -165,6 +172,67 @@ class _TopicContentTextState extends State<TopicContentText> {
           ? TextOverflow.clip
           : TextOverflow.ellipsis,
     );
+    if (!widget.copyOnLongPress) {
+      return richText;
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: () {
+        unawaited(_showCopyMenu());
+      },
+      child: richText,
+    );
+  }
+
+  /// 与动态右上角菜单相同的弹框，贴在正文中间上方。
+  Future<void> _showCopyMenu() async {
+    final box = context.findRenderObject();
+    final overlay = Overlay.of(
+      context,
+      rootOverlay: true,
+    ).context.findRenderObject();
+    if (box is! RenderBox || overlay is! RenderBox) {
+      return;
+    }
+
+    final topLeft = box.localToGlobal(Offset.zero, ancestor: overlay);
+    const menuWidth = 128.0;
+    const menuHeight = 56.0;
+    const gap = 8.0;
+    final selected = await showMenu<String>(
+      context: context,
+      useRootNavigator: true,
+      color: context.palette.card,
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      constraints: const BoxConstraints(minWidth: menuWidth),
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(
+          topLeft.dx + box.size.width / 2 - menuWidth / 2,
+          topLeft.dy - gap - menuHeight,
+          menuWidth,
+          0,
+        ),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        PopupMenuItem<String>(
+          value: 'copy',
+          height: 40,
+          child: Text(
+            '复制',
+            style: TextStyle(fontSize: 17, color: context.palette.titleText),
+          ),
+        ),
+      ],
+    );
+    if (!mounted || selected != 'copy') {
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: widget.text));
+    if (mounted) {
+      AppToast.show(context, '复制成功');
+    }
   }
 
   List<InlineSpan> _buildSpans(TextStyle activeStyle, TextStyle baseStyle) {
