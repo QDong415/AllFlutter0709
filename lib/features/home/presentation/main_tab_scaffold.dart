@@ -114,7 +114,12 @@ class _MainTabScaffoldState extends ConsumerState<MainTabScaffold> {
         // 各 Tab 页自带 Material AppBar，顶部不做 glass edge fade。
         topEdgeFade: false,
         bottomEdgeFade: true,
-        body: widget.navigationShell,
+        // IndexedStack 会保留隐藏 Tab 的 Hero。仅动态 Tab 可见时允许壳层图片
+        // 参与 Hero，避免从「我的」动态列表返回时匹配到隐藏动态并飞出屏幕。
+        body: HeroMode(
+          enabled: shellIndex == MainTabItem.topic.index,
+          child: widget.navigationShell,
+        ),
         bottomBar: ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
