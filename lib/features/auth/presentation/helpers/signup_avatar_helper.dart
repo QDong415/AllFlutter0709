@@ -76,10 +76,12 @@ class SignupAvatarHelper {
     return _cloudStorageService.uploadFile(file: file, key: _buildAvatarKey());
   }
 
-  /// 头像文件名：`user-{yyyyMMddHHmmss}-{0~9999}`。
+  /// 头像文件名：`user-{yyyyMMddHHmmss}-{0~9999}.jpg`。
+  ///
+  /// 裁剪结果固定编码为 JPEG，保留后缀让对象存储写入正确的 Content-Type。
   String _buildAvatarKey() {
     final time = DateFormat('yyyyMMddHHmmss').format(DateTime.now());
     final suffix = _random.nextInt(10000);
-    return 'user-$time-$suffix';
+    return 'user-$time-$suffix.jpg';
   }
 }
