@@ -3,6 +3,7 @@ import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/app/theme/app_typography.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 /// 用壳层色板组装应用主题。
@@ -22,6 +23,26 @@ abstract final class AppTheme {
           surface: AppColors.bodyBackground,
         ),
         scaffoldBackgroundColor: AppColors.bodyBackground,
+        // Android 转场会在新旧页之间铺一层 surface。主题亮度固定浅色，
+        // 这层默认是浅灰，黑夜模式下每次 push/pop 都会闪白。
+        pageTransitionsTheme: PageTransitionsTheme(
+          builders: <TargetPlatform, PageTransitionsBuilder>{
+            TargetPlatform.android: PredictiveBackPageTransitionsBuilder(
+              fallbackColor: palette.bodyBackground,
+            ),
+            TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
+            TargetPlatform.macOS: const CupertinoPageTransitionsBuilder(),
+            TargetPlatform.linux: ZoomPageTransitionsBuilder(
+              backgroundColor: palette.bodyBackground,
+            ),
+            TargetPlatform.windows: ZoomPageTransitionsBuilder(
+              backgroundColor: palette.bodyBackground,
+            ),
+            TargetPlatform.fuchsia: ZoomPageTransitionsBuilder(
+              backgroundColor: palette.bodyBackground,
+            ),
+          },
+        ),
         extensions: <ThemeExtension<dynamic>>[palette],
         useMaterial3: true,
         appBarTheme: AppBarTheme(

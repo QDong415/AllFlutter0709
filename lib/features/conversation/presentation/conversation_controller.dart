@@ -211,6 +211,21 @@ class ConversationController extends ChangeNotifier {
     await refreshConversations();
   }
 
+  /// 先清服务端 AI 记忆，成功后再删本地会话。
+  Future<void> deleteAiConversation(String conversationId) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      throw Exception('请先登录');
+    }
+    final id = conversationId.trim();
+    if (id.isEmpty) {
+      throw Exception('参数错误');
+    }
+    final repository = _ref.read(conversationRepositoryProvider);
+    await repository.clearAiChat(id);
+    await deleteConversation(id);
+  }
+
   /// 删除本地会话及其消息，并刷新列表与未读数。
   Future<void> deleteConversation(String conversationId) async {
     final account = _ref.read(accountProvider);

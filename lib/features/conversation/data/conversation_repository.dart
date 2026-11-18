@@ -81,6 +81,22 @@ class ConversationRepository {
     return _localDataSource.deleteConversation(userId, conversationId);
   }
 
+  /// 清空与 [aiUserId] 的服务端单聊和摘要。失败时抛出异常，本地会话保持不动。
+  Future<void> clearAiChat(String aiUserId) async {
+    final response = await HttpClient.instance.post(
+      '/api/ai/clearchat',
+      data: <String, dynamic>{'ai_userid': aiUserId},
+    );
+    final json = response.data;
+    if (json == null) {
+      throw Exception('服务器返回为空');
+    }
+    final result = ApiResponse<void>.fromJson(json);
+    if (!result.success) {
+      throw Exception(result.message.isEmpty ? '清除失败，请稍后再试' : result.message);
+    }
+  }
+
   /// 删除单条本地消息。
   Future<void> deleteMessage({
     required String userId,

@@ -81,14 +81,23 @@ abstract final class AppSystemUi {
 
   static int? _appliedSignature;
 
+  /// 安卓窗口底色。转场露出窗口时不能是启动页的白底。
+  static Color _windowBackground = AppColors.bodyBackground;
+
   /// 立即应用到系统栏。小米会在回到前台时重刷系统栏，所以同时写给原生。
-  static void apply(SystemUiOverlayStyle style) {
+  ///
+  /// [windowBackground] 只在明暗切换时传入。之后的调用继续用上次的底色。
+  static void apply(SystemUiOverlayStyle style, {Color? windowBackground}) {
+    if (windowBackground != null) {
+      _windowBackground = windowBackground;
+    }
     final signature = Object.hash(
       style.statusBarIconBrightness,
       style.statusBarBrightness,
       style.systemNavigationBarColor,
       style.systemNavigationBarIconBrightness,
       style.statusBarColor,
+      _windowBackground.toARGB32(),
     );
     if (signature == _appliedSignature) {
       return;
@@ -110,6 +119,7 @@ abstract final class AppSystemUi {
               'lightNavigationBars':
                   style.systemNavigationBarIconBrightness != Brightness.light,
               'navigationBarColor': navigationColor.toARGB32(),
+              'windowBackgroundColor': _windowBackground.toARGB32(),
             },
           )
           .catchError((Object _) {

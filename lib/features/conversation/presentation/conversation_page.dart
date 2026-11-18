@@ -6,6 +6,7 @@ import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_chat_args.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/conversation_delete_helper.dart';
 import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/conversation_list_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/conversation_remind_entry.dart';
@@ -145,8 +146,10 @@ class ConversationPage extends ConsumerWidget {
                                 );
                               },
                               onDelete: () {
-                                controller.deleteConversation(
-                                  item.conversationId,
+                                ConversationDeleteHelper.delete(
+                                  context: context,
+                                  controller: controller,
+                                  summaryModel: item,
                                 );
                               },
                             );

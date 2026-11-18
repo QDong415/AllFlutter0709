@@ -1,6 +1,7 @@
 package com.dq.flutter0709.all_flutter0709
 
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import androidx.core.view.WindowCompat
@@ -13,21 +14,25 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val NAV_BAR_LIGHT = 0xFFFFFFFF.toInt()
+        private const val WINDOW_LIGHT = 0xFFF2F2F2.toInt()
     }
 
     // 浅色：白底深色图标。黑夜由 Flutter 改成黑底浅色图标。
     private var lightStatusBars = true
     private var lightNavigationBars = true
     private var navigationBarColor = NAV_BAR_LIGHT
+    private var windowBackgroundColor = WINDOW_LIGHT
 
     fun updateSystemBars(
         lightStatusBars: Boolean,
         lightNavigationBars: Boolean,
         navigationBarColor: Int,
+        windowBackgroundColor: Int,
     ) {
         this.lightStatusBars = lightStatusBars
         this.lightNavigationBars = lightNavigationBars
         this.navigationBarColor = navigationBarColor
+        this.windowBackgroundColor = windowBackgroundColor
         applyEdgeToEdge()
     }
 
@@ -67,6 +72,7 @@ class MainActivity : FlutterActivity() {
 
     private fun applyEdgeToEdge() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.setBackgroundDrawable(ColorDrawable(windowBackgroundColor))
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = navigationBarColor
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

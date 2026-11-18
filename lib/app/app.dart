@@ -66,12 +66,20 @@ class _SocialAppState extends ConsumerState<SocialApp>
     AppSystemUi.themeBrightness = palette.brightness;
     if (_appliedSystemUiBrightness != palette.brightness) {
       _appliedSystemUiBrightness = palette.brightness;
-      AppSystemUi.apply(AppSystemUi.overlayForToolbar(palette.brightness));
+      AppSystemUi.apply(
+        AppSystemUi.overlayForToolbar(palette.brightness),
+        windowBackground: palette.bodyBackground,
+      );
     }
     return MaterialApp.router(
       title: '梦缘AI',
       debugShowCheckedModeBanner: false,
-      builder: AppTypography.wrapWithIosTextScale,
+      builder: (context, child) {
+        return ColoredBox(
+          color: palette.bodyBackground,
+          child: AppTypography.wrapWithIosTextScale(context, child),
+        );
+      },
       theme: AppTheme.build(palette),
       routerConfig: router,
     );

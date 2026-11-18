@@ -68,10 +68,14 @@ class NativeBridge private constructor(
                 val navigationColor =
                     (args?.get("navigationBarColor") as? Number)?.toInt()
                         ?: 0xFFFFFFFF.toInt()
+                val windowBackground =
+                    (args?.get("windowBackgroundColor") as? Number)?.toInt()
+                        ?: 0xFFF2F2F2.toInt()
                 (activity as? MainActivity)?.updateSystemBars(
                     lightStatus,
                     lightNavigation,
                     navigationColor,
+                    windowBackground,
                 )
                 result.success(true)
             }
