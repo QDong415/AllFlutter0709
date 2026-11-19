@@ -84,9 +84,11 @@ class _GiftSendLayer extends StatefulWidget {
 
 class _GiftSendLayerState extends State<_GiftSendLayer>
     with TickerProviderStateMixin {
-  /// 入场约 150ms 半透明淡入，停到 1200ms，离场最长到 2000ms。
-  static const _imageDuration = Duration(milliseconds: 2000);
-  static const _badgeDuration = Duration(milliseconds: 1300);
+  /// 入场约 150ms 半透明淡入，停到 2200ms，离场最长到 3000ms。
+  /// 停留比 2 秒连击窗口多约 200ms，避免间隔里图标先消失。
+  static const _imageDuration = Duration(milliseconds: 3000);
+  static const _badgeDuration = Duration(milliseconds: 2300);
+  static const _holdMs = 2200.0;
 
   _FlyingGift? _currentImage;
   AnimationController? _badgeController;
@@ -268,20 +270,20 @@ class _GiftSendLayerState extends State<_GiftSendLayer>
   static const _entryFadeMs = 150.0;
 
   double _imageScale(double ms) {
-    if (ms < 1200) {
+    if (ms < _holdMs) {
       return 1;
     }
-    return _lerp(1, 1.3, ((ms - 1200) / 700).clamp(0, 1));
+    return _lerp(1, 1.3, ((ms - _holdMs) / 700).clamp(0, 1));
   }
 
   double _imageOpacity(double ms) {
     if (ms < _entryFadeMs) {
       return _lerp(0.5, 1, ms / _entryFadeMs);
     }
-    if (ms < 1200) {
+    if (ms < _holdMs) {
       return 1;
     }
-    return (1 - (ms - 1200) / 300).clamp(0, 1);
+    return (1 - (ms - _holdMs) / 300).clamp(0, 1);
   }
 
   double _countScale(double t) {

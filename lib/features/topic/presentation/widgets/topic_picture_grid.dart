@@ -68,6 +68,7 @@ class TopicPictureGrid extends StatelessWidget {
             pictures: pictures,
             picture: picture,
             size: size,
+            heroTag: scopedTopicPictureHeroTag(context, picture),
           );
         }
 
@@ -90,6 +91,7 @@ class TopicPictureGrid extends StatelessWidget {
                   pictures: pictures,
                   picture: pictures[i],
                   width: itemWidth,
+                  heroTag: scopedTopicPictureHeroTag(context, pictures[i]),
                 ),
             ],
           ),
@@ -105,17 +107,20 @@ class _SinglePictureItem extends StatelessWidget {
     required this.pictures,
     required this.picture,
     required this.size,
+    required this.heroTag,
   });
 
   final int index;
   final List<TopicPictureModel> pictures;
   final TopicPictureModel picture;
   final Size size;
+  final String heroTag;
 
   @override
   Widget build(BuildContext context) {
     return _PictureTile(
       picture: picture,
+      heroTag: heroTag,
       width: size.width,
       height: size.height,
       onTap: () => _openPreview(context, pictures, index),
@@ -129,17 +134,20 @@ class _GridPictureItem extends StatelessWidget {
     required this.pictures,
     required this.picture,
     required this.width,
+    required this.heroTag,
   });
 
   final int index;
   final List<TopicPictureModel> pictures;
   final TopicPictureModel picture;
   final double width;
+  final String heroTag;
 
   @override
   Widget build(BuildContext context) {
     return _PictureTile(
       picture: picture,
+      heroTag: heroTag,
       width: width,
       height: width,
       onTap: () => _openPreview(context, pictures, index),
@@ -150,12 +158,14 @@ class _GridPictureItem extends StatelessWidget {
 class _PictureTile extends StatelessWidget {
   const _PictureTile({
     required this.picture,
+    required this.heroTag,
     required this.width,
     required this.height,
     required this.onTap,
   });
 
   final TopicPictureModel picture;
+  final String heroTag;
   final double width;
   final double height;
   final VoidCallback onTap;
@@ -165,7 +175,7 @@ class _PictureTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Hero(
-        tag: picture.heroTag,
+        tag: heroTag,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(TopicPictureGrid.radius),
           child: CachedNetworkImage(
@@ -194,7 +204,11 @@ void _openPreview(
 
   openImageGalleryPreview(
     context,
-    itemList: topicPictureModelListToGalleryPreviewItemList(pictures),
+    itemList: topicPictureModelListToGalleryPreviewItemList(
+      pictures,
+      heroTagFor: (pictureModel) =>
+          scopedTopicPictureHeroTag(context, pictureModel),
+    ),
     initialIndex: initialIndex,
   ).whenComplete(() {
     // pop 后 Flutter 可能恢复先前焦点，下一帧再清一次。

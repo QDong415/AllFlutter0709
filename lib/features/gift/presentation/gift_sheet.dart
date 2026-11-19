@@ -16,7 +16,7 @@ const giftCountOptions = <int>[1, 10, 66, 100, 188, 520, 1314];
 /// 打开送礼面板。面板保持打开，可连点。
 ///
 /// [onCombo] 每次点击立刻回调，用来播动画，数量是这一轮连击的累计。
-/// [onSent] 停手约 1 秒后服务端扣款成功才回调一次。
+/// [onSent] 停手约 2 秒后服务端扣款成功才回调一次。
 /// [type] 1 为动态，4 为聊天。动态需要带上 [feedId]。
 Future<void> showGiftSheet(
   BuildContext context, {
@@ -137,7 +137,7 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
     super.dispose();
   }
 
-  /// 连点「发送」。先播动画并本地扣金币，停 1 秒再把累计数量交给服务端。
+  /// 连点「发送」。先播动画并本地扣金币，停 2 秒再把累计数量交给服务端。
   void _send() {
     final giftModel = _selected;
     if (giftModel == null) {
@@ -164,7 +164,7 @@ class _GiftSheetState extends ConsumerState<GiftSheet> {
     _storeCoin(_coin);
     widget.onCombo?.call(giftModel, totalCount);
     _comboTimer?.cancel();
-    _comboTimer = Timer(const Duration(seconds: 1), () {
+    _comboTimer = Timer(const Duration(seconds: 2), () {
       final pending = _takeCombo();
       if (pending != null) {
         unawaited(_submitCombo(pending));

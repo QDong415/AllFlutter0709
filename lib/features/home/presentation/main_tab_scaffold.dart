@@ -62,7 +62,6 @@ class MainTabScaffold extends ConsumerStatefulWidget {
 
 class _MainTabScaffoldState extends ConsumerState<MainTabScaffold> {
   var _signPromptScheduled = false;
-  String? _giftNotifyShellLogKey;
 
   @override
   void initState() {
@@ -105,16 +104,6 @@ class _MainTabScaffoldState extends ConsumerState<MainTabScaffold> {
           )
         : AppSystemUi.overlayForToolbar(palette.brightness);
     final shellIsCurrent = ModalRoute.of(context)?.isCurrent ?? true;
-    final matchedLocation = GoRouter.of(context).state.matchedLocation;
-    final giftNotifyShellLogKey = '$shellIsCurrent|$matchedLocation';
-    if (giftNotifyShellLogKey != _giftNotifyShellLogKey) {
-      _giftNotifyShellLogKey = giftNotifyShellLogKey;
-      debugPrint(
-        '[GiftNotify] MainTab shellIsCurrent=$shellIsCurrent '
-        'matchedLocation=$matchedLocation '
-        '(false 时应停止轮询；若无此日志可能是壳未 rebuild)',
-      );
-    }
     if (shellIsCurrent) {
       AppSystemUi.apply(systemOverlay);
     }
@@ -130,6 +119,7 @@ class _MainTabScaffoldState extends ConsumerState<MainTabScaffold> {
         // IndexedStack 会保留隐藏 Tab 的 Hero。仅动态 Tab 可见时允许壳层图片
         // 参与 Hero，避免从「我的」动态列表返回时匹配到隐藏动态并飞出屏幕。
         body: Stack(
+          clipBehavior: Clip.none,
           children: [
             HeroMode(
               enabled: shellIndex == MainTabItem.topic.index,

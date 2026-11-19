@@ -132,7 +132,8 @@ class GiftRepository {
 
   /// 动态首页飘窗。单笔超过 51 金币，最多 5 条。
   ///
-  /// [firstId] 有值时只取比它新的记录；否则由服务端只看最近 2 分钟。
+  /// [firstId] 有值时只取比它新的记录；否则由服务端只看最近 5 分钟。
+  /// 飘窗把见过的最大 id 存在本机，冷启动继续传这个值。
   Future<List<GiftNotifyModel>> fetchNotifyList({int? firstId}) {
     return _fetchItems('/api/gift/notitylist', <String, dynamic>{
       'page': '1',
