@@ -58,7 +58,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       await _save(<String, String>{'avatar': key});
     } catch (error) {
       if (mounted) {
-        AppToast.show(context, '$error');
+        final message = error.toString().replaceFirst('Exception: ', '').trim();
+        AppToast.show(context, '头像上传失败：${message.isEmpty ? '未知错误' : message}');
       }
     }
   }

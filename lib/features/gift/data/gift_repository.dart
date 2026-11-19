@@ -130,6 +130,17 @@ class GiftRepository {
     }, TopSender.fromJson);
   }
 
+  /// 动态首页飘窗。单笔超过 51 金币，最多 5 条。
+  ///
+  /// [firstId] 有值时只取比它新的记录；否则由服务端只看最近 2 分钟。
+  Future<List<GiftNotifyModel>> fetchNotifyList({int? firstId}) {
+    return _fetchItems('/api/gift/notitylist', <String, dynamic>{
+      'page': '1',
+      'pagesize': '5',
+      if (firstId != null && firstId > 0) 'firstid': '$firstId',
+    }, GiftNotifyModel.fromJson);
+  }
+
   /// 魅力榜 [charm] 为 true，否则财富榜。duration：1 今日，2 本周，3 总榜。
   Future<RankPageResult> fetchRank({
     required bool charm,

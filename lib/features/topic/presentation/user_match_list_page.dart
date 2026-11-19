@@ -7,6 +7,7 @@ import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
+import 'package:all_flutter0709/shared/widgets/app_classic_header.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
@@ -104,7 +105,7 @@ class _UserMatchListPageState extends State<UserMatchListPage>
     return ColoredBox(
       color: context.palette.bodyBackground,
       child: EasyRefresh.builder(
-        header: const ClassicHeader(showMessage: false, showText: false),
+        header: appClassicHeader(context),
         footer: const ClassicFooter(
           showMessage: false,
           showText: false,

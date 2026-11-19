@@ -10,6 +10,7 @@ import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_n
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:all_flutter0709/shared/widgets/app_classic_header.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -129,7 +130,7 @@ class _RemindListPageState extends ConsumerState<RemindListPage> {
       backgroundColor: context.palette.bodyBackground,
       appBar: CommonAppBar(title: _title),
       body: EasyRefresh(
-        header: const ClassicHeader(showMessage: false, showText: false),
+        header: appClassicHeader(context),
         triggerAxis: Axis.vertical,
         onRefresh: _onRefreshList,
         onLoad: _hasMore ? _onLoadMoreList : null,

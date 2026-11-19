@@ -33,6 +33,7 @@ import 'package:all_flutter0709/features/user/data/models/user_base_model.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:chat_bottom_container/chat_bottom_container.dart';
+import 'package:all_flutter0709/shared/widgets/app_classic_header.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -764,10 +765,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
             onNotification: _hidePanelOnListDrag,
             child: TopicAudioListScrollNotify(
               child: EasyRefresh(
-                header: const ClassicHeader(
-                  showMessage: false,
-                  showText: false,
-                ),
+                header: appClassicHeader(context),
                 footer: const ClassicFooter(showMessage: false),
                 onRefresh: widget.enablePullRefresh ? _refreshComments : null,
                 onLoad: _hasMore && !_isLoading ? _loadMoreComments : null,

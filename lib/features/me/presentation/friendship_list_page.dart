@@ -7,6 +7,7 @@ import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
+import 'package:all_flutter0709/shared/widgets/app_classic_header.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
@@ -79,6 +80,7 @@ class _FriendshipListPageState extends State<FriendshipListPage> {
       backgroundColor: context.palette.bodyBackground,
       appBar: CommonAppBar(title: widget.args.isFansList ? '我的粉丝' : '我的关注'),
       body: EasyRefresh(
+        header: appClassicHeader(context),
         onRefresh: () => _request(isRefresh: true),
         onLoad: _hasMore ? () => _request(isRefresh: false) : null,
         child: PageStateView(

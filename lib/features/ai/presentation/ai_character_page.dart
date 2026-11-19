@@ -12,6 +12,7 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/conve
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
+import 'package:all_flutter0709/shared/widgets/app_classic_header.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -201,7 +202,7 @@ class _AiCharacterPageState extends State<AiCharacterPage> {
         ),
         Expanded(
           child: EasyRefresh(
-            header: const ClassicHeader(showMessage: false, showText: false),
+            header: appClassicHeader(context),
             onRefresh: () => _requestList(isRefresh: true),
             onLoad: _hasMore ? () => _requestList(isRefresh: false) : null,
             child: _buildContent(),

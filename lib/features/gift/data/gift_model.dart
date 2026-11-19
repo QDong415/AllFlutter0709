@@ -166,6 +166,56 @@ class RankUser {
   }
 }
 
+/// 动态首页飘窗里的一条送礼。
+class GiftNotifyModel {
+  const GiftNotifyModel({
+    required this.id,
+    required this.count,
+    required this.senderName,
+    required this.toUserId,
+    required this.toName,
+    required this.toAvatar,
+    required this.toGender,
+    required this.title,
+    required this.picture,
+  });
+
+  final int id;
+  final int count;
+  final String senderName;
+  final String toUserId;
+  final String toName;
+  final String toAvatar;
+
+  /// 收礼人性别。1 为男。
+  final int toGender;
+  final String title;
+  final String picture;
+
+  /// 礼物图地址。
+  String get pictureUrl => giftPictureUrl(picture);
+
+  /// 收礼人头像地址。
+  String? get toAvatarUrl => ValueUtil.getOriginalImageUrl(toAvatar);
+
+  /// 收礼人是男性。
+  bool get receiverIsMale => toGender == 1;
+
+  factory GiftNotifyModel.fromJson(Map<String, dynamic> json) {
+    return GiftNotifyModel(
+      id: _readInt(json['id']),
+      count: _readInt(json['count']),
+      senderName: json['name']?.toString() ?? '',
+      toUserId: json['to_userid']?.toString() ?? '',
+      toName: json['to_name']?.toString() ?? '',
+      toAvatar: json['to_avatar']?.toString() ?? '',
+      toGender: _readInt(json['to_gender']),
+      title: json['title']?.toString() ?? '',
+      picture: json['picture']?.toString() ?? '',
+    );
+  }
+}
+
 /// 榜单一页。
 class RankPageResult {
   const RankPageResult({required this.items, required this.totalPage});

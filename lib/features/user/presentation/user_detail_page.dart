@@ -23,6 +23,7 @@ import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_h
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_nav_bar.dart';
 import 'package:all_flutter0709/shared/widgets/app_message_dialog.dart';
 import 'package:all_flutter0709/shared/widgets/page_state_view.dart';
+import 'package:all_flutter0709/shared/widgets/app_classic_header.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -415,7 +416,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
         body: Stack(
           children: [
             EasyRefresh.builder(
-              header: const ClassicHeader(showMessage: false, showText: false),
+              header: appClassicHeader(context),
               onRefresh: _onRefresh,
               onLoad: hasMore ? onLoadMoreList : null,
               childBuilder: (context, physics) => _buildScrollBody(physics),
