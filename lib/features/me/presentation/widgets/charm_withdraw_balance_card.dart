@@ -17,64 +17,73 @@ class CharmWithdrawBalanceCard extends StatelessWidget {
   final String scaleHint;
   final String? avatarUrl;
 
+  /// 与 `money_bg.png` 圆角接近；裁掉素材四角白边。
+  static const _cardRadius = BorderRadius.all(Radius.circular(12));
+
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/icons/me/money_bg.png'),
-          fit: BoxFit.fill,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+      child: ClipRRect(
+        borderRadius: _cardRadius,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
+          decoration: const BoxDecoration(
+            borderRadius: _cardRadius,
+            image: DecorationImage(
+              image: AssetImage('assets/icons/me/money_bg.png'),
+              fit: BoxFit.fill,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 6, top: 6, bottom: 6),
-                child: ClipOval(
-                  child: SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: _avatarImage(),
+              Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6, top: 6, bottom: 6),
+                    child: ClipOval(
+                      child: SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: _avatarImage(),
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '共可提现：',
+                      style: TextStyle(color: Colors.white, fontSize: 15),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                loading ? '加载中' : yuanLabel,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.normal,
                 ),
               ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  '共可提现：',
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Text(
+                    loading ? '' : scaleHint,
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            loading ? '加载中' : yuanLabel,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.normal,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Text(
-                loading ? '' : scaleHint,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
