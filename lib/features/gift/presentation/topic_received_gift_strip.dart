@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/gift/data/gift_list_errors.dart';
 import 'package:all_flutter0709/features/gift/data/gift_model.dart';
 import 'package:all_flutter0709/features/gift/data/gift_repository.dart';
@@ -137,6 +138,7 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     if (_gifts.isEmpty && _loading) {
       return const SizedBox.shrink();
     }
@@ -147,7 +149,7 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: palette.card,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
@@ -164,12 +166,14 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
+                  Text(
                     '收到礼物',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF222222),
+                      color: palette.brightness == Brightness.dark
+                          ? palette.titleText
+                          : const Color(0xFF222222),
                     ),
                   ),
                 ],
@@ -177,7 +181,12 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
               const SizedBox(height: 12),
               Text(
                 _errorText!,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF8B8B90)),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: palette.brightness == Brightness.dark
+                      ? palette.secondaryText
+                      : const Color(0xFF8B8B90),
+                ),
               ),
             ],
           ),
@@ -194,7 +203,7 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: palette.card,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -211,13 +220,15 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
                     '收到礼物',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF222222),
+                      color: palette.brightness == Brightness.dark
+                          ? palette.titleText
+                          : const Color(0xFF222222),
                     ),
                   ),
                 ),
@@ -226,9 +237,11 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
                     onTap: _openSenders,
                     child: Text(
                       '共 $_totalCount 个',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
-                        color: Color(0xFF8B8B90),
+                        color: palette.brightness == Brightness.dark
+                            ? palette.secondaryText
+                            : const Color(0xFF8B8B90),
                       ),
                     ),
                   ),
@@ -253,15 +266,19 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
                               : CachedNetworkImage(
                                   imageUrl: gift.pictureUrl,
                                   fit: BoxFit.contain,
+                                  placeholder: (_, _) =>
+                                      ColoredBox(color: palette.pressed),
                                   errorWidget: (_, _, _) =>
-                                      const SizedBox.shrink(),
+                                      ColoredBox(color: palette.pressed),
                                 ),
                         ),
                         Text(
                           'x${gift.totalCount}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFF666666),
+                            color: palette.brightness == Brightness.dark
+                                ? palette.secondaryText
+                                : const Color(0xFF666666),
                           ),
                         ),
                       ],

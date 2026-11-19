@@ -376,16 +376,17 @@ class _CommentAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
+    return ClipOval(
+      child: Container(
+        width: size,
+        height: size,
         color: context.palette.pressed,
-        border: Border.all(color: context.palette.divider, width: 0.6),
+        foregroundDecoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: context.palette.divider, width: 0.6),
+        ),
+        child: VipHaloAvatar.avatarImage(avatarUrl, size: size),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: VipHaloAvatar.avatarImage(avatarUrl, size: size),
     );
   }
 }
@@ -629,8 +630,19 @@ class _CommentLikeColumn extends StatelessWidget {
   }
 }
 
+/// 今天显示 HH:mm，其他日期显示 yyyy-MM-dd。
 String _formatCommentTimeText(int timestamp) {
   if (timestamp <= 0) return '--';
   final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-  return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  final now = DateTime.now();
+  final isToday =
+      date.year == now.year && date.month == now.month && date.day == now.day;
+  if (isToday) {
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '${date.year}-$month-$day';
 }

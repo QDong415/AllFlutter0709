@@ -53,6 +53,9 @@ class ConversationListItem extends StatefulWidget {
   static const _unreadColor = Color(0xFFE64C64);
   static const _itemHeight = 66.0;
   static const _avatarSize = 45.0;
+
+  /// 与聊天页头像同一圆角。
+  static const _avatarRadius = 4.0;
   static const _deleteActionWidth = 80.0;
 
   @override
@@ -369,22 +372,25 @@ class _ConversationAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: ConversationListItem._avatarSize,
-      height: ConversationListItem._avatarSize,
-      child: avatarUrl == null || avatarUrl!.isEmpty
-          ? Image.asset(_placeholderAsset, fit: BoxFit.cover)
-          : CachedNetworkImage(
-              imageUrl: avatarUrl!,
-              fit: BoxFit.cover,
-              fadeInDuration: Duration.zero,
-              fadeOutDuration: Duration.zero,
-              placeholderFadeInDuration: Duration.zero,
-              placeholder: (_, _) =>
-                  Image.asset(_placeholderAsset, fit: BoxFit.cover),
-              errorWidget: (_, _, _) =>
-                  Image.asset(_placeholderAsset, fit: BoxFit.cover),
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(ConversationListItem._avatarRadius),
+      child: SizedBox(
+        width: ConversationListItem._avatarSize,
+        height: ConversationListItem._avatarSize,
+        child: avatarUrl == null || avatarUrl!.isEmpty
+            ? Image.asset(_placeholderAsset, fit: BoxFit.cover)
+            : CachedNetworkImage(
+                imageUrl: avatarUrl!,
+                fit: BoxFit.cover,
+                fadeInDuration: Duration.zero,
+                fadeOutDuration: Duration.zero,
+                placeholderFadeInDuration: Duration.zero,
+                placeholder: (_, _) =>
+                    Image.asset(_placeholderAsset, fit: BoxFit.cover),
+                errorWidget: (_, _, _) =>
+                    Image.asset(_placeholderAsset, fit: BoxFit.cover),
+              ),
+      ),
     );
   }
 }

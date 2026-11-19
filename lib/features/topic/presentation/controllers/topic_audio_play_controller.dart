@@ -140,6 +140,14 @@ class TopicAudioPlayController extends ChangeNotifier
     _dropIntent();
   }
 
+  /// 离开承载页（如 pop 动态详情）时停止当前播放，不限 playKey。
+  void stopCurrentPlayback() {
+    if (_playKey == null) {
+      return;
+    }
+    _dropIntent();
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||

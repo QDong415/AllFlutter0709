@@ -132,18 +132,17 @@ class VipHaloAvatar extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    return Container(
-      width: size,
-      height: size,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
+    return ClipOval(
+      child: Container(
+        width: size,
+        height: size,
         color: backgroundColor,
-        border: borderWidth > 0
-            ? Border.all(color: borderColor, width: borderWidth)
+        foregroundDecoration: borderWidth > 0
+            ? BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: borderWidth),
+              )
             : null,
-      ),
-      child: SizedBox.expand(
         child: avatarImage(imageUrl, size: size),
       ),
     );

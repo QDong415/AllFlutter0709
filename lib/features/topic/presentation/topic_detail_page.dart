@@ -11,6 +11,7 @@ import 'package:all_flutter0709/features/comment/data/comment_repository.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_section.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
+import 'package:all_flutter0709/features/topic/presentation/controllers/topic_audio_play_controller.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_delete_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_like_helper.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
@@ -72,6 +73,12 @@ class _TopicDetailPageState extends ConsumerState<TopicDetailPage> {
     } else {
       _isLoading = false;
     }
+  }
+
+  @override
+  void deactivate() {
+    ref.read(topicAudioPlayControllerProvider).stopCurrentPlayback();
+    super.deactivate();
   }
 
   @override

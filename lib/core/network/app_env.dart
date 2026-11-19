@@ -2,7 +2,7 @@ enum AppEnvironment { test, production }
 
 abstract final class AppEnv {
   // 切换环境时，只需要改这里。
-  static const AppEnvironment current = AppEnvironment.test;
+  static const AppEnvironment current = AppEnvironment.production;
 
   static String get apiBaseUrl {
     switch (current) {
