@@ -22,6 +22,7 @@ class ProfileEditPage extends ConsumerStatefulWidget {
 class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   final UserRepository _userRepository = const UserRepository();
   bool _saving = false;
+  bool _uploadingAvatar = false;
 
   Future<void> _save(Map<String, String> fields) async {
     final current = ref.read(accountProvider);
@@ -46,11 +47,19 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   }
 
   Future<void> _changeAvatar() async {
+    if (_saving || _uploadingAvatar) {
+      return;
+    }
     final helper = SignupAvatarHelper(
       cloudStorageService: ref.read(cloudStorageServiceProvider),
     );
     final file = await helper.pickAndCropAvatar(context);
-    if (file == null) {
+    if (file == null || !mounted) {
+      return;
+    }
+    setState(() => _uploadingAvatar = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) {
       return;
     }
     try {
@@ -60,6 +69,10 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
       if (mounted) {
         final message = error.toString().replaceFirst('Exception: ', '').trim();
         AppToast.show(context, '头像上传失败：${message.isEmpty ? '未知错误' : message}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
       }
     }
   }
@@ -231,7 +244,8 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               ),
             ],
           ),
-          if (_saving) const Center(child: CircularProgressIndicator()),
+          if (_saving || _uploadingAvatar)
+            const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
