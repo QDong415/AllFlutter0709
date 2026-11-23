@@ -171,111 +171,119 @@ class ReceivedGiftSectionState extends State<ReceivedGiftSection>
 
   Widget _buildCard(BuildContext context) {
     final palette = context.palette;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 16, 12, 12),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      decoration: BoxDecoration(
-        color: palette.card,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '收到的礼物',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: palette.titleText,
-            ),
-          ),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            primary: false,
-            // 不写的话会套上整页安全区，大屏上下会多出一大块空白。
-            padding: EdgeInsets.zero,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _gifts.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 8,
-              childAspectRatio: 0.62,
-            ),
-            itemBuilder: (context, index) {
-              final gift = _gifts[index];
-              return Column(
-                children: [
-                  Expanded(
-                    child: gift.pictureUrl.isEmpty
-                        ? const SizedBox.shrink()
-                        : CachedNetworkImage(
-                            imageUrl: gift.pictureUrl,
-                            fit: BoxFit.contain,
-                            fadeInDuration: const Duration(milliseconds: 220),
-                            fadeOutDuration: const Duration(milliseconds: 120),
-                            placeholder: (_, _) =>
-                                ColoredBox(color: palette.pressed),
-                            errorWidget: (_, _, _) =>
-                                ColoredBox(color: palette.pressed),
-                          ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    gift.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: palette.titleText),
-                  ),
-                  Text(
-                    'x${gift.totalCount}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: palette.secondaryText,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-          if (!_loading) ...[
-            const SizedBox(height: 20),
-            InkWell(
-              onTap: () => openGiftSenderPage(context, toUserId: widget.userId),
-              child: Row(
-                children: [
-                  Text(
-                    '送礼的人',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: palette.titleText,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_senders.isNotEmpty)
-                    SizedBox(
-                      height: 28,
-                      width: _senders.length * 18.0 + 10,
-                      child: Stack(
-                        children: [
-                          for (var i = 0; i < _senders.length; i++)
-                            Positioned(
-                              left: i * 18.0,
-                              child: _SenderAvatar(url: _senders[i].avatarUrl),
-                            ),
-                        ],
-                      ),
-                    ),
-                  Icon(Icons.chevron_right, size: 20, color: palette.chevron),
-                ],
+    return ColoredBox(
+      color: palette.bodyBackground,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+        decoration: BoxDecoration(
+          color: palette.card,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '收到的礼物',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: palette.titleText,
               ),
             ),
+            const SizedBox(height: 20),
+            GridView.builder(
+              shrinkWrap: true,
+              primary: false,
+              // 不写的话会套上整页安全区，大屏上下会多出一大块空白。
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _gifts.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 8,
+                childAspectRatio: 0.62,
+              ),
+              itemBuilder: (context, index) {
+                final gift = _gifts[index];
+                return Column(
+                  children: [
+                    Expanded(
+                      child: gift.pictureUrl.isEmpty
+                          ? const SizedBox.shrink()
+                          : CachedNetworkImage(
+                              imageUrl: gift.pictureUrl,
+                              fit: BoxFit.contain,
+                              fadeInDuration: const Duration(milliseconds: 220),
+                              fadeOutDuration: const Duration(
+                                milliseconds: 120,
+                              ),
+                              placeholder: (_, _) =>
+                                  ColoredBox(color: palette.pressed),
+                              errorWidget: (_, _, _) =>
+                                  ColoredBox(color: palette.pressed),
+                            ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      gift.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: palette.titleText),
+                    ),
+                    Text(
+                      'x${gift.totalCount}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: palette.secondaryText,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            if (!_loading) ...[
+              const SizedBox(height: 20),
+              InkWell(
+                onTap: () =>
+                    openGiftSenderPage(context, toUserId: widget.userId),
+                child: Row(
+                  children: [
+                    Text(
+                      '送礼的人',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: palette.titleText,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_senders.isNotEmpty)
+                      SizedBox(
+                        height: 28,
+                        width: _senders.length * 18.0 + 10,
+                        child: Stack(
+                          children: [
+                            for (var i = 0; i < _senders.length; i++)
+                              Positioned(
+                                left: i * 18.0,
+                                child: _SenderAvatar(
+                                  url: _senders[i].avatarUrl,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    Icon(Icons.chevron_right, size: 20, color: palette.chevron),
+                  ],
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
