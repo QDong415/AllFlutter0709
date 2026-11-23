@@ -150,9 +150,8 @@ class _FullscreenMediaSystemUiState extends State<FullscreenMediaSystemUi> {
 
   @override
   void dispose() {
-    AppSystemUi.apply(
-      AppSystemUi.overlayForToolbar(AppSystemUi.themeBrightness),
-    );
+    // 由退场后重新露出的页面通过 AnnotatedRegion 恢复自己的系统栏样式。
+    // 这里主动套用全局默认值会与下层页面短暂冲突，导致状态栏白条闪烁。
     super.dispose();
   }
 

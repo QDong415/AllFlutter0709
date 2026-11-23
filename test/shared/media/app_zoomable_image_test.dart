@@ -53,6 +53,38 @@ void main() {
     expect(placeholderImage.fit, BoxFit.contain);
   });
 
+  testWidgets('原图失败但缩略图可用时不显示碎图图标', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AppZoomableImage(
+            imageProvider: AssetImage('assets/icons/not_exists.png'),
+            placeholderImageProvider: imageProvider,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.broken_image_outlined), findsNothing);
+    expect(find.byType(Image), findsOneWidget);
+  });
+
+  testWidgets('原图失败且没有缩略图时显示碎图图标', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AppZoomableImage(
+            imageProvider: AssetImage('assets/icons/not_exists.png'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+  });
+
   testWidgets('双击一次放大，再次双击复位且不误触单击', (tester) async {
     usePortraitViewport(tester);
     final controller = PhotoViewController();

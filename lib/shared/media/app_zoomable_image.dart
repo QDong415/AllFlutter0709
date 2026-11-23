@@ -47,13 +47,17 @@ class AppZoomableImage extends StatefulWidget {
 class _AppZoomableImageState extends State<AppZoomableImage> {
   ImageStream? _imageStream;
   ImageStreamListener? _imageStreamListener;
+  ImageStream? _placeholderImageStream;
+  ImageStreamListener? _placeholderImageStreamListener;
   bool _isImageLoaded = false;
   bool _isLandscapeImage = false;
+  bool _isPlaceholderUnavailable = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _resolveImage();
+    _resolvePlaceholderImage();
   }
 
   @override
@@ -62,11 +66,15 @@ class _AppZoomableImageState extends State<AppZoomableImage> {
     if (widget.imageProvider != oldWidget.imageProvider) {
       _resolveImage();
     }
+    if (widget.placeholderImageProvider != oldWidget.placeholderImageProvider) {
+      _resolvePlaceholderImage();
+    }
   }
 
   @override
   void dispose() {
     _stopListeningToImageStream();
+    _stopListeningToPlaceholderImageStream();
     super.dispose();
   }
 
@@ -93,6 +101,38 @@ class _AppZoomableImageState extends State<AppZoomableImage> {
     imageStream.addListener(imageStreamListener);
   }
 
+  void _resolvePlaceholderImage() {
+    _stopListeningToPlaceholderImageStream();
+    final placeholderImageProvider = widget.placeholderImageProvider;
+    _isPlaceholderUnavailable = placeholderImageProvider == null;
+    if (placeholderImageProvider == null) {
+      return;
+    }
+
+    final imageStream = placeholderImageProvider.resolve(
+      createLocalImageConfiguration(context),
+    );
+    final imageStreamListener = ImageStreamListener(
+      (_, _) {
+        if (mounted && _isPlaceholderUnavailable) {
+          setState(() {
+            _isPlaceholderUnavailable = false;
+          });
+        }
+      },
+      onError: (_, _) {
+        if (mounted && !_isPlaceholderUnavailable) {
+          setState(() {
+            _isPlaceholderUnavailable = true;
+          });
+        }
+      },
+    );
+    _placeholderImageStream = imageStream;
+    _placeholderImageStreamListener = imageStreamListener;
+    imageStream.addListener(imageStreamListener);
+  }
+
   void _stopListeningToImageStream() {
     final imageStream = _imageStream;
     final imageStreamListener = _imageStreamListener;
@@ -101,6 +141,16 @@ class _AppZoomableImageState extends State<AppZoomableImage> {
     }
     _imageStream = null;
     _imageStreamListener = null;
+  }
+
+  void _stopListeningToPlaceholderImageStream() {
+    final imageStream = _placeholderImageStream;
+    final imageStreamListener = _placeholderImageStreamListener;
+    if (imageStream != null && imageStreamListener != null) {
+      imageStream.removeListener(imageStreamListener);
+    }
+    _placeholderImageStream = null;
+    _placeholderImageStreamListener = null;
   }
 
   Widget _buildLoading(BuildContext context, ImageChunkEvent? event) {
@@ -153,9 +203,14 @@ class _AppZoomableImageState extends State<AppZoomableImage> {
             isLandscapeImage: _isLandscapeImage,
           ),
           loadingBuilder: _buildLoading,
-          errorBuilder: (_, _, _) => const Center(
-            child: Icon(Icons.broken_image_outlined, color: Colors.white54),
-          ),
+          errorBuilder: (_, _, _) => _isPlaceholderUnavailable
+              ? const Center(
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white54,
+                  ),
+                )
+              : const SizedBox.shrink(),
           filterQuality: FilterQuality.medium,
           onTapUp: widget.onTap == null
               ? null
