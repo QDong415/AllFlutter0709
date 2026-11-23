@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
+import 'package:all_flutter0709/shared/media/app_zoomable_image.dart';
 import 'package:all_flutter0709/shared/media/gallery_preview_item.dart';
 import 'package:all_flutter0709/shared/media/image_preview_save_actions.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
-import 'package:photo_view/photo_view_gallery.dart';
 
 /// 多图全屏画廊预览：缩放、下滑关闭、长按保存。
 class AppImageGalleryPreviewPage extends StatefulWidget {
@@ -28,6 +30,7 @@ class AppImageGalleryPreviewPage extends StatefulWidget {
 class _AppImageGalleryPreviewPageState
     extends State<AppImageGalleryPreviewPage> {
   late final PageController _pageController;
+  final Set<int> _precacheIndexSet = <int>{};
   late int _currentIndex;
   double _overlayOpacity = 1;
 
@@ -39,16 +42,41 @@ class _AppImageGalleryPreviewPageState
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _precacheAround(_currentIndex);
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  void _onLongPressSave() {
+  void _precacheAround(int index) {
+    for (final targetIndex in <int>[index - 1, index, index + 1]) {
+      if (targetIndex < 0 ||
+          targetIndex >= widget.itemList.length ||
+          !_precacheIndexSet.add(targetIndex)) {
+        continue;
+      }
+      unawaited(_precacheItem(targetIndex));
+    }
+  }
+
+  Future<void> _precacheItem(int index) async {
+    try {
+      await precacheImage(widget.itemList[index].imageProvider, context);
+    } catch (_) {
+      // 预取失败不影响 PhotoView 自己的加载与错误展示。
+    }
+  }
+
+  void _onLongPressSave(int index) {
     if (!widget.enableSave) {
       return;
     }
-    final item = widget.itemList[_currentIndex];
+    final item = widget.itemList[index];
     ImagePreviewSaveActions.showSaveSheet(context, saveSource: item.saveSource);
   }
 
@@ -78,16 +106,12 @@ class _AppImageGalleryPreviewPageState
             fit: StackFit.expand,
             children: [
               Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onLongPress: widget.enableSave ? _onLongPressSave : null,
-                  child: PhotoViewGallery.builder(
-                    pageController: _pageController,
+                child: PhotoViewGestureDetectorScope(
+                  axis: Axis.horizontal,
+                  child: PageView.builder(
+                    controller: _pageController,
                     itemCount: widget.itemList.length,
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.black,
-                    ),
-                    scrollPhysics: const BouncingScrollPhysics(),
+                    physics: const BouncingScrollPhysics(),
                     onPageChanged: (index) {
                       if (_currentIndex == index) {
                         return;
@@ -95,42 +119,22 @@ class _AppImageGalleryPreviewPageState
                       setState(() {
                         _currentIndex = index;
                       });
+                      _precacheAround(index);
                     },
-                    builder: (context, index) {
+                    itemBuilder: (context, index) {
                       final item = widget.itemList[index];
-                      final heroTag = item.heroTag;
                       final isCurrentPage = index == _currentIndex;
-                      return PhotoViewGalleryPageOptions(
-                        imageProvider: item.imageProvider,
-                        minScale: PhotoViewComputedScale.contained,
-                        initialScale: PhotoViewComputedScale.contained,
-                        maxScale: PhotoViewComputedScale.covered * 4,
-                        tightMode: true,
-                        onTapUp: (context, details, controllerValue) {
-                          Navigator.of(context).maybePop();
-                        },
-                        heroAttributes: heroTag == null || !isCurrentPage
-                            ? null
-                            : PhotoViewHeroAttributes(tag: heroTag),
-                      );
-                    },
-                    loadingBuilder: (context, event) {
-                      final expectedBytes = event?.expectedTotalBytes;
-                      final loadedBytes = event?.cumulativeBytesLoaded;
-                      final progress =
-                          loadedBytes != null &&
-                              expectedBytes != null &&
-                              expectedBytes > 0
-                          ? (loadedBytes / expectedBytes).clamp(0.0, 1.0)
-                          : null;
-                      return Center(
-                        child: SizedBox.square(
-                          dimension: 24,
-                          child: CircularProgressIndicator(
-                            value: progress,
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
+                      return ClipRect(
+                        child: AppZoomableImage(
+                          imageProvider: item.imageProvider,
+                          placeholderImageProvider:
+                              item.placeholderImageProvider,
+                          heroTag: isCurrentPage ? item.heroTag : null,
+                          maxScale: 4,
+                          onTap: () => Navigator.of(context).maybePop(),
+                          onLongPress: widget.enableSave
+                              ? () => _onLongPressSave(index)
+                              : null,
                         ),
                       );
                     },

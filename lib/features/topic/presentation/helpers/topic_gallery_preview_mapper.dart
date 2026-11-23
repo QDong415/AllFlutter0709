@@ -1,6 +1,7 @@
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/shared/media/gallery_preview_item.dart';
 import 'package:all_flutter0709/shared/media/preview_save_source.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// 将动态配图限制在当前路由内的 Hero 标签。
@@ -36,11 +37,18 @@ GalleryPreviewItem _toGalleryPreviewItem(
   TopicPictureModel pictureModel, {
   required String heroTag,
 }) {
-  final imageUrl = pictureModel.originalUrl.isNotEmpty
-      ? pictureModel.originalUrl
-      : pictureModel.thumbnailUrl;
+  final originalUrl = pictureModel.originalUrl;
+  final thumbnailUrl = pictureModel.thumbnailUrl;
+  final thumbnailImageProvider = thumbnailUrl.isEmpty
+      ? null
+      : CachedNetworkImageProvider(thumbnailUrl);
+  final imageUrl = originalUrl.isNotEmpty ? originalUrl : thumbnailUrl;
+  final ImageProvider<Object> imageProvider = originalUrl.isNotEmpty
+      ? CachedNetworkImageProvider(originalUrl)
+      : thumbnailImageProvider!;
   return GalleryPreviewItem(
-    imageProvider: NetworkImage(imageUrl),
+    imageProvider: imageProvider,
+    placeholderImageProvider: thumbnailImageProvider,
     saveSource: PreviewSaveFromUrl(imageUrl),
     heroTag: heroTag,
   );

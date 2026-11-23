@@ -567,11 +567,13 @@ class _LocalCommentImage extends StatelessWidget {
 
   void _openPreview(BuildContext context) {
     FocusManager.instance.primaryFocus?.unfocus();
+    final imageProvider = FileImage(file);
     openImageGalleryPreview(
       context,
       itemList: [
         GalleryPreviewItem(
-          imageProvider: FileImage(file),
+          imageProvider: imageProvider,
+          placeholderImageProvider: imageProvider,
           saveSource: PreviewSaveFromLocalPath(file.path),
         ),
       ],

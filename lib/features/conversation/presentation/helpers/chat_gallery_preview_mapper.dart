@@ -18,14 +18,18 @@ List<GalleryPreviewItem> imageMessageListToGalleryPreviewItemList(
 GalleryPreviewItem _toGalleryPreviewItem(ImageMessage imageMessage) {
   final imagePath = imageMessage.imagePath;
   if (imagePath != null && File(imagePath).existsSync()) {
+    final imageProvider = FileImage(File(imagePath));
     return GalleryPreviewItem(
-      imageProvider: FileImage(File(imagePath)),
+      imageProvider: imageProvider,
+      placeholderImageProvider: imageProvider,
       saveSource: PreviewSaveFromLocalPath(imagePath),
     );
   }
   final imageUrl = imageMessage.imageUrl ?? '';
+  final imageProvider = CachedNetworkImageProvider(imageUrl);
   return GalleryPreviewItem(
-    imageProvider: CachedNetworkImageProvider(imageUrl),
+    imageProvider: imageProvider,
+    placeholderImageProvider: imageProvider,
     saveSource: PreviewSaveFromUrl(imageUrl),
   );
 }

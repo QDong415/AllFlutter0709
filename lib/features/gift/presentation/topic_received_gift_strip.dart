@@ -250,41 +250,45 @@ class TopicReceivedGiftStripState extends State<TopicReceivedGiftStrip> {
             const SizedBox(height: 15),
             SizedBox(
               height: 88,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _gifts.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final gift = _gifts[index];
-                  return SizedBox(
-                    width: 64,
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: gift.pictureUrl.isEmpty
-                              ? const SizedBox.shrink()
-                              : CachedNetworkImage(
-                                  imageUrl: gift.pictureUrl,
-                                  fit: BoxFit.contain,
-                                  placeholder: (_, _) =>
-                                      ColoredBox(color: palette.pressed),
-                                  errorWidget: (_, _, _) =>
-                                      ColoredBox(color: palette.pressed),
-                                ),
-                        ),
-                        Text(
-                          'x${gift.totalCount}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: palette.brightness == Brightness.dark
-                                ? palette.secondaryText
-                                : const Color(0xFF666666),
+              // 隔开外层评论列表的下拉刷新，避免在最左侧向右滑时刷新评论。
+              child: ScrollConfiguration(
+                behavior: const MaterialScrollBehavior(),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _gifts.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final gift = _gifts[index];
+                    return SizedBox(
+                      width: 64,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: gift.pictureUrl.isEmpty
+                                ? const SizedBox.shrink()
+                                : CachedNetworkImage(
+                                    imageUrl: gift.pictureUrl,
+                                    fit: BoxFit.contain,
+                                    placeholder: (_, _) =>
+                                        ColoredBox(color: palette.pressed),
+                                    errorWidget: (_, _, _) =>
+                                        ColoredBox(color: palette.pressed),
+                                  ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                          Text(
+                            'x${gift.totalCount}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: palette.brightness == Brightness.dark
+                                  ? palette.secondaryText
+                                  : const Color(0xFF666666),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ],

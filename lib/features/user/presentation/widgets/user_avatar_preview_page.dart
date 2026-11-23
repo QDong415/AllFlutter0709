@@ -1,10 +1,10 @@
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
+import 'package:all_flutter0709/shared/media/app_zoomable_image.dart';
 import 'package:all_flutter0709/shared/media/image_preview_save_actions.dart';
 import 'package:all_flutter0709/shared/media/preview_save_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dismissible_page/dismissible_page.dart';
 import 'package:flutter/material.dart';
-import 'package:photo_view/photo_view.dart';
 
 /// 打开头像大图预览。
 void openUserAvatarPreview(BuildContext context, {required String imageUrl}) {
@@ -34,6 +34,7 @@ class UserAvatarPreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageProvider = CachedNetworkImageProvider(imageUrl);
     return FullscreenMediaSystemUi(
       child: DismissiblePage(
         direction: DismissiblePageDismissDirection.vertical,
@@ -43,19 +44,11 @@ class UserAvatarPreviewPage extends StatelessWidget {
           body: Stack(
             fit: StackFit.expand,
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.translucent,
+              AppZoomableImage(
+                imageProvider: imageProvider,
+                placeholderImageProvider: imageProvider,
+                maxScale: 3,
                 onLongPress: () => _onLongPressSave(context),
-                child: Center(
-                  child: PhotoView(
-                    imageProvider: CachedNetworkImageProvider(imageUrl),
-                    minScale: PhotoViewComputedScale.contained,
-                    maxScale: PhotoViewComputedScale.covered * 3,
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
               ),
               SafeArea(
                 child: Align(

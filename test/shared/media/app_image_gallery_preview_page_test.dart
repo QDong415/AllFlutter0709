@@ -3,10 +3,9 @@ import 'package:all_flutter0709/shared/media/gallery_preview_item.dart';
 import 'package:all_flutter0709/shared/media/preview_save_source.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:photo_view/photo_view.dart';
 
 void main() {
-  testWidgets('横滑后只有当前图片注册 Hero', (tester) async {
+  testWidgets('快速横滑后切换页面且只有当前图片注册 Hero', (tester) async {
     const imageProvider = AssetImage('assets/icons/app_logo.png');
     final itemList = <GalleryPreviewItem>[
       GalleryPreviewItem(
@@ -32,21 +31,20 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
 
-    var heroPhotoViewList = tester
-        .widgetList<PhotoView>(find.byType(PhotoView))
-        .where((photoView) => photoView.heroAttributes != null)
+    var heroList = tester
+        .widgetList<Hero>(find.byType(Hero))
         .toList(growable: false);
-    expect(heroPhotoViewList, hasLength(1));
-    expect(heroPhotoViewList.single.heroAttributes?.tag, 'first');
+    expect(heroList, hasLength(1));
+    expect(heroList.single.tag, 'first');
 
-    await tester.drag(find.byType(PageView), const Offset(-600, 0));
+    await tester.fling(find.byType(PageView), const Offset(-80, 0), 3000);
     await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 300));
 
-    heroPhotoViewList = tester
-        .widgetList<PhotoView>(find.byType(PhotoView))
-        .where((photoView) => photoView.heroAttributes != null)
+    heroList = tester
+        .widgetList<Hero>(find.byType(Hero))
         .toList(growable: false);
-    expect(heroPhotoViewList, hasLength(1));
-    expect(heroPhotoViewList.single.heroAttributes?.tag, 'second');
+    expect(heroList, hasLength(1));
+    expect(heroList.single.tag, 'second');
   });
 }

@@ -1139,10 +1139,9 @@ packages:
   photo_view:
     dependency: "direct main"
     description:
-      name: photo_view
-      sha256: "1fc3d970a91295fbd1364296575f854c9863f225505c28c46e0a03e48960c75e"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
+      path: "packages/photo_view-0.15.0"
+      relative: true
+    source: path
     version: "0.15.0"
   platform:
     dependency: transitive
@@ -1525,6 +1524,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.4.1"
+  swift_transitions:
+    dependency: "direct main"
+    description:
+      name: swift_transitions
+      sha256: f15e3bc9ee789161ec3468c89ae7a1fbba5648dbc02670162ec412d1eec3df44
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.3.0"
   synchronized:
     dependency: transitive
     description:
