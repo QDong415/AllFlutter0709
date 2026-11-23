@@ -5,6 +5,7 @@ import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/app/theme/app_typography.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:swift_transitions/swift_transitions.dart';
 
 /// 用壳层色板组装应用主题。
 ///
@@ -30,7 +31,7 @@ abstract final class AppTheme {
             TargetPlatform.android: PredictiveBackPageTransitionsBuilder(
               fallbackColor: palette.bodyBackground,
             ),
-            TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: const SwiftPageTransitionsBuilder(),
             TargetPlatform.macOS: const CupertinoPageTransitionsBuilder(),
             TargetPlatform.linux: ZoomPageTransitionsBuilder(
               backgroundColor: palette.bodyBackground,
