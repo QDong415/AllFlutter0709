@@ -1,11 +1,15 @@
+import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/auth/presentation/helpers/signup_avatar_helper.dart';
 import 'package:all_flutter0709/features/me/presentation/helpers/me_account_helper.dart';
+import 'package:all_flutter0709/features/user/data/profile_cover_catalog.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_cover.dart';
 import 'package:all_flutter0709/shared/widgets/common_app_bar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +27,7 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
   final UserRepository _userRepository = const UserRepository();
   bool _saving = false;
   bool _uploadingAvatar = false;
+  bool _loadingCoverThumb = false;
 
   Future<void> _save(Map<String, String> fields) async {
     final current = ref.read(accountProvider);
@@ -44,6 +49,48 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
         setState(() => _saving = false);
       }
     }
+  }
+
+  /// 打开更换封面。自选图回到本页后，小图还要从 CDN 拉下来，这段时间保持 loading。
+  Future<void> _openCover() async {
+    if (_saving || _uploadingAvatar || _loadingCoverThumb) {
+      return;
+    }
+    final picture = await context.push<String>(AppRoutes.meCover);
+    if (!mounted || picture == null || picture.trim().isEmpty) {
+      return;
+    }
+    if (_isBundledCover(picture)) {
+      return;
+    }
+    final url = ValueUtil.getQiniuUrlByFileName(picture, thumbnail: true) ?? '';
+    if (url.isEmpty) {
+      return;
+    }
+    setState(() => _loadingCoverThumb = true);
+    try {
+      await precacheImage(
+        CachedNetworkImageProvider(url),
+        context,
+      ).timeout(const Duration(seconds: 20));
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _loadingCoverThumb = false);
+    }
+  }
+
+  bool _isBundledCover(String picture) {
+    final value = picture.trim();
+    if (ProfileCoverCatalog.assetMap.containsKey(value)) {
+      return true;
+    }
+    final slash = value.lastIndexOf('/');
+    if (slash >= 0 && slash < value.length - 1) {
+      return ProfileCoverCatalog.assetMap.containsKey(
+        value.substring(slash + 1),
+      );
+    }
+    return false;
   }
 
   Future<void> _changeAvatar() async {
@@ -195,6 +242,11 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
                 ),
               ),
               _EditRow(
+                label: '封面',
+                onTap: _openCover,
+                trailing: _CoverThumb(cover: account?.cover ?? ''),
+              ),
+              _EditRow(
                 label: '昵称',
                 value: account?.name ?? '',
                 onTap: () => _editText(
@@ -244,10 +296,45 @@ class _ProfileEditPageState extends ConsumerState<ProfileEditPage> {
               ),
             ],
           ),
-          if (_saving || _uploadingAvatar)
-            const Center(child: CircularProgressIndicator()),
+          if (_saving || _uploadingAvatar || _loadingCoverThumb)
+            const ColoredBox(
+              color: Color(0x66000000),
+              child: Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
+    );
+  }
+}
+
+/// 资料行右侧的封面小图。内置封面读本地，自选封面读网络。
+class _CoverThumb extends StatelessWidget {
+  const _CoverThumb({required this.cover});
+
+  final String cover;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = ProfileCoverCatalog.assetFor(cover);
+    final url = ValueUtil.getQiniuUrlByFileName(cover, thumbnail: true) ?? '';
+    final Widget image;
+    if (asset != null) {
+      image = Image.asset(asset, fit: BoxFit.cover);
+    } else if (url.isEmpty) {
+      image = Image.asset(UserDetailCover.defaultAsset, fit: BoxFit.cover);
+    } else {
+      image = CachedNetworkImage(
+        imageUrl: url,
+        fit: BoxFit.cover,
+        placeholder: (_, _) =>
+            Image.asset(UserDetailCover.defaultAsset, fit: BoxFit.cover),
+        errorWidget: (_, _, _) =>
+            Image.asset(UserDetailCover.defaultAsset, fit: BoxFit.cover),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(2),
+      child: SizedBox(width: 36, height: 36, child: image),
     );
   }
 }

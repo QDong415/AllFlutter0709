@@ -19,6 +19,7 @@ import 'package:all_flutter0709/features/user/presentation/helpers/user_remark_d
 import 'package:all_flutter0709/features/user/presentation/helpers/user_follow_helper.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_avatar_preview_page.dart';
+import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_cover.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_header.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_nav_bar.dart';
 import 'package:all_flutter0709/shared/widgets/app_message_dialog.dart';
@@ -65,6 +66,17 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
 
   static const _parallaxHeight = 70.0;
 
+  /// 正方形封面比可见区域上下各多出 [hidden]。下拉位移一半，拉满需要 2×[hidden]。
+  double _maxCoverStretch(BuildContext context) {
+    final side = MediaQuery.sizeOf(context).width;
+    final hidden = math.max(0.0, (side - _coverHeight(context)) / 2);
+    return hidden * 2;
+  }
+
+  double _clampCoverStretch(BuildContext context, double value) {
+    return value.clamp(0.0, _maxCoverStretch(context));
+  }
+
   bool get _isSelf {
     final myId =
         ProviderScope.containerOf(
@@ -78,6 +90,21 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
     return MediaQuery.paddingOf(context).top +
         AppDimens.toolbarHeight +
         _parallaxHeight;
+  }
+
+  /// 正方形封面固定在页面背后。平时居中对齐可见区域，下拉时只跟着走一半。
+  Widget _buildPinnedCover(BuildContext context) {
+    final side = MediaQuery.sizeOf(context).width;
+    final coverHeight = _coverHeight(context);
+    final hidden = math.max(0.0, (side - coverHeight) / 2);
+    final shift = (_stretchOffset / 2).clamp(0.0, hidden);
+    return Positioned(
+      top: -hidden + shift,
+      left: 0,
+      right: 0,
+      height: side,
+      child: UserDetailCover(cover: _profileModel.cover),
+    );
   }
 
   @override
@@ -129,13 +156,13 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
         UserDetailHeader(
           profileModel: _profileModel,
           coverHeight: _coverHeight(context),
-          stretchOffset: _stretchOffset,
           isSelf: _isSelf,
           isFollowLoading: _isFollowLoading,
           onAvatarTap: _onAvatarTap,
           onChatTap: _onChatTap,
           onFollowTap: _onFollowTap,
           onEditTap: _onEditTap,
+          onCoverTap: _onCoverTap,
         ),
         ReceivedGiftSection(key: _giftSectionKey, userId: widget.userId),
       ],
@@ -173,11 +200,11 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
     final coverHeight = _coverHeight(context);
 
     if (notification is OverscrollNotification) {
-      // 顶部下拉：放大封面
+      // 顶部下拉：封面按位移的一半下移，露出被挡住的部分
       if (notification.overscroll < 0 && notification.metrics.pixels <= 0) {
-        final nextStretch = (_stretchOffset - notification.overscroll).clamp(
-          0.0,
-          140.0,
+        final nextStretch = _clampCoverStretch(
+          context,
+          _stretchOffset - notification.overscroll,
         );
         if ((nextStretch - _stretchOffset).abs() > 0.5) {
           setState(() {
@@ -193,7 +220,7 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
         notification is ScrollUpdateNotification) {
       final pixels = notification.metrics.pixels;
       if (pixels < 0) {
-        final nextStretch = -pixels;
+        final nextStretch = _clampCoverStretch(context, -pixels);
         if ((nextStretch - _stretchOffset).abs() > 0.5 ||
             _collapseProgress != 0) {
           setState(() {
@@ -275,6 +302,18 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
       setState(() => _isFollowLoading = false);
       AppToast.show(context, e.toString());
     }
+  }
+
+  Future<void> _onCoverTap() async {
+    if (!_isSelf) return;
+    if (!context.ensureLoggedIn()) return;
+    final picture = await context.push<String>(AppRoutes.meCover);
+    if (!mounted) return;
+    _applySystemUiOverlayStyle();
+    if (picture == null || picture.isEmpty) return;
+    setState(() {
+      _profileModel = _profileModel.copyWith(cover: picture);
+    });
   }
 
   Future<void> _onEditTap() async {
@@ -415,8 +454,13 @@ class _UserDetailPageState extends TopicListBaseState<UserDetailPage> {
         backgroundColor: context.palette.bodyBackground,
         body: Stack(
           children: [
+            _buildPinnedCover(context),
             EasyRefresh.builder(
-              header: appClassicHeader(context),
+              header: appClassicHeader(
+                context,
+                backgroundColor: Colors.transparent,
+                iconColor: Colors.white,
+              ),
               onRefresh: _onRefresh,
               onLoad: hasMore ? onLoadMoreList : null,
               childBuilder: (context, physics) => _buildScrollBody(physics),

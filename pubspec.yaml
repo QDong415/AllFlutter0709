@@ -112,6 +112,7 @@ flutter:
     - assets/icons/chat/
     - assets/icons/chat/qinput/
     - assets/icons/user/
+    - assets/icons/user/covers/
     - assets/icons/topic/
     - assets/icons/me/
     - assets/icons/gift/

@@ -20,6 +20,7 @@ abstract final class AppRoutes {
   static const conversationFans = 'fans';
   static const me = '/me';
   static const meProfileEdit = '/me/profile-edit';
+  static const meCover = '/me/cover';
   static const meTextEdit = '/me/text-edit';
   static const meFriendship = '/me/friendship';
   static const meTopics = '/me/topics';

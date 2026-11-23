@@ -37,6 +37,7 @@ import 'package:all_flutter0709/features/topic/presentation/topic_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_submit_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_user_select_page.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
+import 'package:all_flutter0709/features/user/presentation/cover_select_page.dart';
 import 'package:all_flutter0709/features/user/presentation/user_detail_page.dart';
 import 'package:all_flutter0709/features/user/presentation/warning_report_page.dart';
 import 'package:flutter/widgets.dart';
@@ -47,6 +48,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshListenable = ValueNotifier<Object?>(null);
   ref.onDispose(refreshListenable.dispose);
   ref.listen(accountProvider, (previous, next) {
+    // 仅登录态变化时刷新 GoRouter（重跑 redirect）。资料、余额、魅力等走
+    // accountProvider，各页 ref.watch 会自行重建，不必动路由。
+    final wasLoggedIn = previous != null;
+    final isLoggedIn = next != null;
+    if (wasLoggedIn == isLoggedIn) {
+      return;
+    }
     refreshListenable.value = Object();
   });
 
@@ -262,6 +270,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: _rootNavigatorKey,
                     path: 'profile-edit',
                     builder: (context, state) => const ProfileEditPage(),
+                  ),
+                  GoRoute(
+                    parentNavigatorKey: _rootNavigatorKey,
+                    path: 'cover',
+                    builder: (context, state) => const CoverSelectPage(),
                   ),
                   GoRoute(
                     parentNavigatorKey: _rootNavigatorKey,

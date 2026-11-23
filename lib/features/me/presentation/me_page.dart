@@ -65,6 +65,7 @@ class _MePageState extends ConsumerState<MePage> {
             current.copyWith(
               name: profile.name,
               avatar: profile.avatar,
+              cover: profile.cover,
               intro: profile.intro,
               gender: profile.gender,
               age: profile.age,

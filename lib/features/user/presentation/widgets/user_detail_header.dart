@@ -4,7 +4,6 @@ import 'package:all_flutter0709/features/user/data/models/user_profile_model.dar
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_ban_label.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_action_buttons.dart';
-import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_cover.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/user_detail_tags.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/vip_halo_avatar.dart';
 import 'package:flutter/material.dart';
@@ -21,18 +20,18 @@ class UserDetailHeader extends StatelessWidget {
     required this.onChatTap,
     required this.onFollowTap,
     required this.onEditTap,
-    this.stretchOffset = 0,
+    required this.onCoverTap,
   });
 
   final UserProfileModel profileModel;
   final double coverHeight;
-  final double stretchOffset;
   final bool isSelf;
   final bool isFollowLoading;
   final VoidCallback onAvatarTap;
   final VoidCallback onChatTap;
   final VoidCallback onFollowTap;
   final VoidCallback onEditTap;
+  final VoidCallback onCoverTap;
 
   static const _avatarSize = 96.0;
   static const _avatarOverlap = 30.0;
@@ -54,7 +53,7 @@ class UserDetailHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: coverHeight + stretchOffset + (112 - _avatarOverlap),
+          height: coverHeight + (112 - _avatarOverlap),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -62,12 +61,37 @@ class UserDetailHeader extends StatelessWidget {
                 top: 0,
                 left: 0,
                 right: 0,
-                child: UserDetailCover(
-                  cover: profileModel.cover,
-                  height: coverHeight,
-                  stretchOffset: stretchOffset,
+                height: coverHeight,
+                child: GestureDetector(
+                  onTap: isSelf ? onCoverTap : null,
+                  behavior: HitTestBehavior.opaque,
+                  child: const SizedBox.expand(),
                 ),
               ),
+              if (isSelf)
+                Positioned(
+                  right: 16,
+                  top: coverHeight - 40,
+                  child: GestureDetector(
+                    onTap: onCoverTap,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0x66000000),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        child: Text(
+                          '更换封面',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               Positioned(
                 left: 0,
                 right: 0,
