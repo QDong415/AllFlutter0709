@@ -273,11 +273,16 @@ class CommentPageResult {
     final rawItems = json['items'] as List<dynamic>? ?? <dynamic>[];
     final total = _CommentJsonParser.parseInt(json['total']);
     final totalPage = _CommentJsonParser.parseInt(json['totalpage']);
+    // 对齐 Android `PagerData.hasMore()`：`totalpage > currentpage`。
+    // 子回复是游标分页，服务端还有更多时 currentpage=0，没有更多时 currentpage=1。
+    final currentPage = json.containsKey('currentpage')
+        ? _CommentJsonParser.parseInt(json['currentpage'])
+        : page;
     final hasMore = json.containsKey('hasmore')
         ? _CommentJsonParser.parseBoolLike(json['hasmore'])
         : json.containsKey('hasMore')
         ? _CommentJsonParser.parseBoolLike(json['hasMore'])
-        : totalPage > page;
+        : totalPage > currentPage;
 
     return CommentPageResult(
       items: rawItems

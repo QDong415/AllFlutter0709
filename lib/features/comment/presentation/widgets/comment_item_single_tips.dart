@@ -16,12 +16,14 @@ class CommentItemSingleTips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayType = item.displayType!;
+    final isLoading = displayType == CommentDisplayType.loadingMoreComment;
+    final canLoadMore = displayType == CommentDisplayType.showMoreComment;
     final label = switch (displayType) {
-      CommentDisplayType.loadingMoreComment => '',
       CommentDisplayType.packUpComment => '已经是全部回复了',
       CommentDisplayType.showMoreComment => '加载全部${item.totalChildCount}条回复',
       _ => '',
     };
+    final lineColor = context.palette.divider;
 
     return ColoredBox(
       color: context.palette.card,
@@ -29,50 +31,62 @@ class CommentItemSingleTips extends StatelessWidget {
         padding: const EdgeInsets.only(left: 12),
         child: Column(
           children: [
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: 64,
-                    child: Stack(
-                      children: [
-                        // 与子评论树竖线对齐：left 12 + 19.7
-                        Positioned(
-                          left: 19.7,
-                          top: 0,
-                          child: Container(
-                            width: 0.6,
-                            height: 24,
-                            color: context.palette.divider,
-                          ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 64,
+                  height: 25,
+                  child: Stack(
+                    children: [
+                      // 与子评论树竖线对齐：left 12 + 19.7
+                      Positioned(
+                        left: 19.7,
+                        top: 0,
+                        child: Container(
+                          width: 0.6,
+                          height: 24,
+                          color: lineColor,
                         ),
-                        Positioned(
-                          left: 20,
-                          top: 24,
-                          child: Container(
-                            width: 20,
-                            height: 0.6,
-                            color: context.palette.divider,
-                          ),
+                      ),
+                      Positioned(
+                        left: 20,
+                        top: 24,
+                        child: Container(
+                          width: 20,
+                          height: 0.6,
+                          color: lineColor,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: canLoadMore ? onTap : null,
+                    behavior: HitTestBehavior.opaque,
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 10, bottom: 2),
-                      child:
-                          displayType == CommentDisplayType.loadingMoreComment
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : GestureDetector(
-                              onTap: onTap,
-                              child: Text(
+                      // 留白放在 GestureDetector 内侧，扩大可点区域（对齐 Android 整 item 可点）
+                      padding: const EdgeInsets.fromLTRB(0, 10, 12, 10),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: isLoading
+                            ? const SizedBox(
+                                width: 25,
+                                height: 25,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  padding: EdgeInsets.zero,
+                                  constraints: BoxConstraints.tightFor(
+                                    width: 25,
+                                    height: 25,
+                                  ),
+                                ),
+                              )
+                            : Text(
                                 label,
                                 style: TextStyle(
                                   fontSize: 16,
@@ -83,20 +97,17 @@ class CommentItemSingleTips extends StatelessWidget {
                                       : const Color(0xFF133465),
                                 ),
                               ),
-                            ),
+                        ),
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             if (showCommentSeparator(displayType))
               Padding(
-                padding: const EdgeInsets.only(left: 61, top: 10),
-                child: Divider(
-                  height: 0.6,
-                  thickness: 0.6,
-                  color: context.palette.divider,
-                ),
+                padding: const EdgeInsets.only(left: 61),
+                child: Divider(height: 0.6, thickness: 0.6, color: lineColor),
               ),
           ],
         ),

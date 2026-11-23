@@ -132,7 +132,7 @@ class TopicAudioPlayController extends ChangeNotifier
     await _startFile(file, generation, key);
   }
 
-  /// 整格滑出屏幕、被盖住或退到后台时调用。下载继续，但完成后不播放。
+  /// 整格滑出屏幕、被盖住或退到后台时调用。下载继续，但完成后不自动播。
   void onHidden(String playKey) {
     if (_playKey != playKey.trim()) {
       return;
@@ -222,6 +222,8 @@ class TopicAudioPlayController extends ChangeNotifier
             return;
           }
           _phase = TopicAudioPhase.playing;
+          _positionSeconds = 0;
+          _progress = 0;
           notifyListeners();
           unawaited(_player.play());
         },
@@ -293,6 +295,13 @@ class TopicAudioPlayController extends ChangeNotifier
 
   void _onPosition(Duration position) {
     if (_phase != TopicAudioPhase.playing && _phase != TopicAudioPhase.paused) {
+      return;
+    }
+    // 新开播且 UI 仍在 0 时，丢弃上一轮残留的 position（常见约 0.2 秒）。
+    if (_phase == TopicAudioPhase.playing &&
+        _progress == 0 &&
+        _positionSeconds == 0 &&
+        position.inMilliseconds > 500) {
       return;
     }
     final total =

@@ -130,7 +130,7 @@ class _CommentPreviewTextState extends State<_CommentPreviewText> {
   Widget build(BuildContext context) {
     final baseStyle = TextStyle(
       color: context.palette.titleText,
-      fontSize: 14,
+      fontSize: 15,
       height: 1.45,
     );
     return Text.rich(

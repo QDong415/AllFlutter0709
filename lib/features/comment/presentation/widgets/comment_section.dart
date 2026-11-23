@@ -250,6 +250,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
   }
 
   Future<void> _loadMoreReplies(CommentDisplayModel actionItem) async {
+    if (actionItem.displayType != CommentDisplayType.showMoreComment) return;
     final loadingIndex = _items.indexOf(actionItem);
     if (loadingIndex == -1) return;
 
@@ -271,35 +272,36 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
           (item) =>
               item.isAction &&
               item.parentCid == actionItem.parentCid &&
-              item.displayType != CommentDisplayType.packUpComment,
+              item.displayType == CommentDisplayType.loadingMoreComment,
         );
         if (currentIndex == -1) return;
 
-        _items.removeAt(currentIndex);
-        final children = result.items
+        final childDisplayModelList = result.items
             .map(
-              (comment) => CommentDisplayModel.child(
-                comment,
+              (commentModel) => CommentDisplayModel.child(
+                commentModel,
                 displayType: CommentDisplayType.childCommentMiddle,
               ),
             )
             .toList(growable: false);
-        _items.insertAll(currentIndex, children);
+        _items
+          ..removeAt(currentIndex)
+          ..insertAll(currentIndex, childDisplayModelList);
 
-        if (result.items.isNotEmpty) {
-          final lastChild = result.items.last;
-          _items.insert(
-            currentIndex + children.length,
-            CommentDisplayModel.action(
-              parentCid: actionItem.parentCid,
-              startCid: lastChild.cid,
-              totalChildCount: actionItem.totalChildCount,
-              displayType: result.hasMore
-                  ? CommentDisplayType.showMoreComment
-                  : CommentDisplayType.packUpComment,
-            ),
-          );
-        }
+        final hasMore = result.hasMore && result.items.isNotEmpty;
+        _items.insert(
+          currentIndex + childDisplayModelList.length,
+          CommentDisplayModel.action(
+            parentCid: actionItem.parentCid,
+            startCid: result.items.isEmpty
+                ? actionItem.startCid
+                : result.items.last.cid,
+            totalChildCount: actionItem.totalChildCount,
+            displayType: hasMore
+                ? CommentDisplayType.showMoreComment
+                : CommentDisplayType.packUpComment,
+          ),
+        );
       });
     } catch (error) {
       if (!mounted) return;
@@ -758,6 +760,9 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
   @override
   Widget build(BuildContext context) {
+    final commentTextFontSize = widget.targetType == CommentTargetType.topic
+        ? 16.0
+        : 15.0;
     final body = Column(
       children: [
         Expanded(
@@ -810,6 +815,10 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                       return CommentItemSingleTips(
                         item: item,
                         onTap: () {
+                          if (item.displayType !=
+                              CommentDisplayType.showMoreComment) {
+                            return;
+                          }
                           unawaited(_loadMoreReplies(item));
                         },
                       );
@@ -817,6 +826,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
                     return CommentItem(
                       key: ValueKey('comment-${item.comment!.effectiveId}'),
                       comment: item.comment!,
+                      textFontSize: commentTextFontSize,
                       isChild: item.isChild,
                       authorUserId: widget.authorUserId,
                       displayType: item.displayType!,

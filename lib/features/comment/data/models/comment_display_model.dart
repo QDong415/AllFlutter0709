@@ -14,12 +14,12 @@ bool showCommentSeparator(CommentDisplayType displayType) {
   switch (displayType) {
     case CommentDisplayType.fatherCommentNoChild:
     case CommentDisplayType.childCommentLast:
+    case CommentDisplayType.showMoreComment:
     case CommentDisplayType.packUpComment:
+    case CommentDisplayType.loadingMoreComment:
       return true;
     case CommentDisplayType.fatherCommentContainsChild:
     case CommentDisplayType.childCommentMiddle:
-    case CommentDisplayType.showMoreComment:
-    case CommentDisplayType.loadingMoreComment:
       return false;
   }
 }

@@ -29,6 +29,7 @@ class CommentItem extends StatelessWidget {
     super.key,
     this.onAvatarTap,
     this.onLongPress,
+    this.textFontSize = 15,
   });
 
   final CommentModel comment;
@@ -41,6 +42,9 @@ class CommentItem extends StatelessWidget {
 
   /// 按住约 0.8 秒后回调，参数是这条评论自己的 context，用来定位弹层。
   final void Function(BuildContext anchorContext)? onLongPress;
+
+  /// 昵称和正文共用的字号。动态评论用 16，视频评论保持 15。
+  final double textFontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +110,7 @@ class CommentItem extends StatelessWidget {
                                           ? '匿名用户'
                                           : comment.userName,
                                       style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: textFontSize,
                                         fontWeight: FontWeight.w500,
                                         color: nameColor,
                                       ),
@@ -124,20 +128,29 @@ class CommentItem extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 3),
-                              _CommentRichText(comment: comment),
+                              _CommentRichText(
+                                comment: comment,
+                                fontSize: textFontSize,
+                              ),
                               if (comment.hasAudio) ...[
                                 const SizedBox(height: 6),
-                                CommentFeedAudioBar(comment: comment),
+                                _CommentCellPointerShield(
+                                  child: CommentFeedAudioBar(comment: comment),
+                                ),
                               ],
                               if (comment.localImageFile != null) ...[
                                 const SizedBox(height: 5),
-                                _LocalCommentImage(
-                                  file: comment.localImageFile!,
+                                _CommentCellPointerShield(
+                                  child: _LocalCommentImage(
+                                    file: comment.localImageFile!,
+                                  ),
                                 ),
                               ] else if (comment.pictures.isNotEmpty) ...[
                                 const SizedBox(height: 5),
-                                _NetworkCommentImages(
-                                  pictures: comment.pictures,
+                                _CommentCellPointerShield(
+                                  child: _NetworkCommentImages(
+                                    pictures: comment.pictures,
+                                  ),
                                 ),
                               ],
                               if (comment.isPending) ...[
@@ -158,9 +171,11 @@ class CommentItem extends StatelessWidget {
                         padding: EdgeInsets.only(
                           top: (isChild ? 12 : 10) + avatarTopInset,
                         ),
-                        child: _CommentLikeColumn(
-                          comment: comment,
-                          onTap: onLikeTap,
+                        child: _CommentCellPointerShield(
+                          child: _CommentLikeColumn(
+                            comment: comment,
+                            onTap: onLikeTap,
+                          ),
                         ),
                       ),
                     ],
@@ -204,6 +219,7 @@ class _CommentPressSurfaceState extends State<_CommentPressSurface> {
   static const Duration _longPressDuration = Duration(milliseconds: 800);
 
   bool _pressed = false;
+  bool _ignorePressFromChild = false;
 
   void _setPressed(bool value) {
     if (_pressed == value) return;
@@ -212,11 +228,23 @@ class _CommentPressSurfaceState extends State<_CommentPressSurface> {
     });
   }
 
+  /// 子区域（语音、点赞等）接管 pointer 时不改变整格底色。
+  void ignorePressFromChild() {
+    _ignorePressFromChild = true;
+    _setPressed(false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Listener(
       behavior: HitTestBehavior.opaque,
-      onPointerDown: (_) => _setPressed(true),
+      onPointerDown: (_) {
+        if (_ignorePressFromChild) {
+          _ignorePressFromChild = false;
+          return;
+        }
+        _setPressed(true);
+      },
       onPointerUp: (_) => _setPressed(false),
       onPointerCancel: (_) => _setPressed(false),
       child: RawGestureDetector(
@@ -250,6 +278,26 @@ class _CommentPressSurfaceState extends State<_CommentPressSurface> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 包在语音、点赞等子控件外，避免整格跟着变 pressed 底色。
+class _CommentCellPointerShield extends StatelessWidget {
+  const _CommentCellPointerShield({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        context
+            .findAncestorStateOfType<_CommentPressSurfaceState>()
+            ?.ignorePressFromChild();
+      },
+      child: child,
     );
   }
 }
@@ -296,16 +344,18 @@ class _CommentTree extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              GestureDetector(
-                onTap: onAvatarTap,
-                behavior: HitTestBehavior.opaque,
-                child: VipHaloAvatar(
-                  size: parentAvatarSize,
-                  vip: vip,
-                  gender: gender,
-                  borderWidth: parentAvatarBorder,
-                  borderColor: context.palette.divider,
-                  imageUrl: avatarUrl,
+              _CommentCellPointerShield(
+                child: GestureDetector(
+                  onTap: onAvatarTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: VipHaloAvatar(
+                    size: parentAvatarSize,
+                    vip: vip,
+                    gender: gender,
+                    borderWidth: parentAvatarBorder,
+                    borderColor: context.palette.divider,
+                    imageUrl: avatarUrl,
+                  ),
                 ),
               ),
               if (displayType == CommentDisplayType.fatherCommentContainsChild)
@@ -355,10 +405,12 @@ class _CommentTree extends StatelessWidget {
             Positioned(
               left: 40,
               top: 10,
-              child: GestureDetector(
-                onTap: onAvatarTap,
-                behavior: HitTestBehavior.opaque,
-                child: _CommentAvatar(size: 24, avatarUrl: avatarUrl),
+              child: _CommentCellPointerShield(
+                child: GestureDetector(
+                  onTap: onAvatarTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: _CommentAvatar(size: 24, avatarUrl: avatarUrl),
+                ),
               ),
             ),
           ],
@@ -392,9 +444,10 @@ class _CommentAvatar extends StatelessWidget {
 }
 
 class _CommentRichText extends StatefulWidget {
-  const _CommentRichText({required this.comment});
+  const _CommentRichText({required this.comment, required this.fontSize});
 
   final CommentModel comment;
+  final double fontSize;
 
   @override
   State<_CommentRichText> createState() => _CommentRichTextState();
@@ -428,7 +481,7 @@ class _CommentRichTextState extends State<_CommentRichText> {
         ? palette.nameText
         : const Color(0xFF133465);
     final baseStyle = TextStyle(
-      fontSize: 15,
+      fontSize: widget.fontSize,
       height: 1.45,
       color: palette.titleText,
     );
