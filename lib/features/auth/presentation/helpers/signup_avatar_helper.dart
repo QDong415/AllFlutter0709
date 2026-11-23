@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
+import 'package:all_flutter0709/features/common/helpers/square_jpeg_fit.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,7 +21,7 @@ class SignupAvatarHelper {
   final ImagePicker _imagePicker;
   final Random _random = Random();
 
-  /// 从相册选图并裁剪为 1:1，返回本地文件；取消则返回 null。
+  /// 从相册选图并裁成正方形，最长边 1024，体积压到 300KB 以内。取消则返回 null。
   ///
   /// Android 打开应用内相册。系统选择器在手机上会变成选文件。
   Future<File?> pickAndCropAvatar(BuildContext context) async {
@@ -42,9 +43,11 @@ class SignupAvatarHelper {
 
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: sourceFile.path,
+      maxWidth: SquareJpegFit.edge,
+      maxHeight: SquareJpegFit.edge,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 90,
+      compressQuality: 80,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: '裁剪头像',
@@ -57,6 +60,8 @@ class SignupAvatarHelper {
         ),
         IOSUiSettings(
           title: '裁剪头像',
+          cancelButtonTitle: '取消',
+          doneButtonTitle: '完成',
           aspectRatioLockEnabled: true,
           resetAspectRatioEnabled: false,
           aspectRatioPickerButtonHidden: true,
@@ -68,7 +73,7 @@ class SignupAvatarHelper {
     if (croppedFile == null) {
       return null;
     }
-    return File(croppedFile.path);
+    return SquareJpegFit.fit(File(croppedFile.path));
   }
 
   /// 上传头像，返回服务端可用的 filename。

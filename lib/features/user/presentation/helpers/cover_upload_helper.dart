@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
+import 'package:all_flutter0709/features/common/helpers/square_jpeg_fit.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,7 +21,7 @@ class CoverUploadHelper {
   final ImagePicker _imagePicker;
   final Random _random = Random();
 
-  /// 从相册选一张图并裁成正方形。取消时返回 null。
+  /// 从相册选一张图并裁成正方形，最长边 1024，体积压到 300KB 以内。取消时返回 null。
   Future<File?> pickAndCrop(BuildContext context) async {
     final File? sourceFile;
     if (Platform.isAndroid) {
@@ -40,9 +41,11 @@ class CoverUploadHelper {
 
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: sourceFile.path,
+      maxWidth: SquareJpegFit.edge,
+      maxHeight: SquareJpegFit.edge,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 90,
+      compressQuality: 80,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: '裁剪封面',
@@ -66,7 +69,7 @@ class CoverUploadHelper {
     if (croppedFile == null) {
       return null;
     }
-    return File(croppedFile.path);
+    return SquareJpegFit.fit(File(croppedFile.path));
   }
 
   /// 上传自定义封面，返回写入 `user.cover` 的文件名。
