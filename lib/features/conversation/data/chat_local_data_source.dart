@@ -376,6 +376,24 @@ class ChatLocalDataSource {
     );
   }
 
+  /// 发送中尚未拿到 msgid 时，按 client_messageid 更新 extend。
+  Future<void> updateMessageExtendByClientId({
+    required String userId,
+    required int clientMessageId,
+    required String extend,
+  }) async {
+    if (clientMessageId <= 0) {
+      return;
+    }
+    final db = await database;
+    await db.update(
+      _chatTable,
+      {'extend': extend},
+      where: 'userid = ? AND client_messageid = ?',
+      whereArgs: [userId, clientMessageId],
+    );
+  }
+
   Future<void> markConversationRead(
     String userId,
     String conversationId,

@@ -182,6 +182,51 @@ class ConversationRepository {
     );
   }
 
+  /// 创建待发送视频消息。视频文件可以稍后才写入 [ConversationMessage.localFilePath]。
+  Future<ConversationMessage> createPendingVideoMessage({
+    required AccountModel account,
+    required String conversationId,
+    required int width,
+    required int height,
+    required int durationSeconds,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) {
+    return _messageDeliveryService.createPendingVideoMessage(
+      account: account,
+      conversationId: conversationId,
+      width: width,
+      height: height,
+      durationSeconds: durationSeconds,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+  }
+
+  /// 抽封面、压缩并上传视频，成功后返回已发送消息。
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingVideoMessage({
+    required AccountModel account,
+    required ConversationMessage message,
+    required Future<bool> Function() writeCover,
+    required Future<File> Function() prepareVideoFile,
+    int peerGender = 0,
+    ValueChanged<ConversationMessage>? onMessageUpdated,
+    ValueChanged<int>? onProgress,
+  }) {
+    return _messageDeliveryService.sendPendingVideoMessage(
+      account: account,
+      message: message,
+      writeCover: writeCover,
+      prepareVideoFile: prepareVideoFile,
+      peerGender: peerGender,
+      onMessageUpdated: onMessageUpdated,
+      onProgress: onProgress,
+    );
+  }
+
   /// 创建待发送的语音消息，extend 对齐 Android `duration` / `hadplay`。
   Future<ConversationMessage> createPendingVoiceMessage({
     required AccountModel account,

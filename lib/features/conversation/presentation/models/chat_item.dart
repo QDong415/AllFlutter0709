@@ -161,6 +161,35 @@ final class ImageMessage extends MessageItem {
   final double imageHeight;
 }
 
+/// 视频气泡。封面可空，点开用本地文件或远端地址播放。
+final class VideoMessage extends MessageItem {
+  const VideoMessage({
+    required super.id,
+    required super.msgId,
+    required super.clientMessageId,
+    required super.direction,
+    required super.avatarUrl,
+    required super.createTimeSeconds,
+    super.deliveryStatus,
+    super.uploadProgress,
+    this.coverUrl,
+    this.coverPath,
+    this.videoUrl,
+    this.videoPath,
+    required this.videoWidth,
+    required this.videoHeight,
+    required this.durationSeconds,
+  });
+
+  final String? coverUrl;
+  final String? coverPath;
+  final String? videoUrl;
+  final String? videoPath;
+  final double videoWidth;
+  final double videoHeight;
+  final int durationSeconds;
+}
+
 /// 动态分享卡片气泡。
 final class TopicMessage extends MessageItem {
   const TopicMessage({

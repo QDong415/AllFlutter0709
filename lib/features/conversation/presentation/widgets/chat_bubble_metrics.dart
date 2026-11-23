@@ -6,7 +6,7 @@ abstract final class ChatBubbleMetrics {
   static const avatarSize = 40.0;
   static const avatarGap = 10.0;
   static const oppositeReserve = 48.0;
-  static const messageSpacing = 8.0;
+  static const messageSpacing = 12.0;
   static const fontSize = 17.0;
   static const lineHeight = 1.3;
 

@@ -1,4 +1,5 @@
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/presentation/topic_publish_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
@@ -17,8 +18,12 @@ class TopicSubmitProgressBar extends StatelessWidget {
         if (!controller.isVisible) {
           return const SizedBox.shrink();
         }
+        final palette = context.palette;
+        final iconColor = palette.brightness == Brightness.dark
+            ? palette.titleText
+            : null;
         return ColoredBox(
-          color: Colors.white,
+          color: palette.card,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -49,7 +54,7 @@ class TopicSubmitProgressBar extends StatelessWidget {
                             fontSize: 16,
                             color: controller.isFailed
                                 ? Colors.red
-                                : const Color(0xFF5B5B5B),
+                                : palette.bodyText,
                           ),
                         ),
                       ),
@@ -57,11 +62,11 @@ class TopicSubmitProgressBar extends StatelessWidget {
                     if (controller.canRetry)
                       IconButton(
                         onPressed: () => controller.retry(),
-                        icon: const Icon(Icons.refresh, size: 22),
+                        icon: Icon(Icons.refresh, size: 22, color: iconColor),
                       ),
                     IconButton(
                       onPressed: controller.cancel,
-                      icon: const Icon(Icons.close, size: 22),
+                      icon: Icon(Icons.close, size: 22, color: iconColor),
                     ),
                   ],
                 ),
@@ -69,10 +74,10 @@ class TopicSubmitProgressBar extends StatelessWidget {
               LinearProgressIndicator(
                 minHeight: 2,
                 value: controller.isFailed ? 0 : controller.progress,
-                backgroundColor: const Color(0xFFEDEDED),
+                backgroundColor: palette.chatBackground,
                 color: AppColors.link,
               ),
-              const Divider(height: 0.5),
+              Divider(height: 0.5, color: palette.divider),
             ],
           ),
         );

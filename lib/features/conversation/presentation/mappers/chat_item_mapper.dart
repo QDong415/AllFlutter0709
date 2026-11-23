@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/gift/data/gift_model.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_video_file_store.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:intl/intl.dart';
@@ -74,6 +75,30 @@ ChatItem _mapMessage(
         imagePath: hasLocalFile ? localPath : null,
         imageWidth: imageSize['width']!.toDouble(),
         imageHeight: imageSize['height']!.toDouble(),
+      );
+    case ConversationMessageType.video:
+      final localVideo = message.localFilePath.trim();
+      final hasLocalVideo =
+          localVideo.isNotEmpty && File(localVideo).existsSync();
+      final videoPath = hasLocalVideo
+          ? localVideo
+          : ChatVideoFileStore.existingPath(message.filename);
+      return VideoMessage(
+        id: message.itemId,
+        msgId: message.msgId,
+        clientMessageId: message.clientMessageId,
+        direction: direction,
+        avatarUrl: avatarUrl,
+        createTimeSeconds: message.createTimeSeconds,
+        deliveryStatus: deliveryStatus,
+        uploadProgress: message.uploadProgress,
+        coverUrl: message.videoCoverUrl,
+        coverPath: ChatVideoFileStore.existingPath(message.videoCover),
+        videoUrl: message.videoUrl,
+        videoPath: videoPath,
+        videoWidth: message.videoWidth.toDouble(),
+        videoHeight: message.videoHeight.toDouble(),
+        durationSeconds: message.videoSeconds,
       );
     case ConversationMessageType.gift:
       return GiftMessage(

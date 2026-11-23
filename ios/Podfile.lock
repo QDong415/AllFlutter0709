@@ -19,6 +19,8 @@ PODS:
     - UMVerify (>= 3.3.0)
   - UMVerify (4.0.0):
     - UMCommon
+  - video_compress (0.3.0):
+    - Flutter
   - ZXSDK (3.3.3)
 
 DEPENDENCIES:
@@ -26,6 +28,7 @@ DEPENDENCIES:
   - getuiflut (from `.symlinks/plugins/getuiflut/ios`)
   - umeng_common_sdk (from `.symlinks/plugins/umeng_common_sdk/ios`)
   - umeng_verify_sdk (from `.symlinks/plugins/umeng_verify_sdk/ios`)
+  - video_compress (from `.symlinks/plugins/video_compress/ios`)
 
 SPEC REPOS:
   trunk:
@@ -45,6 +48,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/umeng_common_sdk/ios"
   umeng_verify_sdk:
     :path: ".symlinks/plugins/umeng_verify_sdk/ios"
+  video_compress:
+    :path: ".symlinks/plugins/video_compress/ios"
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
@@ -56,6 +61,7 @@ SPEC CHECKSUMS:
   umeng_common_sdk: 095b63e6f83b71548725a7c03a6c17b23be6674b
   umeng_verify_sdk: 64a823bd4528bf46c40759c613d6ab34935b8293
   UMVerify: d961ffe2e4b9f00ad578c373e420ad17f72a1f7c
+  video_compress: f2133a07762889d67f0711ac831faa26f956980e
   ZXSDK: ae61fd6163428d62bf5b12e4c90ac9840d58ca54
 
 PODFILE CHECKSUM: ebf4e7b54c0027885e1b904a42b0b63ad7f72ff5

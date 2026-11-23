@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_video_file_store.dart';
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/controllers/conversation_message_store.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_video_prepare.dart';
 import 'package:flutter/material.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// 聊天发送的展示层状态协调器。
 ///
@@ -108,6 +111,84 @@ class ChatSendCoordinator {
     } catch (error, stackTrace) {
       _markFailed(conversationId, message.clientMessageId);
       ChatSendLog.d('Controller 发图失败: $error');
+      ChatSendLog.d('$stackTrace');
+      rethrow;
+    } finally {
+      await _refreshConversations();
+    }
+  }
+
+  /// 先插入视频气泡，再抽封面、压缩并上传。
+  Future<String?> sendVideo({
+    required AccountModel account,
+    required String conversationId,
+    required AssetEntity asset,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+    VoidCallback? onBubbleInserted,
+  }) async {
+    final oriented = asset.orientatedSize;
+    final message = await _repository.createPendingVideoMessage(
+      account: account,
+      conversationId: conversationId,
+      width: oriented.width.round(),
+      height: oriented.height.round(),
+      durationSeconds: asset.duration,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+    );
+    _messageStore.append(conversationId, message);
+    await _refreshConversations();
+    onBubbleInserted?.call();
+
+    try {
+      final outcome = await _repository.sendPendingVideoMessage(
+        account: account,
+        message: message,
+        peerGender: peerGender,
+        writeCover: () => ChatVideoPrepare.writeCover(
+          asset: asset,
+          filename: message.videoCover,
+        ),
+        prepareVideoFile: () => ChatVideoPrepare.prepare(
+          asset: asset,
+          destination: File(message.localFilePath),
+        ),
+        onMessageUpdated: (updated) {
+          _messageStore.update(
+            conversationId: conversationId,
+            clientMessageId: message.clientMessageId,
+            transform: (current) => updated.copyWith(
+              uploadProgress: current.uploadProgress,
+              status: current.status,
+            ),
+          );
+          final coverKey = updated.videoCover;
+          if (coverKey.isNotEmpty &&
+              ChatVideoFileStore.existingPath(coverKey) != null) {
+            _messageStore.refreshMessage(
+              conversationId: conversationId,
+              clientMessageId: message.clientMessageId,
+            );
+          }
+        },
+        onProgress: (progress) {
+          _messageStore.updateUploadProgress(
+            conversationId: conversationId,
+            clientMessageId: message.clientMessageId,
+            progress: progress,
+          );
+        },
+      );
+      _messageStore.replace(conversationId, outcome.message);
+      ChatSendLog.d('Controller 发视频完成');
+      return outcome.vipTipMessage;
+    } catch (error, stackTrace) {
+      _markFailed(conversationId, message.clientMessageId);
+      ChatSendLog.d('Controller 发视频失败: $error');
       ChatSendLog.d('$stackTrace');
       rethrow;
     } finally {

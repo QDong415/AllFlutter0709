@@ -42,7 +42,7 @@ class ChatVoiceService {
         continue;
       }
 
-      final url = ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true);
+      final url = ValueUtil.getVideoUrlByFileName(filename);
       if (url == null || url.isEmpty) {
         continue;
       }

@@ -1,41 +1,25 @@
 import 'dart:io';
 
-import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
-import 'package:characters/characters.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_album_pick_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
-/// 聊天发送：选图、读尺寸、提交文本/图片/语音。不改 UI 状态。
+/// 聊天发送：选图、读尺寸、提交文本/图片/视频/语音。不改 UI 状态。
 class ChatSendHelper {
-  ChatSendHelper({ImagePicker? imagePicker})
-    : _imagePicker = imagePicker ?? ImagePicker();
+  const ChatSendHelper();
 
   /// 单条文本最大字数；一个汉字 / 字母 / 表情按 1 计。输入不截断，发送时校验。
   static const int maxTextCharacterCount = 1000;
-
-  final ImagePicker _imagePicker;
 
   /// 文本是否超过发送字数上限。
   static bool isTextTooLong(String text) {
     return text.characters.length > maxTextCharacterCount;
   }
 
-  /// 从相册选择图片；取消时返回 null。
-  ///
-  /// Android 打开应用内相册。系统选择器在手机上会变成选文件。
-  Future<File?> pickImageFile(BuildContext context) async {
-    if (Platform.isAndroid) {
-      return const AlbumImagePickHelper().pickImage(context: context);
-    }
-    final pickedFile = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 92,
-    );
-    if (pickedFile == null) {
-      return null;
-    }
-    return File(pickedFile.path);
+  /// 从相册选择图片或视频；取消时返回 null。
+  Future<ChatAlbumPick?> pickAlbumMedia(BuildContext context) {
+    return const ChatAlbumPickHelper().pick(context);
   }
 
   /// 读取图片像素尺寸；失败时返回兜底尺寸。
@@ -90,6 +74,28 @@ class ChatSendHelper {
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
       peerGender: peerGender,
+    );
+  }
+
+  /// 发送视频消息。气泡插入后才会压缩和上传。
+  Future<String?> sendVideo({
+    required ConversationController controller,
+    required String conversationId,
+    required AssetEntity asset,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+    VoidCallback? onBubbleInserted,
+  }) {
+    return controller.sendVideoMessage(
+      conversationId: conversationId,
+      asset: asset,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+      peerGender: peerGender,
+      onBubbleInserted: onBubbleInserted,
     );
   }
 

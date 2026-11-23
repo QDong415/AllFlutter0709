@@ -167,6 +167,7 @@ class ChatBubbleMenuHelper {
     return switch (item) {
       TextMessage(:final text) => text,
       ImageMessage() => '[图片]',
+      VideoMessage() => '[视频]',
       VoiceMessage() => '[语音消息]',
       GiftMessage(:final title, :final count) =>
         count > 1 ? '[礼物]$title x$count' : '[礼物]$title',

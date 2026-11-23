@@ -5,6 +5,7 @@ import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_image_file_store.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_video_file_store.dart';
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
 import 'package:all_flutter0709/features/conversation/data/remind_unread_store.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
@@ -14,6 +15,7 @@ import 'package:all_flutter0709/features/conversation/presentation/controllers/c
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 final conversationControllerProvider = Provider<ConversationController>((ref) {
   final controller = ConversationController(ref);
@@ -163,7 +165,8 @@ class ConversationController extends ChangeNotifier {
         conversationId,
       );
       final withImages = await ChatImageFileStore.withCurrentFiles(messages);
-      _messageStore.setState(conversationId, AsyncValue.data(withImages));
+      final withVideos = await ChatVideoFileStore.withCurrentFiles(withImages);
+      _messageStore.setState(conversationId, AsyncValue.data(withVideos));
     } catch (error, stackTrace) {
       if (!hasPreviousData) {
         _messageStore.setState(
@@ -413,6 +416,32 @@ class ConversationController extends ChangeNotifier {
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
       peerGender: peerGender,
+    );
+  }
+
+  /// 发送聊天视频。气泡先出现，压缩和上传在后台继续。
+  Future<String?> sendVideoMessage({
+    required String conversationId,
+    required AssetEntity asset,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+    VoidCallback? onBubbleInserted,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      throw Exception('请先登录');
+    }
+    return _sendCoordinator.sendVideo(
+      account: account,
+      conversationId: conversationId,
+      asset: asset,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+      peerGender: peerGender,
+      onBubbleInserted: onBubbleInserted,
     );
   }
 

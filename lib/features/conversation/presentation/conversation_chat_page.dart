@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
+import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/account/user_type.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
@@ -18,9 +20,11 @@ import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_
 import 'package:all_flutter0709/features/gift/data/gift_model.dart';
 import 'package:all_flutter0709/features/gift/presentation/gift_send_animation.dart';
 import 'package:all_flutter0709/features/gift/presentation/gift_sheet.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_video_preview_page.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_scroll_helper.dart';
 import 'package:all_flutter0709/core/vip/vip_chat_limit_exception.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_send_helper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_album_pick_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/vip_chat_guard.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_voice_play_helper.dart';
@@ -265,6 +269,8 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
           tappedItem: message,
           items: itemList,
         );
+      case VideoMessage():
+        _openVideo(message);
       case VoiceMessage():
         unawaited(_playVoice(message));
       case TopicMessage(:final tid):
@@ -507,14 +513,20 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     if (!mounted) {
       return;
     }
-    final imageFile = await _sendHelper.pickImageFile(context);
-    if (!mounted) {
+    final picked = await _sendHelper.pickAlbumMedia(context);
+    if (!mounted || picked == null) {
       return;
     }
-    if (imageFile == null) {
-      return;
+    switch (picked) {
+      case ChatAlbumImage(:final file):
+        await _sendPickedImage(file);
+      case ChatAlbumVideo():
+        _panelHelper.hidePanel();
+        unawaited(_sendPickedVideo(picked));
     }
+  }
 
+  Future<void> _sendPickedImage(File imageFile) async {
     final imageSize = await _sendHelper.readImageSize(imageFile);
 
     setState(() {
@@ -549,6 +561,107 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         setState(() {
           _isSubmitting = false;
         });
+      }
+    }
+  }
+
+  ConversationMessage? _rawMessageByClientId(int clientMessageId) {
+    final async =
+        _conversationController?.messagesListenableOf(widget.chatId).value;
+    final list = async?.asData?.value;
+    if (list == null) {
+      return null;
+    }
+    for (final item in list) {
+      if (item.clientMessageId == clientMessageId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  void _openVideo(VideoMessage message) {
+    final local = message.videoPath?.trim() ?? '';
+    final hasLocal = local.isNotEmpty && File(local).existsSync();
+    final videoUrl = message.videoUrl?.trim() ?? '';
+    final raw = _rawMessageByClientId(message.clientMessageId);
+    final filename = raw?.filename.trim() ?? '';
+    final extend = raw?.extend.trim() ?? '';
+    final videoHttpUrl = ValueUtil.getVideoUrlByFileName(
+      filename.isEmpty ? null : filename,
+    );
+    final imageHttpUrl = ValueUtil.getQiniuUrlByFileName(
+      filename.isEmpty ? null : filename,
+      keepOriginal: true,
+    );
+    ChatVideoLog.d(
+      '点击视频 msgId=${message.msgId} clientId=${message.clientMessageId} '
+      'status=${message.deliveryStatus} '
+      'local=$local hasLocal=$hasLocal '
+      'videoUrl=${videoUrl.isEmpty ? "(空)" : videoUrl} '
+      'filename=$filename subtype=${raw?.messageType.subtype} '
+      'extend=$extend',
+    );
+    ChatVideoLog.d(
+      '拼址对照 storageHttp=${AppConfig.instance.cloudStorageHttp} '
+      'videoHttp=${AppConfig.instance.cloudStorageVideoHttp} '
+      '当前播放址(keepOriginal)=$imageHttpUrl '
+      '视频域名址(getVideoUrlByFileName)=$videoHttpUrl',
+    );
+    if (message.deliveryStatus == MessageDeliveryStatus.sending && !hasLocal) {
+      ChatVideoLog.d('未打开预览：发送中且本地文件未就绪');
+      AppToast.show(context, '视频处理中');
+      return;
+    }
+    if (!hasLocal &&
+        (message.deliveryStatus != MessageDeliveryStatus.sent ||
+            videoUrl.isEmpty)) {
+      ChatVideoLog.d('未打开预览：无本地且远端不可用 sent=${message.deliveryStatus}');
+      AppToast.show(context, '视频无法播放');
+      return;
+    }
+    unawaited(
+      TopicVideoPreviewPage.open(
+        context: context,
+        filePath: hasLocal ? local : null,
+        videoUrl: videoUrl,
+      ),
+    );
+  }
+
+  Future<void> _sendPickedVideo(ChatAlbumVideo picked) async {
+    try {
+      final vipTip = await _sendHelper.sendVideo(
+        controller: ref.read(conversationControllerProvider),
+        conversationId: widget.chatId,
+        asset: picked.asset,
+        peerName: _peerName,
+        peerAvatar: _peerAvatar,
+        peerUserType: _peerUserType,
+        peerGender: _peerGender,
+        onBubbleInserted: () {
+          if (!mounted) {
+            return;
+          }
+          _scrollHelper.forceScrollToBottom(
+            itemCount: _currentItemCountHint(),
+          );
+        },
+      );
+      if (!mounted) {
+        return;
+      }
+      _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+      _showVipTip(vipTip);
+    } on VipChatLimitException catch (error) {
+      if (mounted) {
+        await handleVipChatLimitException(context, error);
+      }
+    } catch (error, stackTrace) {
+      ChatSendLog.d('页面发视频失败: $error');
+      ChatSendLog.d('$stackTrace');
+      if (mounted) {
+        _showSnackBar(error.toString());
       }
     }
   }

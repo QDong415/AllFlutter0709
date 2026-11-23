@@ -6,6 +6,7 @@ import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_row.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_text_bubble.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_topic_bubble.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_video_bubble.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_voice_bubble.dart';
 import 'package:flutter/material.dart';
 
@@ -69,6 +70,14 @@ class ChatListItemWidget extends StatelessWidget {
         bubble: ChatImageBubble(
           item: imageItem,
           isSelected: selectedMessageId == imageItem.id,
+        ),
+      ),
+      final VideoMessage videoItem => ChatMessageRow(
+        item: videoItem,
+        actions: actions,
+        bubble: ChatVideoBubble(
+          item: videoItem,
+          isSelected: selectedMessageId == videoItem.id,
         ),
       ),
     };

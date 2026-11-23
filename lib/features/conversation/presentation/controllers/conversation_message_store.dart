@@ -79,6 +79,18 @@ class ConversationMessageStore {
     }
   }
 
+  /// 在不改字段的情况下强制刷新一条消息，例如本地封面文件刚写入沙盒。
+  void refreshMessage({
+    required String conversationId,
+    required int clientMessageId,
+  }) {
+    update(
+      conversationId: conversationId,
+      clientMessageId: clientMessageId,
+      transform: (message) => message.copyWith(),
+    );
+  }
+
   /// 优先按客户端 ID、否则按服务端 ID 更新消息。
   void updateByIdentity({
     required String conversationId,

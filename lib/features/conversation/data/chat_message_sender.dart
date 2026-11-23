@@ -11,6 +11,7 @@ import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_image_file_store.dart';
+import 'package:all_flutter0709/features/conversation/data/chat_video_file_store.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_daily_send_store.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_local_data_source.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
@@ -19,7 +20,7 @@ import 'package:path/path.dart' as path;
 
 /// 聊天消息的数据层投递服务。
 ///
-/// 负责创建并保存 pending 消息、上传图片/语音附件、调用发送/撤回接口，
+/// 负责创建并保存 pending 消息、上传图片/视频/语音附件、调用发送/撤回接口，
 /// 以及把 sent/failed/上传进度写入数据库；不依赖 Widget、界面消息 Store
 /// 或页面状态。展示层统一通过 `ConversationRepository` 间接调用本服务。
 class ChatMessageDeliveryService {
@@ -160,6 +161,192 @@ class ChatMessageDeliveryService {
       logName: '图片',
       onProgress: onProgress,
     );
+  }
+
+  /// 创建并保存待发送视频消息。此时视频文件可能还没写进沙盒。
+  Future<ConversationMessage> createPendingVideoMessage({
+    required AccountModel account,
+    required String conversationId,
+    required int width,
+    required int height,
+    required int durationSeconds,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+  }) async {
+    final randomPart = DateTime.now().millisecondsSinceEpoch;
+    final seconds = _nowSeconds();
+    final videoFilename = '$conversationId-$seconds-$randomPart.mp4';
+    final coverFilename = '$conversationId-$seconds-$randomPart.jpg';
+    final localPath = await ChatVideoFileStore.pathFor(videoFilename);
+    final message = ConversationMessage(
+      msgId: 0,
+      clientMessageId: _nextClientMessageId(),
+      conversationId: conversationId,
+      otherUserId: conversationId,
+      otherName: peerName,
+      otherPhoto: peerAvatar,
+      content: '[视频]',
+      createTimeSeconds: seconds,
+      status: ConversationMessageStatus.sending,
+      type: _chatTypeSingle,
+      messageType: ConversationMessageType.video,
+      filename: videoFilename,
+      extend: ConversationMessage.videoExtendJson(
+        cover: coverFilename,
+        width: width,
+        height: height,
+        durationSeconds: durationSeconds,
+      ),
+      isSender: true,
+      isRead: true,
+      localFilePath: localPath,
+      otherUserType: peerUserType,
+    );
+    return _savePendingMessage(account.userId, message);
+  }
+
+  /// 封面和视频准备好之后上传，再调用发送接口。
+  ///
+  /// [writeCover] 和 [prepareVideoFile] 在气泡已经插入之后执行。进度保持 0，
+  /// 直到视频开始上传。
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingVideoMessage({
+    required AccountModel account,
+    required ConversationMessage message,
+    required Future<bool> Function() writeCover,
+    required Future<File> Function() prepareVideoFile,
+    int peerGender = 0,
+    ValueChanged<ConversationMessage>? onMessageUpdated,
+    ValueChanged<int>? onProgress,
+  }) async {
+    ChatSendLog.d(
+      '发视频开始 clientId=${message.clientMessageId} '
+      'file=${message.localFilePath} key=${message.filename}',
+    );
+    try {
+      final vipTip = await _assertVipAllowsServerSend(
+        account: account,
+        message: message,
+        peerGender: peerGender,
+      );
+      var sending = message;
+      final hasCover = await writeCover();
+      if (!hasCover) {
+        final cleared = ConversationMessage.videoExtendJson(
+          cover: '',
+          width: message.videoWidth,
+          height: message.videoHeight,
+          durationSeconds: message.videoSeconds,
+        );
+        await _localDataSource.updateMessageExtendByClientId(
+          userId: account.userId,
+          clientMessageId: message.clientMessageId,
+          extend: cleared,
+        );
+        sending = message.copyWith(extend: cleared);
+      }
+      onMessageUpdated?.call(sending);
+      final videoFile = await prepareVideoFile();
+      sending = await _alignVideoFile(
+        userId: account.userId,
+        message: sending,
+        file: videoFile,
+      );
+      onMessageUpdated?.call(sending);
+      await _uploadVideoCover(sending);
+      final uploadedKey = await _uploadAttachment(
+        userId: account.userId,
+        message: sending,
+        onProgress: onProgress,
+      );
+      await _localDataSource.updateUploadProgress(
+        account.userId,
+        sending.clientMessageId,
+        100,
+      );
+      if (uploadedKey != sending.filename) {
+        await _localDataSource.updateMessageFilename(
+          userId: account.userId,
+          clientMessageId: sending.clientMessageId,
+          filename: uploadedKey,
+        );
+        final localPath = await ChatVideoFileStore.renameLocalCopy(
+          oldFilename: sending.filename,
+          newFilename: uploadedKey,
+        );
+        sending = sending.copyWith(
+          filename: uploadedKey,
+          localFilePath: localPath ?? sending.localFilePath,
+        );
+        if (localPath != null) {
+          await _localDataSource.updateLocalFilePath(
+            userId: account.userId,
+            localFilePath: localPath,
+            clientMessageId: sending.clientMessageId,
+          );
+        }
+      }
+      final msgId = await _sendChatMessage(account: account, message: sending);
+      await _markSent(account.userId, sending.clientMessageId, msgId);
+      ChatSendLog.d('视频 chat/send 成功 msgid=$msgId');
+      return (
+        message: sending.copyWith(
+          msgId: msgId,
+          status: ConversationMessageStatus.sent,
+          uploadProgress: 100,
+        ),
+        vipTipMessage: vipTip,
+      );
+    } catch (error, stackTrace) {
+      ChatSendLog.d('发视频失败: $error');
+      ChatSendLog.d('$stackTrace');
+      await _markFailed(account.userId, message.clientMessageId);
+      rethrow;
+    }
+  }
+
+  Future<ConversationMessage> _alignVideoFile({
+    required String userId,
+    required ConversationMessage message,
+    required File file,
+  }) async {
+    final filename = path.basename(file.path);
+    var sending = message;
+    if (filename.isNotEmpty && filename != message.filename) {
+      await _localDataSource.updateMessageFilename(
+        userId: userId,
+        clientMessageId: message.clientMessageId,
+        filename: filename,
+      );
+      sending = sending.copyWith(filename: filename);
+    }
+    if (file.path != sending.localFilePath) {
+      await _localDataSource.updateLocalFilePath(
+        userId: userId,
+        localFilePath: file.path,
+        clientMessageId: message.clientMessageId,
+      );
+      sending = sending.copyWith(localFilePath: file.path);
+    }
+    return sending;
+  }
+
+  Future<void> _uploadVideoCover(ConversationMessage message) async {
+    final cover = message.videoCover.trim();
+    if (cover.isEmpty) {
+      return;
+    }
+    final coverFile = File(await ChatVideoFileStore.pathFor(cover));
+    if (!await coverFile.exists() || await coverFile.length() <= 0) {
+      return;
+    }
+    try {
+      await _cloudStorageService.uploadFile(file: coverFile, key: cover);
+      ChatSendLog.d('视频封面上传完成 key=$cover');
+    } catch (error) {
+      ChatSendLog.d('视频封面上传失败，继续发视频: $error');
+    }
   }
 
   /// 创建并保存待发送语音消息。
@@ -425,7 +612,7 @@ class ChatMessageDeliveryService {
     return evaluation.tipMessage;
   }
 
-  /// 文本、语音、动态分享成功发给服务器后 +1。图片、礼物、AI 不占这条额度。
+  /// 文本、语音、动态分享成功发给服务器后 +1。图片、视频、礼物、AI 不占这条额度。
   Future<void> _recordCountableSend(
     AccountModel account,
     ConversationMessage message,

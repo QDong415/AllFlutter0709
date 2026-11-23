@@ -17,3 +17,15 @@ abstract final class ChatSendLog {
     debugPrint('[$tag] $message');
   }
 }
+
+/// 聊天视频播放联调日志。
+///
+/// - Android：`adb logcat | grep ChatVideo`
+/// - iOS：Xcode 控制台过滤 `ChatVideo`
+abstract final class ChatVideoLog {
+  static const tag = 'ChatVideo';
+
+  static void d(String message) {
+    debugPrint('[$tag] $message');
+  }
+}

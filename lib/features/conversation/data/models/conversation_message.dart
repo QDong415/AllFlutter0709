@@ -16,6 +16,9 @@ enum ConversationMessageType {
 
   /// 分享的动态卡片。展示快照在 extend JSON，点开再拉详情。
   topic(6),
+
+  /// 聊天视频。气泡只展示封面，点开再播放。
+  video(7),
   callAudio(10),
   callVideo(11),
 
@@ -135,6 +138,57 @@ class ConversationMessage {
 
   bool get isImage => messageType == ConversationMessageType.image;
 
+  /// 是否为聊天视频。
+  bool get isVideo => messageType == ConversationMessageType.video;
+
+  /// 视频封面对象名。抽封面失败时为空。
+  String get videoCover {
+    if (!isVideo) {
+      return '';
+    }
+    return _extendJsonMap()?['cover']?.toString().trim() ?? '';
+  }
+
+  /// 视频宽。extend 没有有效值时为 0。
+  int get videoWidth => isVideo ? (_readExtendInt('width') ?? 0) : 0;
+
+  /// 视频高。extend 没有有效值时为 0。
+  int get videoHeight => isVideo ? (_readExtendInt('height') ?? 0) : 0;
+
+  /// 视频时长（秒）。
+  int get videoSeconds => isVideo ? (_readExtendInt('duration') ?? 0) : 0;
+
+  /// 视频远端地址。走 [ValueUtil.getVideoUrlByFileName] 视频域名，不用图片 CDN。
+  String? get videoUrl {
+    if (!isVideo) {
+      return null;
+    }
+    return ValueUtil.getVideoUrlByFileName(filename);
+  }
+
+  /// 封面远端地址。封面本身已经很小，不再套缩略图参数。
+  String? get videoCoverUrl {
+    if (!isVideo || videoCover.isEmpty) {
+      return null;
+    }
+    return ValueUtil.getQiniuUrlByFileName(videoCover, keepOriginal: true);
+  }
+
+  /// 生成视频 extend。cover 为空表示没有封面。
+  static String videoExtendJson({
+    required String cover,
+    required int width,
+    required int height,
+    required int durationSeconds,
+  }) {
+    return jsonEncode(<String, dynamic>{
+      'cover': cover,
+      'width': width,
+      'height': height,
+      'duration': durationSeconds,
+    });
+  }
+
   /// 礼物图文件名。优先 extend.picture，其次 filename。
   String get giftPicture {
     if (messageType != ConversationMessageType.gift) {
@@ -186,12 +240,12 @@ class ConversationMessage {
       ? ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true)
       : null;
 
-  /// 语音远端地址；filename 为空时为 null。下载/播放必须用原文件，不要加 imageView。
+  /// 语音远端地址。走视频域名，与动态/评论语音一致。
   String? get voiceUrl {
     if (messageType != ConversationMessageType.voice) {
       return null;
     }
-    return ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true);
+    return ValueUtil.getVideoUrlByFileName(filename);
   }
 
   /// 语音时长（秒）；对齐 Android extend.duration。
@@ -387,6 +441,8 @@ class ConversationMessage {
     switch (messageType) {
       case ConversationMessageType.image:
         return '[图片消息]';
+      case ConversationMessageType.video:
+        return '[视频]';
       case ConversationMessageType.voice:
         return '[语音消息]';
       case ConversationMessageType.gift:

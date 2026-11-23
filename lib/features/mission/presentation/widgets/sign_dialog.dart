@@ -105,25 +105,35 @@ class _SignDialogState extends State<SignDialog> {
                           child: InkWell(
                             onTap: _submitting ? null : _handleSign,
                             borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: Center(
-                                child: _submitting
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text(
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Opacity(
+                                    opacity: _submitting ? 0 : 1,
+                                    child: const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 6),
+                                      child: Text(
                                         '签到',
                                         style: TextStyle(
                                           fontSize: 17,
                                           color: Colors.white,
                                         ),
                                       ),
+                                    ),
+                                  ),
+                                  if (_submitting)
+                                    const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ),

@@ -7,7 +7,7 @@ import 'package:all_flutter0709/features/conversation/data/models/conversation_m
 /// 本地消息已入库后，是否允许请求 `/api/chat/send`。
 ///
 /// 文本、语音、动态分享的条数用 SharedPreferences 里「今天已成功发出」的次数，
-/// 删除本地聊天记录不会恢复额度。图片和礼物不占这条额度，仍会发给服务器。
+/// 删除本地聊天记录不会恢复额度。图片、视频和礼物不占这条额度，仍会发给服务器。
 class VipChatSendEvaluation {
   const VipChatSendEvaluation._({
     required this.allowServerSend,
@@ -55,8 +55,10 @@ class VipChatSendPolicy {
     }
 
     final isGift = message.messageType == ConversationMessageType.gift;
-    final isImage = message.messageType == ConversationMessageType.image;
-    final honorServerBlock = !isGift && !isImage;
+    final isMedia =
+        message.messageType == ConversationMessageType.image ||
+        message.messageType == ConversationMessageType.video;
+    final honorServerBlock = !isGift && !isMedia;
     final tips = <String>[];
     var blockServer = false;
 
