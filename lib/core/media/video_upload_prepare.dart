@@ -11,7 +11,9 @@ class VideoPrepareCancelled implements Exception {
 
 /// 聊天和动态发视频前的本地压缩。
 ///
-/// 长边大于 1280 时压成 720p。宽高未知时也压缩。压缩失败且原片不超过 100MB 时改发原片。
+/// 长边大于 1280 时压成 720p。安卓目标码率约 5.4Mbps；
+/// iPhone 用同样码率封住导出文件大小。宽高未知时也压缩。
+/// 压缩失败且原片不超过 100MB 时改发原片。
 class VideoUploadPrepare {
   VideoUploadPrepare._();
 

@@ -1679,11 +1679,10 @@ packages:
   video_compress:
     dependency: "direct main"
     description:
-      name: video_compress
-      sha256: "31bc5cdb9a02ba666456e5e1907393c28e6e0e972980d7d8d619a7beda0d4f20"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "3.1.4"
+      path: "packages/video_compress"
+      relative: true
+    source: path
+    version: "3.1.4+local"
   video_player:
     dependency: "direct main"
     description:

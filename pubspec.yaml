@@ -59,7 +59,25 @@ dependencies:
   dismissible_page: ^1.0.2
   gal: ^2.3.2
   video_player: ^2.11.1
-  video_compress: ^3.1.4
+  # video_compress 使用 path 依赖（packages/video_compress），非 pub 官方包。
+  #
+  # 为何本地化：
+  # - 部分华为/海思机型硬解（如 OMX.hisi.video.decoder.avc）对高码率 H.264 敏感，
+  #   动态/聊天里即使用 Res1280x720 压到 720p，官方插件在 Android 仍可能 ~10Mbps，
+  #   iPhone 上也可能压出同样量级，海思上仍可能初始化失败。
+  # - 本 fork 仅在 quality==6（Res1280x720）上改动：Android 固定约 5.4Mbps 码率；
+  #   iOS 用 fileLengthLimit 按时长封顶体积（非精确码率控件）。详见插件内 Kotlin/Swift 注释。
+  # - 业务侧 long边>1280 的压缩入口：lib/core/media/video_upload_prepare.dart。
+  #
+  # 未必有效 / 局限：
+  # - 未在所有问题机型上充分验证；压缩失败或跳过压缩时仍可能上传原片/高码率片。
+  # - 只影响新上传且走压缩成功的文件，历史 S3 原片不会自动修复。
+  # - iOS 限体积是间接控码率，效果因片长、画面复杂度而异。
+  #
+  # 可放弃本方案：若改为服务端上传后统一转码（ffmpeg 等）、或不再针对该播放问题优化，
+  # 可改回 `video_compress: ^3.1.4` 并删除 packages/video_compress，保留 VideoUploadPrepare 即可。
+  video_compress:
+    path: packages/video_compress
   chewie: ^1.14.1
   record: ^6.2.1
   getuiflut: ^0.2.41
