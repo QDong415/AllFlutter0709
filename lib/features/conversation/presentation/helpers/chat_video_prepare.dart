@@ -1,34 +1,20 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:all_flutter0709/core/media/video_upload_prepare.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_video_file_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
-import 'package:video_compress/video_compress.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
-/// 聊天视频发送前的本地处理：抽小封面、按体积决定是否压缩。
-///
-/// 压缩逐条进行。失败且原片不超过 [maxOriginalBytes] 时改发原片。
+/// 聊天视频发送前的本地处理：抽小封面，并交给 [VideoUploadPrepare] 压缩。
 class ChatVideoPrepare {
   ChatVideoPrepare._();
 
-  /// 超过此时长的视频在相册里不可选。
-  static const maxDurationSeconds = 5 * 60;
-
-  /// 原片不超过这个体积就直接传，不再压缩。
-  static const skipCompressBytes = 30 * 1024 * 1024;
-
-  /// 压缩失败时，原片超过这个体积就不再发送。
-  static const maxOriginalBytes = 80 * 1024 * 1024;
-
   static const _coverTargetBytes = 20 * 1024;
   static const _coverLongEdge = 320;
-
-  static Future<void> _queue = Future<void>.value();
 
   /// 抽取封面并写入沙盒。失败时返回 false，不阻断发送。
   static Future<bool> writeCover({
@@ -63,13 +49,7 @@ class ChatVideoPrepare {
     required AssetEntity asset,
     required File destination,
   }) {
-    return _enqueue(() => _prepare(asset, destination));
-  }
-
-  static Future<T> _enqueue<T>(Future<T> Function() job) {
-    final run = _queue.then((_) => job());
-    _queue = run.then((_) {}, onError: (_) {});
-    return run;
+    return _prepare(asset, destination);
   }
 
   static Future<File> _prepare(AssetEntity asset, File destination) async {
@@ -78,60 +58,27 @@ class ChatVideoPrepare {
       throw Exception('视频读取失败');
     }
     final length = await source.length();
-    ChatSendLog.d('视频原片 ${source.path} bytes=$length');
+    final oriented = asset.orientatedSize;
+    final width = oriented.width.round();
+    final height = oriented.height.round();
+    ChatSendLog.d('视频原片 ${source.path} bytes=$length ${width}x$height');
     if (length <= 0) {
       throw Exception('视频读取失败');
     }
-    if (length <= skipCompressBytes) {
-      final target = _retarget(destination, path.extension(source.path));
-      ChatSendLog.d('原片不超过 30MB，跳过压缩 -> ${target.path}');
-      return _copyKeep(source, target);
-    }
 
-    try {
-      final compressed = await _compress(source);
-      final output = await _place(compressed, destination);
-      ChatSendLog.d(
-        '视频压缩完成 ${output.path} bytes=${await output.length()}',
-      );
-      return output;
-    } catch (error) {
-      ChatSendLog.d('视频压缩失败，改判断原片: $error');
-      try {
-        await VideoCompress.cancelCompression();
-      } catch (_) {}
-      if (length > maxOriginalBytes) {
-        throw Exception('视频太大，发送失败');
-      }
-      final target = _retarget(destination, path.extension(source.path));
-      ChatSendLog.d('压缩失败，改发原片 -> ${target.path}');
-      return _copyKeep(source, target);
-    }
-  }
-
-  static Future<File> _compress(File source) async {
-    final info = await VideoCompress.compressVideo(
-      source.path,
-      quality: VideoQuality.Res1280x720Quality,
-      deleteOrigin: false,
-      includeAudio: true,
+    final prepared = await VideoUploadPrepare.prepare(
+      source: source,
+      width: width,
+      height: height,
     );
-    final fromFile = info?.file;
-    if (fromFile != null &&
-        await fromFile.exists() &&
-        await fromFile.length() > 0) {
-      return fromFile;
+    if (prepared.path == source.path) {
+      final target = _retarget(destination, path.extension(source.path));
+      ChatSendLog.d('使用原片 -> ${target.path}');
+      return _copyKeep(source, target);
     }
-    final rawPath = info?.path?.trim() ?? '';
-    if (rawPath.isEmpty) {
-      throw Exception('压缩结果为空');
-    }
-    final decoded = File(Uri.decodeFull(rawPath));
-    final compressed = await decoded.exists() ? decoded : File(rawPath);
-    if (!await compressed.exists() || await compressed.length() <= 0) {
-      throw Exception('压缩结果为空');
-    }
-    return compressed;
+    final output = await _place(prepared, destination);
+    ChatSendLog.d('视频压缩完成 ${output.path} bytes=${await output.length()}');
+    return output;
   }
 
   static Future<Uint8List?> _coverBytes(AssetEntity asset) async {

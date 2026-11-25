@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
-import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_video_prepare.dart';
-import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -42,7 +40,6 @@ class ChatAlbumPickHelper {
           requestType: RequestType.common,
           themeColor: AppColors.link,
           textDelegate: const AssetPickerTextDelegate(),
-          selectPredicate: _allowSelect,
         ),
       );
     } on StateError {
@@ -63,21 +60,6 @@ class ChatAlbumPickHelper {
       return null;
     }
     return ChatAlbumImage(file);
-  }
-
-  Future<bool> _allowSelect(
-    BuildContext context,
-    AssetEntity asset,
-    bool isSelected,
-  ) async {
-    if (isSelected || asset.type != AssetType.video) {
-      return true;
-    }
-    if (asset.duration <= ChatVideoPrepare.maxDurationSeconds) {
-      return true;
-    }
-    AppToast.show(context, '视频不能超过 5 分钟');
-    return false;
   }
 
   /// HEIC 转成系统导出的 JPEG。iOS 再压到接近原来系统选择器的质量。

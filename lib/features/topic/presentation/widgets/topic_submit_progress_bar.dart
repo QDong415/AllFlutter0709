@@ -73,7 +73,11 @@ class TopicSubmitProgressBar extends StatelessWidget {
               ),
               LinearProgressIndicator(
                 minHeight: 2,
-                value: controller.isFailed ? 0 : controller.progress,
+                value: controller.isFailed
+                    ? 0
+                    : controller.isCompressing
+                    ? null
+                    : controller.progress,
                 backgroundColor: palette.chatBackground,
                 color: AppColors.link,
               ),

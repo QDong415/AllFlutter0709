@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_upload_result.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
+import 'package:all_flutter0709/core/media/video_upload_prepare.dart';
 import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
 import 'package:all_flutter0709/features/topic/data/topic_repository.dart';
@@ -59,6 +60,7 @@ class TopicPublishController extends ChangeNotifier {
   bool _shouldRefreshList = false;
   bool _cancelled = false;
   bool _disposed = false;
+  bool _compressing = false;
   Map<String, dynamic>? _lastParamsMap;
   List<TopicSubmitMediaModel>? _lastMediaList;
   File? _audioFile;
@@ -81,6 +83,9 @@ class TopicPublishController extends ChangeNotifier {
   bool get isVisible => _phase != TopicPublishPhase.idle;
 
   bool get isBusy => _phase == TopicPublishPhase.uploading;
+
+  /// 正在把视频压成 720p。这段进度条走不确定动画，不写入 [progress]。
+  bool get isCompressing => _compressing;
 
   bool get isFailed => _phase == TopicPublishPhase.failed;
 
@@ -140,6 +145,7 @@ class TopicPublishController extends ChangeNotifier {
     _cancelled = true;
     _uploadProgress.stop();
     _cancelUploads();
+    unawaited(VideoUploadPrepare.cancel(this));
     hide();
   }
 
@@ -149,6 +155,7 @@ class TopicPublishController extends ChangeNotifier {
 
   void hide() {
     _uploadProgress.stop();
+    _compressing = false;
     _phase = TopicPublishPhase.idle;
     _progress = 0;
     _statusText = '';
@@ -238,7 +245,12 @@ class TopicPublishController extends ChangeNotifier {
     Map<String, dynamic> paramsMap,
     TopicSubmitMediaModel mediaModel,
   ) async {
-    debugPrint('[TopicPublish] 开始上传视频 ${mediaModel.file.path}');
+    debugPrint('[TopicPublish] 开始处理视频 ${mediaModel.file.path}');
+    final uploadFile = await _prepareVideoFile(mediaModel);
+    if (_cancelled || uploadFile == null) {
+      return;
+    }
+    debugPrint('[TopicPublish] 开始上传视频 ${uploadFile.path}');
     final useS3 = AppConfig.instance.cloudStorage == CloudStorage.s3;
     String? token;
     if (!useS3) {
@@ -279,7 +291,7 @@ class TopicPublishController extends ChangeNotifier {
     }
 
     final result = await _uploadInSlot(
-      file: mediaModel.file,
+      file: uploadFile,
       token: token,
       keyIndex: videoSlotIndex,
       slotIndex: videoSlotIndex,
@@ -292,7 +304,7 @@ class TopicPublishController extends ChangeNotifier {
     var rawWidth = result.widthText;
     var rawHeight = result.heightText;
     if (useS3 || !result.hasSize) {
-      final localSize = await _readVideoSize(mediaModel.file);
+      final localSize = await _readVideoSize(uploadFile);
       if (localSize != null) {
         rawWidth = '${localSize.$1}';
         rawHeight = '${localSize.$2}';
@@ -321,6 +333,93 @@ class TopicPublishController extends ChangeNotifier {
       '[TopicPublish] 视频上传完成 key=${result.key} '
       'cover=${coverResult?.key} w=$width h=$height',
     );
+  }
+
+  /// 长边超过 1280 时先压成 720p。取消时返回 null。
+  Future<File?> _prepareVideoFile(TopicSubmitMediaModel mediaModel) async {
+    final edges = await _videoEdges(mediaModel);
+    if (_cancelled) {
+      return null;
+    }
+    if (!VideoUploadPrepare.needsCompress(width: edges.$1, height: edges.$2)) {
+      debugPrint(
+        '[TopicPublish] 视频无需压缩 ${edges.$1}x${edges.$2} '
+        '${mediaModel.file.path}',
+      );
+      return mediaModel.file;
+    }
+
+    _compressing = true;
+    _statusText = '正在压缩';
+    _progress = 0;
+    _notify();
+    try {
+      final prepared = await VideoUploadPrepare.prepare(
+        source: mediaModel.file,
+        width: edges.$1,
+        height: edges.$2,
+        owner: this,
+        isCancelled: () => _cancelled,
+      );
+      if (_cancelled) {
+        return null;
+      }
+      if (prepared.path == mediaModel.file.path) {
+        return mediaModel.file;
+      }
+      return _adoptCompressed(mediaModel.file, prepared);
+    } on VideoPrepareCancelled {
+      return null;
+    } finally {
+      final wasCompressing = _compressing;
+      _compressing = false;
+      if (wasCompressing &&
+          !_cancelled &&
+          !_disposed &&
+          _phase == TopicPublishPhase.uploading) {
+        _statusText = '正在上传';
+        _notify();
+      }
+    }
+  }
+
+  /// 优先用相册里已经转正的宽高，读不到再打开本地文件。
+  Future<(int, int)> _videoEdges(TopicSubmitMediaModel mediaModel) async {
+    final asset = mediaModel.asset;
+    if (asset != null) {
+      final size = asset.orientatedSize;
+      final width = size.width.round();
+      final height = size.height.round();
+      if (width > 0 && height > 0) {
+        return (width, height);
+      }
+    }
+    final read = await _readVideoSize(mediaModel.file);
+    if (read != null) {
+      return read;
+    }
+    return (0, 0);
+  }
+
+  /// 压缩结果挪到本次发布的临时目录，避免插件缓存被清掉。
+  Future<File> _adoptCompressed(File source, File compressed) async {
+    final dest = File('${source.parent.path}/video.mp4');
+    if (dest.path == compressed.path) {
+      return dest;
+    }
+    await dest.parent.create(recursive: true);
+    if (await dest.exists()) {
+      await dest.delete();
+    }
+    try {
+      return await compressed.rename(dest.path);
+    } on FileSystemException {
+      final copied = await compressed.copy(dest.path);
+      try {
+        await compressed.delete();
+      } catch (_) {}
+      return copied;
+    }
   }
 
   /// S3 发视频：从相册资源抽 JPEG 封面；失败则返回 null，不阻断发帖。
@@ -492,7 +591,8 @@ class TopicPublishController extends ChangeNotifier {
   }
 
   bool _hasUploadedMedia(Map<String, dynamic> paramsMap) {
-    return !_isBlank(paramsMap['photoarray']) || !_isBlank(paramsMap['videourl']);
+    return !_isBlank(paramsMap['photoarray']) ||
+        !_isBlank(paramsMap['videourl']);
   }
 
   bool _isBlank(Object? value) {
@@ -641,6 +741,7 @@ class TopicPublishController extends ChangeNotifier {
     _cancelled = true;
     _uploadProgress.stop();
     _cancelUploads();
+    unawaited(VideoUploadPrepare.cancel(this));
     super.dispose();
   }
 }
@@ -676,9 +777,7 @@ class _TopicUploadProgress {
     _fileBytes = fileBytes;
     _startedAt = DateTime.now();
     onProgress(_slotProgress(0));
-    debugPrint(
-      '[TopicPublish] 开始上传 ${_index + 1}/$_total size=$_fileBytes',
-    );
+    debugPrint('[TopicPublish] 开始上传 ${_index + 1}/$_total size=$_fileBytes');
     _timer = Timer.periodic(_tickInterval, (_) {
       onProgress(_slotProgress(_estimatedFilePercent()));
     });
