@@ -27,6 +27,7 @@ class AccountModel {
     this.charm = 0,
     this.vip = 0,
     this.vipTime = 0,
+    this.inviteCode = '',
   });
 
   final String userId;
@@ -66,6 +67,9 @@ class AccountModel {
   /// 会员到期时间戳，秒。0 或已过期都按非会员（对齐 Buddy `vip_time`）。
   final int vipTime;
 
+  /// 分享用邀请码。空字符串表示历史用户，对外展示 [userId]。
+  final String inviteCode;
+
   bool get isValid => userId.trim().isNotEmpty;
 
   /// 是否为 AI 账号。
@@ -96,6 +100,7 @@ class AccountModel {
     int? charm,
     int? vip,
     int? vipTime,
+    String? inviteCode,
   }) {
     return AccountModel(
       userId: userId ?? this.userId,
@@ -122,6 +127,7 @@ class AccountModel {
       charm: charm ?? this.charm,
       vip: vip ?? this.vip,
       vipTime: vipTime ?? this.vipTime,
+      inviteCode: inviteCode ?? this.inviteCode,
     );
   }
 
@@ -151,6 +157,7 @@ class AccountModel {
       'charm': charm,
       'vip': vip,
       'vip_time': vipTime,
+      'invite_code': inviteCode,
     };
   }
 
@@ -180,6 +187,7 @@ class AccountModel {
       charm: _readInt(json['charm']),
       vip: _readInt(json['vip']),
       vipTime: _readInt(json['vip_time']),
+      inviteCode: _readString(json['invite_code']),
     );
   }
 

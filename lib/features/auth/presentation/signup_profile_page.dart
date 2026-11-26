@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
+import 'package:all_flutter0709/features/auth/data/invite_repository.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/features/auth/presentation/helpers/signup_avatar_helper.dart';
 import 'package:all_flutter0709/features/auth/presentation/models/signup_args.dart';
@@ -11,7 +13,8 @@ import 'package:go_router/go_router.dart';
 import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:all_flutter0709/shared/widgets/gender_pick_menu.dart';
 
-/// 注册第二步：头像（可选）+ 昵称 + 性别（必填，对齐 Buddy）。
+/// 注册第二步：头像（可选）+ 昵称 + 性别（必填）+ 邀请码（选填）。
+/// 进入时按当前 IP 静默预填邀请码，用户可以改掉或清空。
 class SignupProfilePage extends ConsumerStatefulWidget {
   const SignupProfilePage({super.key, required this.args});
 
@@ -23,6 +26,7 @@ class SignupProfilePage extends ConsumerStatefulWidget {
 
 class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
   final _nameController = TextEditingController();
+  final _inviteController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   SignupAvatarHelper? _avatarHelper;
@@ -39,9 +43,25 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_loadMatchedInviteCode());
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
+    _inviteController.dispose();
     super.dispose();
+  }
+
+  /// 进入完善资料时按当前 IP 预填邀请码。用户已经输入过则不再覆盖。
+  Future<void> _loadMatchedInviteCode() async {
+    final code = await const InviteRepository().matchInviteCode();
+    if (!mounted || code.isEmpty || _inviteController.text.trim().isNotEmpty) {
+      return;
+    }
+    _inviteController.text = code;
   }
 
   Future<void> _pickAvatar() async {
@@ -129,6 +149,7 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
             password: widget.args.password,
             gender: _gender,
             avatar: _uploadedAvatarKey ?? '',
+            invitecode: _inviteController.text.trim(),
           );
 
       if (mounted) {
@@ -153,22 +174,26 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
   Widget build(BuildContext context) {
     final busy = _isSubmitting || _isUploadingAvatar;
 
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: const Text('完善资料')),
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + bottomInset),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 50),
+                    SizedBox(height: bottomInset > 0 ? 16 : 50),
                     Center(
                       child: GestureDetector(
                         onTap: busy ? null : _pickAvatar,
@@ -274,6 +299,17 @@ class _SignupProfilePageState extends ConsumerState<SignupProfilePage> {
                           ),
                         );
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _inviteController,
+                      textCapitalization: TextCapitalization.characters,
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        labelText: '邀请码',
+                        hintText: '选填',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     FilledButton(

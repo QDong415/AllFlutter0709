@@ -258,7 +258,11 @@ abstract class TopicListBaseState<T extends StatefulWidget> extends State<T>
       mainAxisSize: MainAxisSize.min,
       children: [
         item,
-        if (index < _topics.length - 1) const SizedBox(height: 10),
+        if (index < _topics.length - 1)
+          ColoredBox(
+            color: context.palette.bodyBackground,
+            child: const SizedBox(height: 10, width: double.infinity),
+          ),
       ],
     );
   }

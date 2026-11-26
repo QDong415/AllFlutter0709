@@ -198,17 +198,23 @@ class AccountRepository {
     required String password,
     required int gender,
     String avatar = '',
+    String invitecode = '',
   }) async {
+    final data = <String, dynamic>{
+      'mobile': mobile,
+      'code': code,
+      'name': name,
+      'password': password,
+      'gender': gender,
+      'avatar': avatar,
+    };
+    final trimmedInviteCode = invitecode.trim();
+    if (trimmedInviteCode.isNotEmpty) {
+      data['invitecode'] = trimmedInviteCode;
+    }
     final response = await HttpClient.instance.post(
       '/api/user/register',
-      data: {
-        'mobile': mobile,
-        'code': code,
-        'name': name,
-        'password': password,
-        'gender': gender,
-        'avatar': avatar,
-      },
+      data: data,
     );
 
     final json = response.data;

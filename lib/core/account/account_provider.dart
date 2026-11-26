@@ -66,6 +66,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
     required String password,
     required int gender,
     String avatar = '',
+    String invitecode = '',
   }) async {
     final account = await _repository.register(
       mobile: mobile,
@@ -74,6 +75,7 @@ class AccountNotifier extends Notifier<AccountModel?> {
       password: password,
       gender: gender,
       avatar: avatar,
+      invitecode: invitecode,
     );
     await _repository.writeAccountToStorage(account);
     HttpClient.instance.updateUserId(account.userId);

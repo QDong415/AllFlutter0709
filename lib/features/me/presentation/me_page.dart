@@ -2,11 +2,13 @@ import 'package:all_flutter0709/app/router/app_routes.dart';
 import 'package:all_flutter0709/app/theme/app_dimens.dart';
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
+import 'package:all_flutter0709/core/account/account.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
 import 'package:all_flutter0709/features/me/data/wallet_repository.dart';
 import 'package:all_flutter0709/features/me/presentation/widgets/me_header.dart';
+import 'package:all_flutter0709/features/me/presentation/widgets/me_invite_link_dialog.dart';
 import 'package:all_flutter0709/features/me/presentation/widgets/me_menu_section.dart';
 import 'package:all_flutter0709/features/user/data/user_repository.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
@@ -18,7 +20,7 @@ import 'package:go_router/go_router.dart';
 /// 「我的」页，对齐 Android `MineFragment`。
 ///
 /// 先用本地缓存的 `app_reviewing` 渲染；为 true 时隐藏充值会员、充值金币、
-/// 魅力提现。进入后再静默拉服务端，不一致才刷新 UI。
+/// 邀请新用户、魅力提现。进入后再静默拉服务端，不一致才刷新 UI。
 class MePage extends ConsumerStatefulWidget {
   const MePage({super.key});
 
@@ -98,6 +100,18 @@ class _MePageState extends ConsumerState<MePage> {
 
   bool _requireLogin() => context.ensureLoggedIn();
 
+  /// 分享码：新用户用邀请码，历史用户用 userid。
+  String _shareCode(AccountModel? account) {
+    if (account == null) {
+      return '';
+    }
+    final code = account.inviteCode.trim();
+    if (code.isNotEmpty) {
+      return code;
+    }
+    return account.userId;
+  }
+
   void _open(String path, {Object? extra}) {
     if (!_requireLogin()) {
       return;
@@ -109,6 +123,7 @@ class _MePageState extends ConsumerState<MePage> {
   Widget build(BuildContext context) {
     final account = ref.watch(accountProvider);
     final loggedIn = account != null;
+    final shareCode = _shareCode(account);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AppSystemUi.overlayForToolbar(context.palette.brightness),
@@ -228,6 +243,26 @@ class _MePageState extends ConsumerState<MePage> {
                           iconAsset: 'assets/icons/me/mine_icon_crash.png',
                           title: '充值金币',
                           onTap: () => _open(AppRoutes.meCharge),
+                        ),
+                        MeMenuItem(
+                          iconAsset: 'assets/icons/me/lord_ic_money.png',
+                          title: '邀请新用户',
+                          detail: shareCode.isEmpty ? '' : '邀请码：$shareCode',
+                          onTap: () {
+                            if (!_requireLogin()) {
+                              return;
+                            }
+                            final code = _shareCode(ref.read(accountProvider));
+                            if (code.isEmpty) {
+                              return;
+                            }
+                            final account = ref.read(accountProvider);
+                            MeInviteLinkDialog.show(
+                              context,
+                              inviteCode: code,
+                              inviterName: account?.name ?? '',
+                            );
+                          },
                         ),
                         MeMenuItem(
                           iconAsset: 'assets/icons/me/mine_icon_mybuy.png',

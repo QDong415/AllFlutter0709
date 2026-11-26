@@ -40,11 +40,15 @@ class MeMenuItem {
     required this.iconAsset,
     required this.title,
     required this.onTap,
+    this.detail = '',
   });
 
   final String iconAsset;
   final String title;
   final VoidCallback onTap;
+
+  /// 标题右侧、箭头左侧的说明，例如邀请码。空则不显示。
+  final String detail;
 }
 
 class _MeMenuRow extends StatelessWidget {
@@ -67,12 +71,27 @@ class _MeMenuRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 15,
                     color: context.palette.bodyText,
                   ),
                 ),
               ),
+              if (item.detail.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 4),
+                  child: Text(
+                    item.detail,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.palette.secondaryText,
+                    ),
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: Image.asset(

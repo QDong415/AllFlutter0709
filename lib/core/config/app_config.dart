@@ -120,6 +120,9 @@ class AppConfig {
   static const _aiCreationCoinCostCacheKey = 'app_config_ai_creation_coin_cost';
   static const _payWay2CacheKey = 'app_config_pay_way2';
   static const _appReviewingCacheKey = 'app_config_app_reviewing';
+  static const _inviteSiteUrlCacheKey = 'app_config_invite_site_url';
+  static const _inviteRewardCoinCacheKey = 'app_config_invite_reward_coin';
+  static const _inviteInviteeCoinCacheKey = 'app_config_invite_invitee_coin';
 
   /// 没拉到配置时的发图上限，单位 MB。
   static const defaultImageUploadMaxMemoryMb = 6;
@@ -145,6 +148,10 @@ class AppConfig {
   /// 创建 AI 成功时扣的金币数；跟服务端 `ai_creation_coin_cost`，0 表示免费。
   static const defaultAiCreationCoinCost = 20;
 
+  static const defaultInviteSiteUrl = 'http://www.itopic.com.cn';
+  static const defaultInviteRewardCoin = 10;
+  static const defaultInviteInviteeCoin = 10;
+
   SharedPreferences? _preferences;
   String? _cachedHttp;
   String? _cachedVideoHttp;
@@ -161,6 +168,9 @@ class AppConfig {
   int? _cachedAiCreationCoinCost;
   String? _cachedPayWay2;
   bool _cachedAppReviewing = false;
+  String? _cachedInviteSiteUrl;
+  int? _cachedInviteRewardCoin;
+  int? _cachedInviteInviteeCoin;
 
   /// 文件访问前缀，跟服务端 `oss_http`。
   String get cloudStorageHttp => _cachedHttp ?? AppEnv.cloudFrontBaseUrl;
@@ -225,6 +235,37 @@ class AppConfig {
   /// 审核期标记。为 true 时「我的」隐藏充值会员、充值金币、魅力提现。
   bool get appReviewing => _cachedAppReviewing;
 
+  /// 邀请下载页域名，跟服务端 `invite_site_url`。不含末尾 `/`。
+  String get inviteSiteUrl {
+    final cached = _cachedInviteSiteUrl?.trim() ?? '';
+    if (cached.isEmpty) {
+      return defaultInviteSiteUrl;
+    }
+    return _stripTrailingSlash(cached);
+  }
+
+  /// 邀请人获得的金币，跟服务端 `invite_reward_coin`。
+  int get inviteRewardCoin =>
+      _cachedInviteRewardCoin ?? defaultInviteRewardCoin;
+
+  /// 被邀请人获得的金币，跟服务端 `invite_invitee_coin`。
+  int get inviteInviteeCoin =>
+      _cachedInviteInviteeCoin ?? defaultInviteInviteeCoin;
+
+  /// 拼接邀请链接：`{inviteSiteUrl}?invitecode=xxxx`
+  String buildInviteLink(String inviteCode) {
+    final code = inviteCode.trim();
+    return '$inviteSiteUrl?invitecode=$code';
+  }
+
+  String _stripTrailingSlash(String url) {
+    var value = url.trim();
+    while (value.endsWith('/')) {
+      value = value.substring(0, value.length - 1);
+    }
+    return value;
+  }
+
   /// 把 `app_reviewing` 转成是否审核中。`true`、`1`、`"1"` 为审核中，缺省为否。
   static bool isReviewingValue(Object? rawValue) {
     return switch (rawValue) {
@@ -279,6 +320,9 @@ class AppConfig {
     _cachedPayWay2 = preferences.getString(_payWay2CacheKey);
     _cachedAppReviewing =
         preferences.getBool(_appReviewingCacheKey) ?? false;
+    _cachedInviteSiteUrl = preferences.getString(_inviteSiteUrlCacheKey);
+    _cachedInviteRewardCoin = preferences.getInt(_inviteRewardCoinCacheKey);
+    _cachedInviteInviteeCoin = preferences.getInt(_inviteInviteeCoinCacheKey);
     // 以前设置页可选上传目标，本地覆盖作废，一律跟服务端。
     preferences.remove('app_config_cloud_storage_override');
     preferences.remove('app_config_oss_upload_override');
@@ -388,6 +432,24 @@ class AppConfig {
         await preferences.setString(_payWay2CacheKey, payWay2);
       }
       setAppReviewing(isReviewingValue(data['app_reviewing']));
+
+      final inviteSiteUrl = data['invite_site_url']?.toString().trim() ?? '';
+      if (inviteSiteUrl.isNotEmpty) {
+        _cachedInviteSiteUrl = inviteSiteUrl;
+        await preferences.setString(_inviteSiteUrlCacheKey, inviteSiteUrl);
+      }
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['invite_reward_coin'],
+        cacheKey: _inviteRewardCoinCacheKey,
+        onCached: (value) => _cachedInviteRewardCoin = value,
+      );
+      await _cacheIntPreference(
+        preferences: preferences,
+        rawValue: data['invite_invitee_coin'],
+        cacheKey: _inviteInviteeCoinCacheKey,
+        onCached: (value) => _cachedInviteInviteeCoin = value,
+      );
     } catch (error) {
       debugPrint('[AppConfig] 刷新配置失败，继续使用本地配置: $error');
     }
