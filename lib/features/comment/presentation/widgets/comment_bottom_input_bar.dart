@@ -36,6 +36,7 @@ class CommentBottomInputBar extends StatelessWidget {
     this.pendingAudioSeconds = 0,
     this.onDeletePendingAudio,
     this.pendingImageFile,
+    this.pendingImageIsVideo = false,
     this.onPendingImageTap,
     this.onDeletePendingImage,
   });
@@ -63,6 +64,7 @@ class CommentBottomInputBar extends StatelessWidget {
   final int pendingAudioSeconds;
   final VoidCallback? onDeletePendingAudio;
   final File? pendingImageFile;
+  final bool pendingImageIsVideo;
   final VoidCallback? onPendingImageTap;
   final VoidCallback? onDeletePendingImage;
 
@@ -116,6 +118,7 @@ class CommentBottomInputBar extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: _PendingCommentImagePreview(
                     file: pendingImageFile!,
+                    showPlayIcon: pendingImageIsVideo,
                     onTap: onPendingImageTap ?? () {},
                     onDelete: onDeletePendingImage ?? () {},
                   ),
@@ -284,9 +287,11 @@ class _PendingCommentImagePreview extends StatelessWidget {
     required this.file,
     required this.onTap,
     required this.onDelete,
+    this.showPlayIcon = false,
   });
 
   final File file;
+  final bool showPlayIcon;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
@@ -307,6 +312,22 @@ class _PendingCommentImagePreview extends StatelessWidget {
               ),
             ),
           ),
+          if (showPlayIcon)
+            const IgnorePointer(
+              child: Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Color(0x66000000),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             top: -6,
             right: -6,

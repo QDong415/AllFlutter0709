@@ -33,7 +33,7 @@ class ChatAlbumLiveImage extends ChatAlbumPick {
   final AssetEntity asset;
 }
 
-/// 聊天「图片」入口的相册。图片和视频在同一个网格里，只能选 1 个。
+/// 聊天和评论共用的相册。图片和视频在同一个网格里，只能选 1 个。
 class ChatAlbumPickHelper {
   const ChatAlbumPickHelper();
 

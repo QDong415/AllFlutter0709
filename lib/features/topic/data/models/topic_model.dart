@@ -37,6 +37,7 @@ class TopicPictureModel {
     this.width,
     this.height,
     this.videoFileName = '',
+    this.videoDurationSeconds = 0,
   });
 
   final String originalUrl;
@@ -44,11 +45,18 @@ class TopicPictureModel {
   final int? width;
   final int? height;
 
-  /// 配对短视频的对象名。空字符串表示普通静图。
+  /// 配对短视频或评论视频的对象名。空字符串表示普通静图。
   final String videoFileName;
 
+  /// 大于 0 表示可拖动进度的普通视频。Live 不写时长。
+  final int videoDurationSeconds;
+
   /// 是否带 Live 短视频。
-  bool get hasLive => videoFileName.trim().isNotEmpty;
+  bool get hasLive => videoFileName.trim().isNotEmpty && !isVideoClip;
+
+  /// 评论里的普通视频：有地址，也有时长。
+  bool get isVideoClip =>
+      videoFileName.trim().isNotEmpty && videoDurationSeconds > 0;
 
   String get heroTag => '$originalUrl|$thumbnailUrl';
 
@@ -81,6 +89,7 @@ class TopicPictureModel {
         height: _TopicJsonParser.parseNullableInt(json['height']),
         videoFileName:
             _TopicJsonParser.parseNullableString(json['videourl']) ?? '',
+        videoDurationSeconds: _TopicJsonParser.parseInt(json['duration']),
       );
     }
 

@@ -8,6 +8,7 @@ import 'package:all_flutter0709/features/conversation/data/chat_video_file_store
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 /// 聊天视频发送前的本地处理：抽小封面，并交给 [VideoUploadPrepare] 压缩。
@@ -41,6 +42,21 @@ class ChatVideoPrepare {
       ChatSendLog.d('视频封面写入失败，继续发送: $error');
       return false;
     }
+  }
+
+  /// 抽出封面写到临时目录。读不到封面时抛出。
+  static Future<File> tempCoverFile(AssetEntity asset) async {
+    final bytes = await _coverBytes(asset);
+    if (bytes == null || bytes.isEmpty) {
+      throw Exception('视频封面读取失败');
+    }
+    final directory = await getTemporaryDirectory();
+    final file = File(
+      '${directory.path}${Platform.pathSeparator}'
+      'video_cover_${DateTime.now().microsecondsSinceEpoch}.jpg',
+    );
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
   }
 
   /// 把相册视频准备成沙盒里待上传的文件。

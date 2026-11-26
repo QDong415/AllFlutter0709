@@ -112,6 +112,7 @@ class CommentModel {
       final seconds = audioDurationSeconds > 0 ? audioDurationSeconds : 1;
       return "$seconds'' 语音";
     }
+    if (pictures.any((picture) => picture.isVideoClip)) return '[视频]';
     if (pictures.isNotEmpty || localImageFile != null) return '[图片]';
     return '';
   }

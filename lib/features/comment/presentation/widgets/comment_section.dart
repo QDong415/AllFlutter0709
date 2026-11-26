@@ -16,12 +16,13 @@ import 'package:all_flutter0709/features/comment/presentation/helpers/comment_lo
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_send_helper.dart';
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_audio_upload.dart';
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_image_upload.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_album_pick_helper.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_video_prepare.dart';
 import 'package:all_flutter0709/features/comment/presentation/helpers/comment_voice_record_helper.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_bottom_input_bar.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_item_single_tips.dart';
 import 'package:all_flutter0709/features/common/widget/common_state_placeholder.dart';
-import 'package:all_flutter0709/features/common/helpers/album_image_pick_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_panel_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_emoji_panel.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_input_bar.dart';
@@ -86,7 +87,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
   bool _isVoiceMode = false;
   File? _pendingAudioFile;
   int _pendingAudioSeconds = 0;
-  File? _pendingImageFile;
+  ChatAlbumPick? _pendingMedia;
+  File? _pendingPreviewFile;
   int _nextPage = 1;
   int _commentCount = 0;
   bool _hasMore = true;
@@ -154,7 +156,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       _replyTarget = null;
       _pendingAudioFile = null;
       _pendingAudioSeconds = 0;
-      _pendingImageFile = null;
+      _pendingMedia = null;
+      _pendingPreviewFile = null;
       _isVoiceMode = false;
       _items.clear();
       _nextPage = 1;
@@ -377,21 +380,82 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       });
     }
     _panelHelper.hidePanel();
-    final file = await const AlbumImagePickHelper().pickImage(context: context);
-    if (!mounted || file == null) {
+    final ChatAlbumPick? picked;
+    try {
+      picked = await const ChatAlbumPickHelper().pick(context);
+    } catch (error) {
+      if (mounted) {
+        _showSnack(error.toString());
+      }
+      return;
+    }
+    if (!mounted || picked == null) {
+      return;
+    }
+    final File preview;
+    try {
+      preview = await _previewFileOf(picked);
+    } catch (error) {
+      if (mounted) {
+        _showSnack(error.toString());
+      }
+      return;
+    }
+    if (!mounted) {
       return;
     }
     setState(() {
-      _pendingImageFile = file;
+      _pendingMedia = picked;
+      _pendingPreviewFile = preview;
     });
   }
 
+  Future<File> _previewFileOf(ChatAlbumPick picked) async {
+    switch (picked) {
+      case ChatAlbumImage(:final file):
+        return file;
+      case ChatAlbumLiveImage(:final asset):
+        final still = await const ChatAlbumPickHelper().imageFileOf(asset);
+        if (still == null) {
+          throw Exception('图片读取失败');
+        }
+        return still;
+      case ChatAlbumVideo(:final asset):
+        return ChatVideoPrepare.tempCoverFile(asset);
+    }
+  }
+
   void _previewPendingImage() {
-    final file = _pendingImageFile;
+    final file = _pendingPreviewFile;
     if (file == null) {
       return;
     }
     unawaited(TopicSubmitLocalPreviewPage.open(context: context, file: file));
+  }
+
+  Future<CommentImageUploadResult> _uploadPendingMedia(
+    ChatAlbumPick media,
+    File? preview,
+  ) {
+    switch (media) {
+      case ChatAlbumImage(:final file):
+        return CommentImageUpload.upload(file);
+      case ChatAlbumLiveImage(:final asset):
+        if (preview == null) {
+          throw Exception('图片读取失败');
+        }
+        return CommentImageUpload.uploadLive(still: preview, asset: asset);
+      case ChatAlbumVideo(:final asset):
+        if (preview == null) {
+          throw Exception('视频封面读取失败');
+        }
+        final seconds = asset.duration <= 0 ? 1 : asset.duration;
+        return CommentImageUpload.uploadVideo(
+          cover: preview,
+          asset: asset,
+          durationSeconds: seconds,
+        );
+    }
   }
 
   Future<void> _sendComment() async {
@@ -408,9 +472,10 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
 
     final content = _inputController.text.trim();
     final pendingAudio = _pendingAudioFile;
-    final pendingImage = _pendingImageFile;
-    if (content.isEmpty && pendingAudio == null && pendingImage == null) {
-      _showSnack('请输入评论、选择图片或录制语音');
+    final pendingMedia = _pendingMedia;
+    final pendingImage = _pendingPreviewFile;
+    if (content.isEmpty && pendingAudio == null && pendingMedia == null) {
+      _showSnack('请输入评论、选择图片或视频，或录制语音');
       return;
     }
     final atUserIds = _inputController.findAtUserIds();
@@ -433,7 +498,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
       _inputController.clearContent();
       _pendingAudioFile = null;
       _pendingAudioSeconds = 0;
-      _pendingImageFile = null;
+      _pendingMedia = null;
+      _pendingPreviewFile = null;
       _syncCommentCount(_commentCount + 1);
     });
     if (!localComment.isRoot) {
@@ -467,8 +533,8 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
         audioKey = await CommentAudioUpload.upload(pendingAudio);
       }
       CommentImageUploadResult? imageResult;
-      if (pendingImage != null) {
-        imageResult = await CommentImageUpload.upload(pendingImage);
+      if (pendingMedia != null) {
+        imageResult = await _uploadPendingMedia(pendingMedia, pendingImage);
       }
       final result = await _sendHelper.submit(
         targetId: widget.targetId,
@@ -504,6 +570,7 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
             pictures: imageResult == null
                 ? comment.pictures
                 : [imageResult.picture],
+            clearLocalImageFile: imageResult != null,
           ),
         );
       });
@@ -880,12 +947,14 @@ class _CommentSectionState extends ConsumerState<CommentSection> {
               _pendingAudioSeconds = 0;
             });
           },
-          pendingImageFile: _pendingImageFile,
+          pendingImageFile: _pendingPreviewFile,
+          pendingImageIsVideo: _pendingMedia is ChatAlbumVideo,
           onImageTap: () => unawaited(_pickCommentImage()),
           onPendingImageTap: _previewPendingImage,
           onDeletePendingImage: () {
             setState(() {
-              _pendingImageFile = null;
+              _pendingMedia = null;
+              _pendingPreviewFile = null;
             });
           },
           replyHintText: _replyTarget?.hintText,

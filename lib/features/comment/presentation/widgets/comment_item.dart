@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_display_model.dart';
 import 'package:all_flutter0709/features/comment/presentation/widgets/comment_feed_audio_bar.dart';
 import 'package:all_flutter0709/features/comment/data/models/comment_model.dart';
+import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_gallery_preview_mapper.dart';
+import 'package:all_flutter0709/features/topic/presentation/widgets/topic_video_preview_page.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_content_text.dart';
 import 'package:all_flutter0709/features/topic/presentation/widgets/topic_like_button.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
@@ -628,7 +631,47 @@ class _NetworkCommentImages extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (pictures[index].hasLive)
+                    if (pictures[index].isVideoClip) ...[
+                      const Center(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Color(0x66000000),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0x66000000),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
+                            child: Text(
+                              _formatCommentVideoDuration(
+                                pictures[index].videoDurationSeconds,
+                              ),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else if (pictures[index].hasLive)
                       const Positioned(left: 4, bottom: 4, child: LiveBadge()),
                   ],
                 ),
@@ -641,6 +684,15 @@ class _NetworkCommentImages extends StatelessWidget {
 
   void _openPreview(BuildContext context, int initialIndex) {
     FocusManager.instance.primaryFocus?.unfocus();
+    final picture = pictures[initialIndex];
+    if (picture.isVideoClip) {
+      final videoUrl =
+          ValueUtil.getVideoUrlByFileName(picture.videoFileName) ?? '';
+      unawaited(
+        TopicVideoPreviewPage.open(context: context, videoUrl: videoUrl),
+      );
+      return;
+    }
     openImageGalleryPreview(
       context,
       itemList: topicPictureModelListToGalleryPreviewItemList(pictures),
@@ -696,6 +748,13 @@ class _CommentLikeColumn extends StatelessWidget {
 }
 
 /// 今天显示 HH:mm，其他日期显示 yyyy-MM-dd。
+String _formatCommentVideoDuration(int seconds) {
+  final safe = seconds < 0 ? 0 : seconds;
+  final minutes = (safe ~/ 60).toString().padLeft(2, '0');
+  final remain = (safe % 60).toString().padLeft(2, '0');
+  return '$minutes:$remain';
+}
+
 String _formatCommentTimeText(int timestamp) {
   if (timestamp <= 0) return '--';
   final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
