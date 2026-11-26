@@ -38,6 +38,7 @@ import 'package:all_flutter0709/features/conversation/presentation/widgets/conve
 import 'package:all_flutter0709/features/user/data/user_remark_store.dart';
 import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_navigation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -264,6 +265,15 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     _panelHelper.hidePanel();
     switch (message) {
       case ImageMessage():
+        if (message.hasLive && !message.canPlayLive) {
+          AppToast.show(
+            context,
+            message.deliveryStatus == MessageDeliveryStatus.sending
+                ? '实况处理中'
+                : '实况无法播放',
+          );
+          break;
+        }
         _imagePreviewHelper.open(
           context: context,
           tappedItem: message,
@@ -522,7 +532,46 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
         await _sendPickedImage(file);
       case ChatAlbumVideo():
         _panelHelper.hidePanel();
-        unawaited(_sendPickedVideo(picked));
+        unawaited(_sendPickedVideo(picked.asset));
+      case ChatAlbumLiveImage():
+        _panelHelper.hidePanel();
+        unawaited(_sendPickedLiveImage(picked.asset));
+    }
+  }
+
+  Future<void> _sendPickedLiveImage(AssetEntity asset) async {
+    try {
+      final vipTip = await _sendHelper.sendLiveImage(
+        controller: ref.read(conversationControllerProvider),
+        conversationId: widget.chatId,
+        asset: asset,
+        peerName: _peerName,
+        peerAvatar: _peerAvatar,
+        peerUserType: _peerUserType,
+        peerGender: _peerGender,
+        onBubbleInserted: () {
+          if (!mounted) {
+            return;
+          }
+          _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+        },
+      );
+      if (!mounted) {
+        return;
+      }
+      _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
+      _startAiTypingIfNeeded();
+      _showVipTip(vipTip);
+    } on VipChatLimitException catch (error) {
+      if (mounted) {
+        await handleVipChatLimitException(context, error);
+      }
+    } catch (error, stackTrace) {
+      ChatSendLog.d('页面发实况图失败: $error');
+      ChatSendLog.d('$stackTrace');
+      if (mounted) {
+        _showSnackBar(error.toString());
+      }
     }
   }
 
@@ -566,8 +615,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
   }
 
   ConversationMessage? _rawMessageByClientId(int clientMessageId) {
-    final async =
-        _conversationController?.messagesListenableOf(widget.chatId).value;
+    final async = _conversationController
+        ?.messagesListenableOf(widget.chatId)
+        .value;
     final list = async?.asData?.value;
     if (list == null) {
       return null;
@@ -629,12 +679,12 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     );
   }
 
-  Future<void> _sendPickedVideo(ChatAlbumVideo picked) async {
+  Future<void> _sendPickedVideo(AssetEntity asset) async {
     try {
       final vipTip = await _sendHelper.sendVideo(
         controller: ref.read(conversationControllerProvider),
         conversationId: widget.chatId,
-        asset: picked.asset,
+        asset: asset,
         peerName: _peerName,
         peerAvatar: _peerAvatar,
         peerUserType: _peerUserType,
@@ -643,9 +693,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
           if (!mounted) {
             return;
           }
-          _scrollHelper.forceScrollToBottom(
-            itemCount: _currentItemCountHint(),
-          );
+          _scrollHelper.forceScrollToBottom(itemCount: _currentItemCountHint());
         },
       );
       if (!mounted) {

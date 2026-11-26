@@ -77,6 +77,35 @@ class ChatSendHelper {
     );
   }
 
+  /// 勾选实况后发图片消息。静图先落成文件，短视频在气泡出现后压缩上传。
+  Future<String?> sendLiveImage({
+    required ConversationController controller,
+    required String conversationId,
+    required AssetEntity asset,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+    VoidCallback? onBubbleInserted,
+  }) async {
+    final imageFile = await const ChatAlbumPickHelper().imageFileOf(asset);
+    if (imageFile == null) {
+      throw Exception('图片读取失败');
+    }
+    final imageSize = await readImageSize(imageFile);
+    return controller.sendLiveImageMessage(
+      conversationId: conversationId,
+      imageFile: imageFile,
+      imageSize: imageSize,
+      asset: asset,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+      peerGender: peerGender,
+      onBubbleInserted: onBubbleInserted,
+    );
+  }
+
   /// 发送视频消息。气泡插入后才会压缩和上传。
   Future<String?> sendVideo({
     required ConversationController controller,

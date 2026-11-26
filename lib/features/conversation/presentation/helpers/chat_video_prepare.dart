@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:all_flutter0709/core/media/live_photo_export.dart';
 import 'package:all_flutter0709/core/media/video_upload_prepare.dart';
 import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/chat_video_file_store.dart';
@@ -78,6 +79,17 @@ class ChatVideoPrepare {
     }
     final output = await _place(prepared, destination);
     ChatSendLog.d('视频压缩完成 ${output.path} bytes=${await output.length()}');
+    return output;
+  }
+
+  /// 导出 Live 配对视频，强制压成 H.264，再放到 [destination]。
+  static Future<File> prepareLive({
+    required AssetEntity asset,
+    required File destination,
+  }) async {
+    final prepared = await LivePhotoExport.compressedPairedVideo(asset: asset);
+    final output = await _place(prepared, destination);
+    ChatSendLog.d('实况视频压缩完成 ${output.path} bytes=${await output.length()}');
     return output;
   }
 

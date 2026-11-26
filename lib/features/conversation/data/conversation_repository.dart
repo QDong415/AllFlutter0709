@@ -154,6 +154,7 @@ class ConversationRepository {
     String peerName = '',
     String peerAvatar = '',
     int peerUserType = 0,
+    bool includeLiveVideo = false,
   }) {
     return _messageDeliveryService.createPendingImageMessage(
       account: account,
@@ -163,6 +164,7 @@ class ConversationRepository {
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,
+      includeLiveVideo: includeLiveVideo,
     );
   }
 
@@ -178,6 +180,26 @@ class ConversationRepository {
       account: account,
       message: message,
       peerGender: peerGender,
+      onProgress: onProgress,
+    );
+  }
+
+  /// 上传静图和实况短视频，成功后返回已发送的图片消息。
+  Future<({ConversationMessage message, String? vipTipMessage})>
+  sendPendingLiveImageMessage({
+    required AccountModel account,
+    required ConversationMessage message,
+    required Future<File> Function() prepareVideoFile,
+    int peerGender = 0,
+    ValueChanged<ConversationMessage>? onMessageUpdated,
+    ValueChanged<int>? onProgress,
+  }) {
+    return _messageDeliveryService.sendPendingLiveImageMessage(
+      account: account,
+      message: message,
+      prepareVideoFile: prepareVideoFile,
+      peerGender: peerGender,
+      onMessageUpdated: onMessageUpdated,
       onProgress: onProgress,
     );
   }

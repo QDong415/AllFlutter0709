@@ -6,6 +6,7 @@ import 'package:all_flutter0709/features/conversation/data/chat_video_file_store
 import 'package:all_flutter0709/features/conversation/data/conversation_repository.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/presentation/controllers/conversation_message_store.dart';
+import 'package:all_flutter0709/core/media/video_upload_prepare.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_video_prepare.dart';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
@@ -118,6 +119,85 @@ class ChatSendCoordinator {
     }
   }
 
+  /// 勾选实况后发图片消息。气泡先用静图，再压配对视频并一起上传。
+  Future<String?> sendLiveImage({
+    required AccountModel account,
+    required String conversationId,
+    required File imageFile,
+    required Size imageSize,
+    required AssetEntity asset,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+    VoidCallback? onBubbleInserted,
+  }) async {
+    ChatSendLog.d(
+      'Controller 发实况图 conversationId=$conversationId '
+      'path=${imageFile.path} size=${imageSize.width}x${imageSize.height}',
+    );
+    final message = await _repository.createPendingImageMessage(
+      account: account,
+      conversationId: conversationId,
+      imageFile: imageFile,
+      imageSize: imageSize,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+      includeLiveVideo: true,
+    );
+    _messageStore.append(conversationId, message);
+    await _refreshConversations();
+    onBubbleInserted?.call();
+
+    try {
+      final outcome = await _repository.sendPendingLiveImageMessage(
+        account: account,
+        message: message,
+        peerGender: peerGender,
+        prepareVideoFile: () async {
+          final path = await ChatVideoFileStore.pathFor(
+            message.liveVideoFileName,
+          );
+          return ChatVideoPrepare.prepareLive(
+            asset: asset,
+            destination: File(path),
+          );
+        },
+        onMessageUpdated: (updated) {
+          _messageStore.update(
+            conversationId: conversationId,
+            clientMessageId: message.clientMessageId,
+            transform: (current) => updated.copyWith(
+              uploadProgress: current.uploadProgress,
+              status: current.status,
+            ),
+          );
+        },
+        onProgress: (progress) {
+          _messageStore.updateUploadProgress(
+            conversationId: conversationId,
+            clientMessageId: message.clientMessageId,
+            progress: progress,
+          );
+        },
+      );
+      _messageStore.replace(conversationId, outcome.message);
+      ChatSendLog.d('Controller 发实况图完成');
+      return outcome.vipTipMessage;
+    } on VideoPrepareCancelled {
+      _markFailed(conversationId, message.clientMessageId);
+      throw Exception('实况视频处理失败');
+    } catch (error, stackTrace) {
+      _markFailed(conversationId, message.clientMessageId);
+      ChatSendLog.d('Controller 发实况图失败: $error');
+      ChatSendLog.d('$stackTrace');
+      rethrow;
+    } finally {
+      await _refreshConversations();
+    }
+  }
+
   /// 先插入视频气泡，再抽封面、压缩并上传。
   Future<String?> sendVideo({
     required AccountModel account,
@@ -130,12 +210,13 @@ class ChatSendCoordinator {
     VoidCallback? onBubbleInserted,
   }) async {
     final oriented = asset.orientatedSize;
+    final durationSeconds = asset.duration;
     final message = await _repository.createPendingVideoMessage(
       account: account,
       conversationId: conversationId,
       width: oriented.width.round(),
       height: oriented.height.round(),
-      durationSeconds: asset.duration,
+      durationSeconds: durationSeconds,
       peerName: peerName,
       peerAvatar: peerAvatar,
       peerUserType: peerUserType,

@@ -73,6 +73,10 @@ ChatItem _mapMessage(
         uploadProgress: message.uploadProgress,
         imageUrl: message.imageUrl,
         imagePath: hasLocalFile ? localPath : null,
+        liveVideoUrl: message.liveVideoUrl,
+        liveVideoPath: ChatVideoFileStore.existingPath(
+          message.liveVideoFileName,
+        ),
         imageWidth: imageSize['width']!.toDouble(),
         imageHeight: imageSize['height']!.toDouble(),
       );

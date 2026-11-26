@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:all_flutter0709/app/theme/app_system_ui.dart';
 import 'package:all_flutter0709/shared/media/app_zoomable_image.dart';
+import 'package:all_flutter0709/shared/media/gallery_live_video.dart';
 import 'package:all_flutter0709/shared/media/gallery_preview_item.dart';
 import 'package:all_flutter0709/shared/media/image_preview_save_actions.dart';
 import 'package:dismissible_page/dismissible_page.dart';
@@ -65,10 +66,15 @@ class _AppImageGalleryPreviewPageState
   }
 
   Future<void> _precacheItem(int index) async {
+    final imageProvider = switch (widget.itemList[index]) {
+      GalleryImagePreviewItem(:final imageProvider) => imageProvider,
+      GalleryLiveVideoPreviewItem(:final coverImageProvider) =>
+        coverImageProvider,
+    };
     try {
-      await precacheImage(widget.itemList[index].imageProvider, context);
+      await precacheImage(imageProvider, context);
     } catch (_) {
-      // 预取失败不影响 PhotoView 自己的加载与错误展示。
+      // 预取失败不影响当前页自己的加载与错误展示。
     }
   }
 
@@ -77,7 +83,15 @@ class _AppImageGalleryPreviewPageState
       return;
     }
     final item = widget.itemList[index];
-    ImagePreviewSaveActions.showSaveSheet(context, saveSource: item.saveSource);
+    switch (item) {
+      case GalleryImagePreviewItem(:final saveSource):
+        ImagePreviewSaveActions.showSaveSheet(context, saveSource: saveSource);
+      case GalleryLiveVideoPreviewItem(:final saveSource):
+        ImagePreviewSaveActions.showSaveVideoSheet(
+          context,
+          saveSource: saveSource,
+        );
+    }
   }
 
   @override
@@ -125,17 +139,33 @@ class _AppImageGalleryPreviewPageState
                       final item = widget.itemList[index];
                       final isCurrentPage = index == _currentIndex;
                       return ClipRect(
-                        child: AppZoomableImage(
-                          imageProvider: item.imageProvider,
-                          placeholderImageProvider:
-                              item.placeholderImageProvider,
-                          heroTag: isCurrentPage ? item.heroTag : null,
-                          maxScale: 4,
-                          onTap: () => Navigator.of(context).maybePop(),
-                          onLongPress: widget.enableSave
-                              ? () => _onLongPressSave(index)
-                              : null,
-                        ),
+                        child: switch (item) {
+                          GalleryImagePreviewItem() => AppZoomableImage(
+                            imageProvider: item.imageProvider,
+                            placeholderImageProvider:
+                                item.placeholderImageProvider,
+                            heroTag: isCurrentPage ? item.heroTag : null,
+                            maxScale: 4,
+                            onTap: () => Navigator.of(context).maybePop(),
+                            onLongPress: widget.enableSave
+                                ? () => _onLongPressSave(index)
+                                : null,
+                          ),
+                          GalleryLiveVideoPreviewItem() => GalleryLiveVideo(
+                            key: ValueKey(index),
+                            coverImageProvider: item.coverImageProvider,
+                            placeholderImageProvider:
+                                item.placeholderImageProvider,
+                            videoUrl: item.videoUrl,
+                            videoPath: item.videoPath,
+                            heroTag: isCurrentPage ? item.heroTag : null,
+                            active: isCurrentPage,
+                            onTap: () => Navigator.of(context).maybePop(),
+                            onLongPress: widget.enableSave
+                                ? () => _onLongPressSave(index)
+                                : null,
+                          ),
+                        },
                       );
                     },
                   ),

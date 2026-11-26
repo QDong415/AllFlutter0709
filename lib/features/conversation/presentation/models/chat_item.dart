@@ -151,14 +151,40 @@ final class ImageMessage extends MessageItem {
     super.uploadProgress,
     this.imageUrl,
     this.imagePath,
+    this.liveVideoUrl,
+    this.liveVideoPath,
     required this.imageWidth,
     required this.imageHeight,
   }) : assert(imageUrl != null || imagePath != null);
 
   final String? imageUrl;
   final String? imagePath;
+
+  /// 实况短视频远端地址。空表示这张图没有实况。
+  final String? liveVideoUrl;
+
+  /// 发送方沙盒里的实况短视频。接收方通常为空，改播 [liveVideoUrl]。
+  final String? liveVideoPath;
   final double imageWidth;
   final double imageHeight;
+
+  bool get hasLive {
+    final remote = liveVideoUrl?.trim() ?? '';
+    final local = liveVideoPath?.trim() ?? '';
+    return remote.isNotEmpty || local.isNotEmpty;
+  }
+
+  /// 本地文件已经写好，或消息已发出且有远端地址时可以打开画廊。
+  bool get canPlayLive {
+    if (!hasLive) {
+      return false;
+    }
+    if ((liveVideoPath?.trim() ?? '').isNotEmpty) {
+      return true;
+    }
+    return deliveryStatus == MessageDeliveryStatus.sent &&
+        (liveVideoUrl?.trim() ?? '').isNotEmpty;
+  }
 }
 
 /// 视频气泡。封面可空，点开用本地文件或远端地址播放。

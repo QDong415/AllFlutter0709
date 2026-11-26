@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
+import 'package:all_flutter0709/shared/media/live_badge.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -99,6 +100,8 @@ class ChatImageBubble extends StatelessWidget {
                 ),
               ),
             ),
+          if (item.hasLive)
+            const Positioned(left: 6, bottom: 6, child: LiveBadge()),
         ],
       ),
     );

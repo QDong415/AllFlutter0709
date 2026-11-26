@@ -42,6 +42,9 @@ class VideoUploadPrepare {
 
   /// 返回实际上传的文件。不需要压缩或压缩失败且允许发原片时，返回 [source]。
   ///
+  /// [force] 为 true 时忽略长边，一律转成 720p H.264。Live 配对视频用这个，
+  /// 避免 1080p 的 HEVC 原片直接上传。
+  /// [allowOriginalFallback] 为 false 时，压缩失败不再改发原片。
   /// [owner] 用来让取消只打断这一次压缩，避免误停队列里另一条正在压的视频。
   static Future<File> prepare({
     required File source,
@@ -49,12 +52,19 @@ class VideoUploadPrepare {
     required int height,
     Object? owner,
     bool Function()? isCancelled,
+    bool force = false,
+    bool allowOriginalFallback = true,
   }) {
-    if (!needsCompress(width: width, height: height)) {
+    if (!force && !needsCompress(width: width, height: height)) {
       return Future<File>.value(source);
     }
     return _enqueue(
-      () => _prepare(source: source, owner: owner, isCancelled: isCancelled),
+      () => _prepare(
+        source: source,
+        owner: owner,
+        isCancelled: isCancelled,
+        allowOriginalFallback: allowOriginalFallback,
+      ),
     );
   }
 
@@ -78,6 +88,7 @@ class VideoUploadPrepare {
     required File source,
     required Object? owner,
     required bool Function()? isCancelled,
+    required bool allowOriginalFallback,
   }) async {
     if (isCancelled?.call() == true) {
       throw const VideoPrepareCancelled();
@@ -105,6 +116,9 @@ class VideoUploadPrepare {
       } catch (_) {}
       if (isCancelled?.call() == true) {
         throw const VideoPrepareCancelled();
+      }
+      if (!allowOriginalFallback) {
+        throw Exception('视频压缩失败');
       }
       if (!canSendOriginal(length)) {
         throw Exception('视频太大，发送失败');

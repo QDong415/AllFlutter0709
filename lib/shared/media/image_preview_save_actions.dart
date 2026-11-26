@@ -6,6 +6,7 @@ import 'package:all_flutter0709/shared/widgets/app_toast.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// 大图预览长按保存：底部菜单与写入相册逻辑集中在此。
 class ImagePreviewSaveActions {
@@ -60,6 +61,76 @@ class ImagePreviewSaveActions {
     );
   }
 
+  /// 弹出「保存视频 / 取消」，并在确认后写入系统相册。
+  static Future<void> showSaveVideoSheet(
+    BuildContext context, {
+    required PreviewSaveSource saveSource,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.white,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Center(
+                  child: Text(
+                    '保存视频',
+                    style: TextStyle(color: Color(0xFF111111), fontSize: 16),
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.of(sheetContext).pop();
+                  if (!context.mounted) {
+                    return;
+                  }
+                  await saveVideoToGallery(context, saveSource);
+                },
+              ),
+              const Divider(height: 1, color: Color(0xFFE5E5E5)),
+              ListTile(
+                title: const Center(
+                  child: Text(
+                    '取消',
+                    style: TextStyle(color: Color(0xFF666666), fontSize: 16),
+                  ),
+                ),
+                onTap: () => Navigator.of(sheetContext).pop(),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 按来源读取或下载视频并保存到相册，失败时 Toast 提示。
+  static Future<void> saveVideoToGallery(
+    BuildContext context,
+    PreviewSaveSource saveSource,
+  ) async {
+    try {
+      final didSave = await _saveVideo(saveSource);
+      if (!context.mounted) {
+        return;
+      }
+      if (!didSave) {
+        _showMessage(context, '视频无效');
+        return;
+      }
+      _showMessage(context, '已保存到相册');
+    } catch (e) {
+      if (!context.mounted) {
+        return;
+      }
+      _showMessage(context, '保存失败: $e');
+    }
+  }
+
   /// 按来源读取或下载图片并保存到相册，失败时 Toast 提示。
   static Future<void> saveToGallery(
     BuildContext context,
@@ -82,6 +153,51 @@ class ImagePreviewSaveActions {
       }
       _showMessage(context, '保存失败: $e');
     }
+  }
+
+  static Future<bool> _saveVideo(PreviewSaveSource saveSource) async {
+    return switch (saveSource) {
+      PreviewSaveFromUrl(:final url) => _saveVideoFromUrl(url),
+      PreviewSaveFromLocalPath(:final path) => _saveVideoFromLocalPath(path),
+    };
+  }
+
+  static Future<bool> _saveVideoFromUrl(String url) async {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+    final dir = await getTemporaryDirectory();
+    final name = _nameFromUrl(trimmed, prefix: 'live');
+    final fileName = name.contains('.') ? name : '$name.mp4';
+    final file = File('${dir.path}/$fileName');
+    try {
+      await _dio.download(trimmed, file.path);
+      if (!await file.exists() || await file.length() <= 0) {
+        return false;
+      }
+      await Gal.putVideo(file.path);
+      return true;
+    } finally {
+      try {
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (_) {}
+    }
+  }
+
+  static Future<bool> _saveVideoFromLocalPath(String path) async {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+    final file = File(trimmed);
+    if (!file.existsSync()) {
+      return false;
+    }
+    await Gal.putVideo(file.path);
+    return true;
   }
 
   static Future<bool> _save(PreviewSaveSource saveSource) async {

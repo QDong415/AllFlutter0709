@@ -1,3 +1,4 @@
+import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/shared/media/gallery_preview_item.dart';
 import 'package:all_flutter0709/shared/media/preview_save_source.dart';
@@ -46,7 +47,19 @@ GalleryPreviewItem _toGalleryPreviewItem(
   final ImageProvider<Object> imageProvider = originalUrl.isNotEmpty
       ? CachedNetworkImageProvider(originalUrl)
       : thumbnailImageProvider!;
-  return GalleryPreviewItem(
+  final videoUrl = pictureModel.hasLive
+      ? ValueUtil.getVideoUrlByFileName(pictureModel.videoFileName) ?? ''
+      : '';
+  if (videoUrl.isNotEmpty) {
+    return GalleryLiveVideoPreviewItem(
+      coverImageProvider: imageProvider,
+      placeholderImageProvider: thumbnailImageProvider,
+      videoUrl: videoUrl,
+      saveSource: PreviewSaveFromUrl(videoUrl),
+      heroTag: heroTag,
+    );
+  }
+  return GalleryImagePreviewItem(
     imageProvider: imageProvider,
     placeholderImageProvider: thumbnailImageProvider,
     saveSource: PreviewSaveFromUrl(imageUrl),

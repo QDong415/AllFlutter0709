@@ -419,6 +419,36 @@ class ConversationController extends ChangeNotifier {
     );
   }
 
+  /// 勾选实况后发图片消息。静图先出气泡，配对短视频压完再一起上传。
+  Future<String?> sendLiveImageMessage({
+    required String conversationId,
+    required File imageFile,
+    required Size imageSize,
+    required AssetEntity asset,
+    String peerName = '',
+    String peerAvatar = '',
+    int peerUserType = 0,
+    int peerGender = 0,
+    VoidCallback? onBubbleInserted,
+  }) async {
+    final account = _ref.read(accountProvider);
+    if (account == null) {
+      throw Exception('请先登录');
+    }
+    return _sendCoordinator.sendLiveImage(
+      account: account,
+      conversationId: conversationId,
+      imageFile: imageFile,
+      imageSize: imageSize,
+      asset: asset,
+      peerName: peerName,
+      peerAvatar: peerAvatar,
+      peerUserType: peerUserType,
+      peerGender: peerGender,
+      onBubbleInserted: onBubbleInserted,
+    );
+  }
+
   /// 发送聊天视频。气泡先出现，压缩和上传在后台继续。
   Future<String?> sendVideoMessage({
     required String conversationId,

@@ -36,12 +36,19 @@ class TopicPictureModel {
     required this.thumbnailUrl,
     this.width,
     this.height,
+    this.videoFileName = '',
   });
 
   final String originalUrl;
   final String thumbnailUrl;
   final int? width;
   final int? height;
+
+  /// 配对短视频的对象名。空字符串表示普通静图。
+  final String videoFileName;
+
+  /// 是否带 Live 短视频。
+  bool get hasLive => videoFileName.trim().isNotEmpty;
 
   String get heroTag => '$originalUrl|$thumbnailUrl';
 
@@ -72,6 +79,8 @@ class TopicPictureModel {
             '',
         width: _TopicJsonParser.parseNullableInt(json['width']),
         height: _TopicJsonParser.parseNullableInt(json['height']),
+        videoFileName:
+            _TopicJsonParser.parseNullableString(json['videourl']) ?? '',
       );
     }
 
@@ -173,8 +182,7 @@ class TopicCommentModel {
       avatar: ValueUtil.getQiniuUrlByFileName(json['avatar']?.toString()),
       toAvatar: ValueUtil.getQiniuUrlByFileName(json['to_avatar']?.toString()),
       userType: UserType.parse(json['user_type']),
-      audioFileName:
-          _TopicJsonParser.parseNullableString(json['audio']) ?? '',
+      audioFileName: _TopicJsonParser.parseNullableString(json['audio']) ?? '',
       audioDurationSeconds: _TopicJsonParser.parseInt(json['duration']),
     );
   }
@@ -268,8 +276,7 @@ class TopicModel {
       videoUrl: ValueUtil.getVideoUrlByFileName(
         _TopicJsonParser.parseNullableString(json['videourl']),
       ),
-      audioFileName:
-          _TopicJsonParser.parseNullableString(json['audio']) ?? '',
+      audioFileName: _TopicJsonParser.parseNullableString(json['audio']) ?? '',
       audioDurationSeconds: _TopicJsonParser.parseInt(json['duration']),
       userType: UserType.parse(json['user_type']),
       sort: _TopicJsonParser.parseInt(json['sort']),

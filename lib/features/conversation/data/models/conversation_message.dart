@@ -240,6 +240,37 @@ class ConversationMessage {
       ? ValueUtil.getQiniuUrlByFileName(filename, keepOriginal: true)
       : null;
 
+  /// 图片消息附带的实况短视频对象名。没有则为空，旧版只当普通图片。
+  String get liveVideoFileName {
+    if (!isImage) {
+      return '';
+    }
+    return _extendJsonMap()?['videourl']?.toString().trim() ?? '';
+  }
+
+  /// 实况短视频远端地址。走视频域名，和动态 Live 一样。
+  String? get liveVideoUrl {
+    final name = liveVideoFileName;
+    if (name.isEmpty) {
+      return null;
+    }
+    return ValueUtil.getVideoUrlByFileName(name);
+  }
+
+  /// 生成图片 extend。带 [liveVideoFileName] 时对方气泡显示 Live，点开播短视频。
+  static String imageExtendJson({
+    required int width,
+    required int height,
+    String liveVideoFileName = '',
+  }) {
+    final map = <String, dynamic>{'width': width, 'height': height};
+    final videoName = liveVideoFileName.trim();
+    if (videoName.isNotEmpty) {
+      map['videourl'] = videoName;
+    }
+    return jsonEncode(map);
+  }
+
   /// 语音远端地址。走视频域名，与动态/评论语音一致。
   String? get voiceUrl {
     if (messageType != ConversationMessageType.voice) {

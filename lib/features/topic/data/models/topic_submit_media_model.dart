@@ -7,12 +7,16 @@ class TopicSubmitMediaModel {
   const TopicSubmitMediaModel({
     required this.file,
     required this.isVideo,
+    this.isLive = false,
     this.duration,
     this.asset,
   });
 
   final File file;
   final bool isVideo;
+
+  /// 相册里的 Live 图。静图走 [file]，发布时再导出配对视频。
+  final bool isLive;
   final Duration? duration;
 
   /// 相册原资源。视频封面用它取缩略图，对齐 Android `Glide.load(LocalMedia)`。

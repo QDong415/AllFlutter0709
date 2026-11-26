@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_service.dart';
 import 'package:all_flutter0709/core/cloud_storage/cloud_storage_upload_result.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
+import 'package:all_flutter0709/core/media/live_photo_export.dart';
 import 'package:all_flutter0709/core/media/video_upload_prepare.dart';
 import 'package:all_flutter0709/core/qiniu/qiniu_upload_service.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
@@ -501,18 +502,25 @@ class TopicPublishController extends ChangeNotifier {
 
     try {
       final photoJsonList = <Map<String, String>>[];
-      for (var index = 0; index < mediaList.length; index++) {
+      final slotTotal = mediaList.fold<int>(
+        0,
+        (sum, mediaModel) => sum + (mediaModel.isLive ? 2 : 1),
+      );
+      var keyIndex = 0;
+      var slotIndex = 0;
+      for (final mediaModel in mediaList) {
         if (_cancelled) {
           return;
         }
-        final mediaModel = mediaList[index];
         final result = await _uploadInSlot(
           file: mediaModel.file,
           token: token,
-          keyIndex: index,
-          slotIndex: index,
-          slotTotal: mediaList.length,
+          keyIndex: keyIndex,
+          slotIndex: slotIndex,
+          slotTotal: slotTotal,
         );
+        keyIndex++;
+        slotIndex++;
         if (_cancelled) {
           return;
         }
@@ -521,7 +529,25 @@ class TopicPublishController extends ChangeNotifier {
         if (!result.hasSize) {
           fallbackSize = await _readImageSize(mediaModel.file);
         }
-        photoJsonList.add(result.toTopicPhotoJson(fallbackSize: fallbackSize));
+        final photoJson = result.toTopicPhotoJson(fallbackSize: fallbackSize);
+        if (mediaModel.isLive) {
+          final videoKey = await _uploadLiveVideo(
+            mediaModel: mediaModel,
+            token: token,
+            keyIndex: keyIndex,
+            slotIndex: slotIndex,
+            slotTotal: slotTotal,
+          );
+          keyIndex++;
+          slotIndex++;
+          if (_cancelled) {
+            return;
+          }
+          if (videoKey != null && videoKey.isNotEmpty) {
+            photoJson['videourl'] = videoKey;
+          }
+        }
+        photoJsonList.add(photoJson);
       }
       paramsMap['photoarray'] = jsonEncode(photoJsonList);
       paramsMap.remove('videourl');
@@ -532,8 +558,57 @@ class TopicPublishController extends ChangeNotifier {
     } catch (_) {
       _uploadProgress.stop();
       _cancelUploads();
+      unawaited(VideoUploadPrepare.cancel(this));
       rethrow;
     }
+  }
+
+  /// 静图已经上传。再压配对视频，用图片凭证上传，不走七牛视频转码回调。
+  Future<String?> _uploadLiveVideo({
+    required TopicSubmitMediaModel mediaModel,
+    required String? token,
+    required int keyIndex,
+    required int slotIndex,
+    required int slotTotal,
+  }) async {
+    final asset = mediaModel.asset;
+    if (asset == null || !asset.isLivePhoto) {
+      throw Exception('实况视频读取失败');
+    }
+    _compressing = true;
+    _statusText = '正在压缩';
+    _notify();
+    File videoFile;
+    try {
+      videoFile = await LivePhotoExport.compressedPairedVideo(
+        asset: asset,
+        owner: this,
+        isCancelled: () => _cancelled,
+      );
+    } on VideoPrepareCancelled {
+      return null;
+    } finally {
+      final wasCompressing = _compressing;
+      _compressing = false;
+      if (wasCompressing &&
+          !_cancelled &&
+          !_disposed &&
+          _phase == TopicPublishPhase.uploading) {
+        _statusText = '正在上传';
+        _notify();
+      }
+    }
+    if (_cancelled) {
+      return null;
+    }
+    final result = await _uploadInSlot(
+      file: videoFile,
+      token: token,
+      keyIndex: keyIndex,
+      slotIndex: slotIndex,
+      slotTotal: slotTotal,
+    );
+    return result.key;
   }
 
   Future<CloudStorageUploadResult> _uploadInSlot({
@@ -683,6 +758,7 @@ class TopicPublishController extends ChangeNotifier {
     return TopicSubmitMediaModel(
       file: dest,
       isVideo: mediaModel.isVideo,
+      isLive: mediaModel.isLive,
       duration: mediaModel.duration,
       asset: mediaModel.asset,
     );

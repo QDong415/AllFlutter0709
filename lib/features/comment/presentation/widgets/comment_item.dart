@@ -12,6 +12,7 @@ import 'package:all_flutter0709/features/user/presentation/helpers/user_detail_n
 import 'package:all_flutter0709/features/user/presentation/widgets/user_ai_tag.dart';
 import 'package:all_flutter0709/features/user/presentation/widgets/vip_halo_avatar.dart';
 import 'package:all_flutter0709/shared/media/gallery_preview_item.dart';
+import 'package:all_flutter0709/shared/media/live_badge.dart';
 import 'package:all_flutter0709/shared/media/open_image_gallery_preview.dart';
 import 'package:all_flutter0709/shared/media/preview_save_source.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -571,7 +572,7 @@ class _LocalCommentImage extends StatelessWidget {
     openImageGalleryPreview(
       context,
       itemList: [
-        GalleryPreviewItem(
+        GalleryImagePreviewItem(
           imageProvider: imageProvider,
           placeholderImageProvider: imageProvider,
           saveSource: PreviewSaveFromLocalPath(file.path),
@@ -602,25 +603,34 @@ class _NetworkCommentImages extends StatelessWidget {
             onTap: () => _openPreview(context, index),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(_radius),
-              child: CachedNetworkImage(
-                imageUrl: pictures[index].thumbnailUrl,
+              child: SizedBox(
                 width: _extent,
                 height: _extent,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => Container(
-                  width: _extent,
-                  height: _extent,
-                  color: context.palette.pressed,
-                ),
-                errorWidget: (_, _, _) => Container(
-                  width: _extent,
-                  height: _extent,
-                  color: context.palette.pressed,
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    color: context.palette.secondaryText,
-                  ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: pictures[index].thumbnailUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (_, _) => Container(
+                        width: _extent,
+                        height: _extent,
+                        color: context.palette.pressed,
+                      ),
+                      errorWidget: (_, _, _) => Container(
+                        width: _extent,
+                        height: _extent,
+                        color: context.palette.pressed,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: context.palette.secondaryText,
+                        ),
+                      ),
+                    ),
+                    if (pictures[index].hasLive)
+                      const Positioned(left: 4, bottom: 4, child: LiveBadge()),
+                  ],
                 ),
               ),
             ),

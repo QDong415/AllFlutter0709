@@ -1,5 +1,6 @@
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/topic/data/models/topic_submit_media_model.dart';
+import 'package:all_flutter0709/shared/media/live_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -100,6 +101,8 @@ class _MediaTile extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     _MediaCover(mediaModel: mediaModel),
+                    if (mediaModel.isLive && !mediaModel.isVideo)
+                      const Positioned(left: 4, bottom: 4, child: LiveBadge()),
                     if (mediaModel.isVideo)
                       const ColoredBox(
                         color: Color(0x33000000),

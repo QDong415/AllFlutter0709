@@ -17,19 +17,33 @@ List<GalleryPreviewItem> imageMessageListToGalleryPreviewItemList(
 
 GalleryPreviewItem _toGalleryPreviewItem(ImageMessage imageMessage) {
   final imagePath = imageMessage.imagePath;
+  final ImageProvider<Object> imageProvider;
+  final PreviewSaveSource stillSaveSource;
   if (imagePath != null && File(imagePath).existsSync()) {
-    final imageProvider = FileImage(File(imagePath));
-    return GalleryPreviewItem(
-      imageProvider: imageProvider,
+    imageProvider = FileImage(File(imagePath));
+    stillSaveSource = PreviewSaveFromLocalPath(imagePath);
+  } else {
+    final imageUrl = imageMessage.imageUrl ?? '';
+    imageProvider = CachedNetworkImageProvider(imageUrl);
+    stillSaveSource = PreviewSaveFromUrl(imageUrl);
+  }
+  final livePath = imageMessage.liveVideoPath?.trim() ?? '';
+  final liveUrl = imageMessage.liveVideoUrl?.trim() ?? '';
+  final hasLocalVideo = livePath.isNotEmpty && File(livePath).existsSync();
+  if (imageMessage.hasLive && (hasLocalVideo || liveUrl.isNotEmpty)) {
+    return GalleryLiveVideoPreviewItem(
+      coverImageProvider: imageProvider,
       placeholderImageProvider: imageProvider,
-      saveSource: PreviewSaveFromLocalPath(imagePath),
+      videoUrl: liveUrl,
+      videoPath: hasLocalVideo ? livePath : null,
+      saveSource: hasLocalVideo
+          ? PreviewSaveFromLocalPath(livePath)
+          : PreviewSaveFromUrl(liveUrl),
     );
   }
-  final imageUrl = imageMessage.imageUrl ?? '';
-  final imageProvider = CachedNetworkImageProvider(imageUrl);
-  return GalleryPreviewItem(
+  return GalleryImagePreviewItem(
     imageProvider: imageProvider,
     placeholderImageProvider: imageProvider,
-    saveSource: PreviewSaveFromUrl(imageUrl),
+    saveSource: stillSaveSource,
   );
 }

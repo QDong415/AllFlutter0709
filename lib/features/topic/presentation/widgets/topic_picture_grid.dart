@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:all_flutter0709/features/topic/data/models/topic_model.dart';
 import 'package:all_flutter0709/features/topic/presentation/helpers/topic_gallery_preview_mapper.dart';
+import 'package:all_flutter0709/shared/media/live_badge.dart';
 import 'package:all_flutter0709/shared/media/open_image_gallery_preview.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -176,17 +177,26 @@ class _PictureTile extends StatelessWidget {
       onTap: onTap,
       child: Hero(
         tag: heroTag,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(TopicPictureGrid.radius),
-          child: CachedNetworkImage(
-            imageUrl: picture.thumbnailUrl,
-            width: width,
-            height: height,
-            fit: BoxFit.cover,
-            placeholder: (_, _) =>
-                _PicturePlaceholder(width: width, height: height),
-            errorWidget: (_, _, _) =>
-                _PictureError(width: width, height: height),
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(TopicPictureGrid.radius),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: picture.thumbnailUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, _) =>
+                      _PicturePlaceholder(width: width, height: height),
+                  errorWidget: (_, _, _) =>
+                      _PictureError(width: width, height: height),
+                ),
+                if (picture.hasLive)
+                  const Positioned(left: 6, bottom: 6, child: LiveBadge()),
+              ],
+            ),
           ),
         ),
       ),

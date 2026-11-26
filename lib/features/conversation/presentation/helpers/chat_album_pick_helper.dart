@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:all_flutter0709/app/theme/app_colors.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_live_picker_delegate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,45 +26,87 @@ class ChatAlbumVideo extends ChatAlbumPick {
   final AssetEntity asset;
 }
 
+/// 选中的 Live 图，并且勾了「实况」。按带短视频的图片消息发送。
+class ChatAlbumLiveImage extends ChatAlbumPick {
+  const ChatAlbumLiveImage(this.asset);
+
+  final AssetEntity asset;
+}
+
 /// 聊天「图片」入口的相册。图片和视频在同一个网格里，只能选 1 个。
 class ChatAlbumPickHelper {
   const ChatAlbumPickHelper();
 
   /// 打开相册。取消或没有权限时返回 null。
+  ///
+  /// 选中 Live 时底部有「实况」勾选，默认不勾。勾上后返回 [ChatAlbumLiveImage]。
   Future<ChatAlbumPick?> pick(BuildContext context) async {
-    final List<AssetEntity>? assetList;
+    final PermissionState permission;
     try {
-      assetList = await AssetPicker.pickAssets(
-        context,
-        pickerConfig: AssetPickerConfig(
-          maxAssets: 1,
-          requestType: RequestType.common,
-          themeColor: AppColors.link,
-          textDelegate: const AssetPickerTextDelegate(),
+      permission = await AssetPicker.permissionCheck(
+        requestOption: const PermissionRequestOption(
+          androidPermission: AndroidPermission(
+            type: RequestType.common,
+            mediaLocation: false,
+          ),
         ),
       );
     } on StateError {
       return null;
     }
+    if (!context.mounted) {
+      return null;
+    }
+
+    final provider = DefaultAssetPickerProvider(
+      maxAssets: 1,
+      requestType: RequestType.common,
+    );
+    final delegate = ChatLivePickerDelegate(
+      provider: provider,
+      initialPermission: permission,
+      themeColor: AppColors.link,
+      textDelegate: const AssetPickerTextDelegate(),
+      locale: Localizations.maybeLocaleOf(context),
+    );
+    final List<AssetEntity>? assetList;
+    var sendLive = false;
+    try {
+      if (!context.mounted) {
+        return null;
+      }
+      assetList = await AssetPicker.pickAssetsWithDelegate(
+        context,
+        delegate: delegate,
+      );
+      sendLive = delegate.sendLive.value;
+    } on StateError {
+      return null;
+    } finally {
+      delegate.sendLive.dispose();
+    }
     if (assetList == null || assetList.isEmpty) {
       return null;
     }
     final asset = assetList.first;
+    if (sendLive && asset.isLivePhoto) {
+      return ChatAlbumLiveImage(asset);
+    }
     if (asset.type == AssetType.video) {
       return ChatAlbumVideo(asset);
     }
     if (asset.type != AssetType.image) {
       return null;
     }
-    final file = await _imageFileOf(asset);
+    final file = await imageFileOf(asset);
     if (file == null) {
       return null;
     }
     return ChatAlbumImage(file);
   }
 
-  /// HEIC 转成系统导出的 JPEG。iOS 再压到接近原来系统选择器的质量。
-  Future<File?> _imageFileOf(AssetEntity asset) async {
+  /// 取出静图文件。HEIC 先要系统导出的 JPEG，iOS 再压到接近原来系统选择器的质量。
+  Future<File?> imageFileOf(AssetEntity asset) async {
     final origin = await asset.originFile;
     final lower = origin?.path.toLowerCase() ?? '';
     final File? file;

@@ -52,7 +52,14 @@ class TopicMediaPickHelper {
       if (file == null) {
         continue;
       }
-      mediaList.add(TopicSubmitMediaModel(file: file, isVideo: false));
+      mediaList.add(
+        TopicSubmitMediaModel(
+          file: file,
+          isVideo: false,
+          isLive: asset.isLivePhoto,
+          asset: asset.isLivePhoto ? asset : null,
+        ),
+      );
     }
     return mediaList;
   }
@@ -63,10 +70,7 @@ class TopicMediaPickHelper {
   }) async {
     final assetList = await AssetPicker.pickAssets(
       context,
-      pickerConfig: _pickerConfig(
-        maxAssets: 1,
-        requestType: RequestType.video,
-      ),
+      pickerConfig: _pickerConfig(maxAssets: 1, requestType: RequestType.video),
     );
     if (assetList == null || assetList.isEmpty) {
       return null;
