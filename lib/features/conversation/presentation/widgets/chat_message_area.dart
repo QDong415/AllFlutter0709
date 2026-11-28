@@ -17,13 +17,15 @@ class ChatMessageArea extends StatelessWidget {
     required this.scrollController,
     required this.onRefresh,
     required this.onRetry,
-    required this.onPointerDown,
+    required this.onTap,
     required this.onItemsChanged,
     required this.onMessageTap,
     required this.onMessageLongPress,
     required this.onAvatarTap,
     this.playingMessageId,
     this.selectedMessageId,
+    this.speechLoadingMessageId,
+    this.onSpeechTap,
   });
 
   final ValueListenable<AsyncValue<List<ConversationMessage>>>
@@ -33,7 +35,7 @@ class ChatMessageArea extends StatelessWidget {
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
-  final VoidCallback onPointerDown;
+  final VoidCallback onTap;
   final ValueChanged<int> onItemsChanged;
   final void Function(MessageItem message, List<ChatItem> itemList)
   onMessageTap;
@@ -41,6 +43,8 @@ class ChatMessageArea extends StatelessWidget {
   final ValueChanged<MessageItem> onAvatarTap;
   final String? playingMessageId;
   final String? selectedMessageId;
+  final String? speechLoadingMessageId;
+  final ValueChanged<TextMessage>? onSpeechTap;
 
   @override
   Widget build(BuildContext context) {
@@ -58,15 +62,17 @@ class ChatMessageArea extends StatelessWidget {
         if (state.hasValue && itemList.isNotEmpty) {
           onItemsChanged(itemList.length);
         }
-        return Listener(
+        return GestureDetector(
           behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) => onPointerDown(),
+          onTap: onTap,
           child: ChatMessageListView(
             state: state,
             items: itemList,
             scrollController: scrollController,
             playingMessageId: playingMessageId,
             selectedMessageId: selectedMessageId,
+            speechLoadingMessageId: speechLoadingMessageId,
+            onSpeechTap: onSpeechTap,
             onRefresh: onRefresh,
             onRetry: onRetry,
             actions: ChatMessageActions(

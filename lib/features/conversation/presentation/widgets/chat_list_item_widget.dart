@@ -1,6 +1,7 @@
 import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_item.dart';
 import 'package:all_flutter0709/features/conversation/presentation/models/chat_message_interaction.dart';
+import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_ai_speech_icon.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_gift_bubble.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_image_bubble.dart';
 import 'package:all_flutter0709/features/conversation/presentation/widgets/chat_message_row.dart';
@@ -18,12 +19,16 @@ class ChatListItemWidget extends StatelessWidget {
     this.actions = ChatMessageActions.empty,
     this.playingMessageId,
     this.selectedMessageId,
+    this.speechLoadingMessageId,
+    this.onSpeechTap,
   });
 
   final ChatItem item;
   final ChatMessageActions actions;
   final String? playingMessageId;
   final String? selectedMessageId;
+  final String? speechLoadingMessageId;
+  final ValueChanged<TextMessage>? onSpeechTap;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +39,13 @@ class ChatListItemWidget extends StatelessWidget {
       final TextMessage textItem => ChatMessageRow(
         item: textItem,
         actions: actions,
+        speechTrailing: textItem.canSpeak
+            ? ChatAiSpeechIcon(
+                isPlaying: playingMessageId == textItem.id,
+                isLoading: speechLoadingMessageId == textItem.id,
+                onTap: () => onSpeechTap?.call(textItem),
+              )
+            : null,
         bubble: ChatTextBubble(
           item: textItem,
           isSelected: selectedMessageId == textItem.id,

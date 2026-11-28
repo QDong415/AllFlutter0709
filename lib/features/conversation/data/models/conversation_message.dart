@@ -141,6 +141,15 @@ class ConversationMessage {
   /// 是否为聊天视频。
   bool get isVideo => messageType == ConversationMessageType.video;
 
+  /// 新的 AI 文字回复可以点喇叭朗读。旧消息 extend 里没有 tts。
+  bool get canSpeak {
+    if (messageType != ConversationMessageType.text) {
+      return false;
+    }
+    final raw = _extendJsonMap()?['tts'];
+    return raw == 1 || raw == '1' || raw == true;
+  }
+
   /// 视频封面对象名。抽封面失败时为空。
   String get videoCover {
     if (!isVideo) {

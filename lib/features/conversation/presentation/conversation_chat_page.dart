@@ -6,6 +6,7 @@ import 'package:all_flutter0709/app/theme/app_palette.dart';
 import 'package:all_flutter0709/core/account/account_guard.dart';
 import 'package:all_flutter0709/core/account/account_provider.dart';
 import 'package:all_flutter0709/core/config/app_config.dart';
+import 'package:all_flutter0709/core/network/http_client.dart';
 import 'package:all_flutter0709/core/utils/value_util.dart';
 import 'package:all_flutter0709/core/emoji/qq_emoji_catalog.dart';
 import 'package:all_flutter0709/core/account/user_type.dart';
@@ -13,6 +14,7 @@ import 'package:all_flutter0709/core/push/chat_push_log.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_message.dart';
 import 'package:all_flutter0709/features/conversation/data/models/conversation_summary.dart';
 import 'package:all_flutter0709/features/conversation/presentation/conversation_controller.dart';
+import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_ai_speech_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_ai_typing_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_bubble_menu_helper.dart';
 import 'package:all_flutter0709/features/conversation/presentation/helpers/chat_image_preview_helper.dart';
@@ -114,6 +116,9 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
 
   bool _isVoiceMode = false;
   bool _isSubmitting = false;
+  String? _speechLoadingId;
+  bool _speechBusy = false;
+  final ChatAiSpeechHelper _aiSpeechHelper = const ChatAiSpeechHelper();
   int _peerGender = 0;
 
   VipChatGuard get _vipChatGuard => VipChatGuard(appConfig: AppConfig.instance);
@@ -262,7 +267,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
 
   /// 气泡点按：图片预览；语音播放下一步挂在 [VoiceMessage] 分支。
   void _handleMessageTap(MessageItem message, List<ChatItem> itemList) {
-    _panelHelper.hidePanel();
+    _resetInputState();
     switch (message) {
       case ImageMessage():
         if (message.hasLive && !message.canPlayLive) {
@@ -761,6 +766,53 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
     }
   }
 
+  /// 点喇叭：有沙盒文件就播。没有则等 [ChatAiSpeechHelper] 合成，完成后由本页播放。
+  ///
+  /// 合成请求不挂在本页上。离开聊天后请求继续写文件；再进来点同一条会接上同一次结果。
+  Future<void> _playAiSpeech(TextMessage message) async {
+    if (_speechBusy) {
+      return;
+    }
+    if (_voicePlayHelper.playingMessageId == message.id) {
+      await _voicePlayHelper.stop();
+      return;
+    }
+    _speechBusy = true;
+    try {
+      final cached = await _aiSpeechHelper.cachedPath(message.msgId);
+      if (!mounted) {
+        return;
+      }
+      if (cached != null) {
+        await _voicePlayHelper.toggle(messageId: message.id, filePath: cached);
+        return;
+      }
+      setState(() {
+        _speechLoadingId = message.id;
+      });
+      final path = await _aiSpeechHelper.ensureFile(message.msgId);
+      if (!mounted) {
+        return;
+      }
+      await _voicePlayHelper.toggle(messageId: message.id, filePath: path);
+    } on ChatAiSpeechRejected {
+      if (mounted) {
+        _showSnackBar('这句话暂时读不了');
+      }
+    } catch (error) {
+      if (mounted) {
+        _showSnackBar(HttpClient.instance.describeError(error));
+      }
+    } finally {
+      _speechBusy = false;
+      if (mounted && _speechLoadingId == message.id) {
+        setState(() {
+          _speechLoadingId = null;
+        });
+      }
+    }
+  }
+
   Future<void> _playVoice(VoiceMessage message) async {
     final tappingSame = _voicePlayHelper.playingMessageId == message.id;
     if (!tappingSame && !message.isRight && !message.hadPlay) {
@@ -862,12 +914,17 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                     scrollController: _scrollController,
                     playingMessageId: _voicePlayHelper.playingMessageId,
                     selectedMessageId: _bubbleMenuHelper.selectedMessageId,
+                    speechLoadingMessageId: _speechLoadingId,
+                    onSpeechTap: (message) {
+                      _bubbleMenuHelper.hide();
+                      unawaited(_playAiSpeech(message));
+                    },
                     onRefresh: controller.syncMessagesFromServer,
                     onRetry: () {
                       unawaited(controller.syncMessagesFromServer());
                     },
-                    // 点列表收键盘并取消选中；菜单 Overlay 在外层 Stack。
-                    onPointerDown: _resetInputState,
+                    // 点列表空白处收键盘；气泡、头像和朗读按钮各自处理点击。
+                    onTap: _resetInputState,
                     onItemsChanged: _scrollHelper.scrollIfNewMessages,
                     onMessageTap: _handleMessageTap,
                     onMessageLongPress: (details) {
@@ -877,7 +934,7 @@ class _ConversationChatPageState extends ConsumerState<ConversationChatPage> {
                     onAvatarTap: (message) {
                       // 右侧为自己，左侧为对方；个人主页内再校验登录。
                       if (message.direction == MessageDirection.right) {
-                        _panelHelper.hidePanel();
+                        _resetInputState();
                         final account = ref.read(accountProvider);
                         openUserDetailPage(
                           context,

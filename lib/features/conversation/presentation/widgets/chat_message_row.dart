@@ -13,11 +13,15 @@ class ChatMessageRow extends StatelessWidget {
     required this.item,
     required this.bubble,
     this.actions = ChatMessageActions.empty,
+    this.speechTrailing,
   });
 
   final MessageItem item;
   final Widget bubble;
   final ChatMessageActions actions;
+
+  /// 左侧文字气泡右边的朗读喇叭。
+  final Widget? speechTrailing;
 
   bool get _isRight => item.isRight;
 
@@ -81,9 +85,26 @@ class ChatMessageRow extends StatelessWidget {
             ),
             const SizedBox(width: ChatBubbleMetrics.avatarGap),
             Flexible(
-              child: Align(alignment: Alignment.centerLeft, child: bubbleChild),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(child: bubbleChild),
+                    if (speechTrailing != null) ...[
+                      const SizedBox(width: 6),
+                      speechTrailing!,
+                    ],
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(width: ChatBubbleMetrics.oppositeReserve),
+            SizedBox(
+              width: speechTrailing != null
+                  ? 8
+                  : ChatBubbleMetrics.oppositeReserve,
+            ),
           ],
         ],
       ),

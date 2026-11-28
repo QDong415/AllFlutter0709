@@ -83,9 +83,13 @@ final class TextMessage extends MessageItem {
     required super.createTimeSeconds,
     super.deliveryStatus,
     required this.text,
+    this.canSpeak = false,
   });
 
   final String text;
+
+  /// 气泡右侧显示朗读喇叭。只给带 tts 标记的新 AI 文字。
+  final bool canSpeak;
 }
 
 /// 语音条气泡。

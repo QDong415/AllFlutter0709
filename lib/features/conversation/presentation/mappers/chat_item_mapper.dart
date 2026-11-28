@@ -201,5 +201,6 @@ TextMessage _textMessage({
     createTimeSeconds: message.createTimeSeconds,
     deliveryStatus: deliveryStatus,
     text: text,
+    canSpeak: message.canSpeak && direction == MessageDirection.left,
   );
 }

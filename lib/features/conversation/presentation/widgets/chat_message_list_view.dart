@@ -20,6 +20,8 @@ class ChatMessageListView extends StatelessWidget {
     this.actions = ChatMessageActions.empty,
     this.playingMessageId,
     this.selectedMessageId,
+    this.speechLoadingMessageId,
+    this.onSpeechTap,
   });
 
   final AsyncValue<List<ConversationMessage>> state;
@@ -30,6 +32,8 @@ class ChatMessageListView extends StatelessWidget {
   final ChatMessageActions actions;
   final String? playingMessageId;
   final String? selectedMessageId;
+  final String? speechLoadingMessageId;
+  final ValueChanged<TextMessage>? onSpeechTap;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +94,8 @@ class ChatMessageListView extends StatelessWidget {
               actions: actions,
               playingMessageId: playingMessageId,
               selectedMessageId: selectedMessageId,
+              speechLoadingMessageId: speechLoadingMessageId,
+              onSpeechTap: onSpeechTap,
             );
           },
         );
